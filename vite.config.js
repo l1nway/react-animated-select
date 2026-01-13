@@ -1,20 +1,23 @@
 import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
-import {resolve} from 'path'
+import {libInjectCss} from 'vite-plugin-lib-inject-css'
 
 export default defineConfig({
-    plugins: [react()],
+    plugins: [
+        react(),
+        libInjectCss()
+    ],
     build: {
         lib: {
-            entry: resolve(__dirname, 'src/index.js'),
-            name: 'MySuperSelect',
+            entry: 'src/select.jsx',
+            name: 'react-animated-select',
             fileName: (format) => `index.${format}.js`,
         },
         rollupOptions: {
-            external: ['react', 'react-dom'],
+            external: ['react', 'react-dom', 'react-transition-group'],
             output: {
                 globals: {
-                react: 'React', 'react-dom': 'ReactDOM',
+                    react: 'React', 'react-dom': 'ReactDOM' ,'react-transition-group': 'ReactTransitionGroup'
                 },
             },
         },
