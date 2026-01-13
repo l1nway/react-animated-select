@@ -1,0 +1,163 @@
+:root {
+    --select-white: white;
+    --select-almost-black: #252525ff;
+    --select-active: #5ea500;
+    --select-inactive: #e7000b;
+    --select-black: #151515;
+    --rac-hover: color-mix(in srgb, CanvasText 6%, Canvas);
+    --rac-highlight: color-mix(in srgb, CanvasText 10%, Canvas);
+    --rac-selected: color-mix(in srgb, CanvasText 14%, Canvas);
+  }
+
+.rac-select {
+    position: relative;
+    min-width: 10em;
+    justify-content: space-between;
+    display: flex;
+    background: color-mix(in srgb, Canvas 98%, CanvasText 2%);
+    --rac-border: color-mix(in srgb, Canvas 98%, CanvasText 2%);
+    border: 2px solid var(--rac-border);
+    color: CanvasText;
+    transition: 300ms border-color, 300ms font-size, 300ms width;
+    cursor: pointer;
+    padding: 0.5em;
+}
+
+.rac-loading-style,
+.rac-disabled-style {
+    opacity: 0.75;
+    filter: grayscale(0.6) saturate(0.8);
+    cursor: not-allowed;
+    transition: 300ms border, 300ms filter, 300ms opacity;
+    cursor: wait;
+}
+
+.rac-disabled-style {
+    cursor: not-allowed;
+}
+
+.rac-error-style {
+    border-color: var(--select-inactive);
+    cursor: help;
+
+    &:hover {
+        border-color: var(--select-inactive);
+    }
+}
+
+.rac-select-title {
+    display: flex;
+    align-items: center;
+
+    @media (max-width: 1024px) {
+        gap: 1vw;
+    }
+}
+
+.rac-loading-dots {
+    display: inline-flex;
+    gap: 3px;
+    padding-left: 0.25em;
+    padding-bottom: 0.1em;
+    height: 100%;
+    align-items: end;
+    transition: 300ms opacity;
+}
+
+.rac-loading-dots i {
+    width: 0.25em;
+    height: 0.25em;
+    background: currentColor;
+    border-radius: 50%;
+    animation: blink 1.4s infinite both;
+}
+
+.rac-loading-dots i:nth-child(1) {animation-delay: 0s;}
+.rac-loading-dots i:nth-child(2) {animation-delay: .2s;}
+.rac-loading-dots i:nth-child(3) {animation-delay: .4s;}
+
+.rac-select-buttons {
+    display: flex;
+}
+
+.rac-select-cancel {
+    transition: 300ms opacity, 300ms border;
+    opacity: var(--opacity);
+
+    &:hover {
+        
+    }
+}
+
+.rac-select-arrow-wrapper {
+    height: 1em;
+    width: 1em;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    will-change: transform;
+    transition: transform 300ms cubic-bezier(.4,0,.2,1);
+    transform-origin: 50% 50%;
+}
+
+.rac-select-arrow-wrapper.--open {
+    transform: rotate(180deg);
+}
+
+.rac-select-arrow {
+    display: block;
+    transform: translateZ(0);
+}
+
+.rac-select-list {
+    background: color-mix(in srgb, Canvas 98%, CanvasText 2%);
+    color: CanvasText;
+    max-height: 250px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    scroll-behavior: smooth;
+    scroll-padding-top: 0.5em;
+    scroll-padding-bottom: 0.5em;
+    z-index: 1;
+    transition: 300ms border, 300ms background-color, 300ms opacity, 300ms padding, 300ms height;
+    opacity: var(--opacity);
+}
+
+.rac-select-option {
+    padding: 0.5em;
+    transition: background-color 300ms, border-radius 300ms, font-size 300ms, 300ms height;
+    transition: background-color 300ms, border-radius 300ms, font-size 300ms, 300ms height;
+}
+
+.rac-select-option:not(.rac-disabled-option):hover {
+  background-color: var(--rac-hover);
+}
+
+.rac-select-option.rac-highlighted {
+  background-color: var(--rac-highlight);
+}
+
+.rac-select-option.rac-selected {
+  background-color: var(--rac-selected);
+}
+
+.rac-select-option.rac-selected.rac-highlighted {
+  background-color: color-mix(in srgb, var(--rac-selected) 60%, CanvasText 40%);
+}
+
+.rac-disabled-option {
+    cursor: not-allowed;
+    color: gray;
+}
+
+.rac-invalid-option {
+    color: red;
+}
+
+.rac-true-option {
+    color: #4caf50;
+}
+
+.rac-false-option {
+    color: #f44336;
+}

@@ -1,0 +1,46 @@
+{
+  "name": "react-animated-select",
+  "version": "0.1.0",
+  "type": "module",
+  "author": "l1nway (https://github.com/l1nway/)",
+  "description": "Animated, accessible, and flexible select component for React",
+  "keywords": [
+    "react",
+    "select",
+    "animated",
+    "accessible",
+    "ui-components"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/l1nway/react-animated-select.git"
+  },
+  "license": "MIT",
+  "homepage": "https://github.com/l1nway/react-animated-select#readme",
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch"
+  },
+  "main": "./dist/index.umd.js",
+  "module": "./dist/index.es.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./dist/index.es.js",
+      "require": "./dist/index.umd.js"
+    },
+    "./style.css": "./dist/react-animated-select.css"
+  },
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "react-dom": ">=16.8.0"
+  },
+  "dependencies": {
+    "react-transition-group": "^4.4.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.2",
+    "vite": "^7.3.1"
+  }
+}
