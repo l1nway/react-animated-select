@@ -9,13 +9,15 @@ export default defineConfig({
     ],
     build: {
         lib: {
-            entry: 'src/select.jsx',
-            name: 'react-animated-select',
+            entry: 'src/index.js',
+            name: 'ReactAnimatedSelect',
+            formats: ['es', 'cjs'],
             fileName: (format) => `index.${format}.js`,
         },
         rollupOptions: {
             external: ['react', 'react-dom', 'react-transition-group'],
             output: {
+                exports: 'named',
                 globals: {
                     react: 'React', 'react-dom': 'ReactDOM' ,'react-transition-group': 'ReactTransitionGroup'
                 },
