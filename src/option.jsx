@@ -1,6 +1,7 @@
 import {useEffect, useContext} from 'react'
 import {SelectContext} from './selectContext'
 import {makeId} from './makeId'
+import getText from './getText'
 
 export default function Option({value, id, className, children, disabled}) {
     const ctx = useContext(SelectContext)
@@ -8,9 +9,11 @@ export default function Option({value, id, className, children, disabled}) {
     useEffect(() => {
         if (!ctx) return
 
+        const textFallback = getText(children)
+        
         const option = {
-            id: id ?? makeId(String(value ?? children)),
-            value,
+            id: String(id ?? makeId(String(textFallback))),
+            value: value !== undefined ? value : textFallback,
             label: typeof children === 'string' ? children : String(value ?? id),
             jsx: children,
             className,

@@ -8,7 +8,7 @@ function SlideLeft({visibility, children, duration = 300, unmount}) {
         <CSSTransition
             in={visibility}
             timeout={duration}
-            classNames='slide-left'
+            classNames='rac-slide-left'
             unmountOnExit
             nodeRef={nodeRef}
             onEnter={() => (nodeRef.current.style.width = '0px')}

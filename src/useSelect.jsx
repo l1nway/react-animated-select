@@ -13,14 +13,22 @@ function useSelect({
 
     useEffect(() => {
         if (isOpen) {
-            const index = selected 
-                ? options.findIndex(o => o.id == selected.id) 
-                : -1
-            setHighlightedIndex(index >= 0 ? index : 0)
+            let index = -1
+
+            if (selected) {
+                const selectedIndex = options.findIndex(o => o.id === selected.id && !o.disabled)
+                if (selectedIndex >= 0) index = selectedIndex
+            }
+
+            if (index === -1) {
+                index = options.findIndex(o => !o.disabled)
+            }
+
+            setHighlightedIndex(index)
         } else {
             setHighlightedIndex(-1)
         }
-    }, [isOpen, selected])
+    }, [isOpen, selected, options])
 
     const handleBlur = useCallback((e) => {
         if (e.currentTarget.contains(e.relatedTarget)) return
@@ -49,19 +57,21 @@ function useSelect({
     }, [disabled, isOpen, setIsOpen])
 
     const getNextIndex = (current, direction) => {
-        let next = current + direction
-        if (next < 0) next = options.length - 1
-        if (next >= options.length) next = 0
-        
+        if (options.every(o => o.disabled)) return -1
+
+        let next = current
         let loops = 0
-        while (options[next]?.disabled && loops < options.length) {
+
+        do {
             next += direction
             if (next < 0) next = options.length - 1
             if (next >= options.length) next = 0
             loops++
-        }
+        } while (options[next]?.disabled && loops <= options.length)
+
         return next
     }
+
 
     const handleKeyDown = useCallback((e) => {
         if (disabled) return

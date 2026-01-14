@@ -63,7 +63,7 @@ export default function Select({children, renderedDropdown, ...props}) {
 
             const option = normalizedOptions[highlightedIndex]
             if (option) {
-                const elementId = `option-${makeId(option.name)}-${selectId}`
+                const elementId = `opt-${selectId}-${makeId(option.id)}`
                 const domElement = document.getElementById(elementId)
                 
                 if (domElement) {
@@ -85,7 +85,7 @@ export default function Select({children, renderedDropdown, ...props}) {
         if (loading) return loadingText
         if (disabled) return disabledText
         
-        if (selected) return selected.name
+        if (selected) return selected.jsx ?? selected.name
 
         if (hasActualValue) {
             return typeof selectedValue === 'object' 
@@ -102,10 +102,12 @@ export default function Select({children, renderedDropdown, ...props}) {
 
     // option list rendering
     const renderOptions = useMemo(() => normalizedOptions?.map((element, index) => {
-        const optionId = `option-${makeId(element.name)}-${selectId}`
+        const optionId = `opt-${selectId}-${makeId(element.id)}`
 
         let optionClass = 'rac-select-option'
         if (element.className) optionClass += ` ${element.className}`
+
+        if (selected?.id === element.id) optionClass += ' rac-selected'
 
         if (index === highlightedIndex) optionClass += ' rac-highlighted'
 
@@ -199,7 +201,7 @@ export default function Select({children, renderedDropdown, ...props}) {
                         visibility={loading && !error}
                     >
                         <span className='rac-loading-dots'>
-                            <i></i><i></i><i></i>
+                            <i/><i/><i/>
                         </span>
                     </SlideLeft>
                 </div>
