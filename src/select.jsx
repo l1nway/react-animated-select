@@ -1,7 +1,7 @@
 import './select.css'
 
 import {XMarkIcon, ArrowUpIcon} from './icons'
-import {useRef, useMemo, useState, useEffect, useCallback, useId} from 'react'
+import {forwardRef, useImperativeHandle, useRef, useMemo, useState, useEffect, useCallback, useId, isValidElement, cloneElement} from 'react'
 
 import {SelectContext} from './selectContext'
 import useSelect from './useSelect'
@@ -10,7 +10,26 @@ import {makeId} from './makeId'
 import Options from './options'
 import SlideLeft from './slideLeft'
 
-export default function Select({
+const renderIcon = (Icon, defaultProps) => {
+    if (!Icon) return null
+
+    if (typeof Icon === 'string') {
+        return <img src={Icon} {...defaultProps} alt='' />
+    }
+
+    if (isValidElement(Icon)) {
+        return cloneElement(Icon, defaultProps)
+    }
+
+    if (typeof Icon === 'function' || (typeof Icon === 'object' && Icon.$$typeof)) {
+        const IconComponent = Icon
+        return <IconComponent {...defaultProps} />
+    }
+
+    return null
+}
+
+const Select = forwardRef(({
     unmount,
     children,
     renderedDropdown,
@@ -21,8 +40,12 @@ export default function Select({
     easing = 'ease-out',
     offset = 2,
     animateOpacity = true,
+    style = {},
+    className = '',
+    ArrowIcon = ArrowUpIcon,
+    ClearIcon = XMarkIcon,
     ...props
-}) {
+}, ref) => {
 
     const reactId = useId()
 
@@ -40,6 +63,17 @@ export default function Select({
 
     // ref is needed to pass dimensions for the animation hook
     const selectRef = useRef(null)
+
+    useEffect(() => {
+        if (!ref) return
+        if (typeof ref === 'function') {
+            ref(selectRef.current)
+        } else {
+            ref.current = selectRef.current
+        }
+    }, [ref])
+
+    useImperativeHandle(ref, () => selectRef.current)
 
     // open/closed status select
     const [internalVisibility, setInternalVisibility] = useState(false)
@@ -203,8 +237,12 @@ export default function Select({
             {children}
             {renderedDropdown}
             <div
-                style={{'--rac-duration': `${duration}ms`}}
+                style={{
+                    '--rac-duration': `${duration}ms`,
+                    ...style
+                }}
                 className={`rac-select
+                    ${className}
                     ${(!hasOptions || disabled) ? 'rac-disabled-style' : ''}
                     ${loading ? 'rac-loading-style' : ''}
                     ${error ? 'rac-error-style' : ''}`
@@ -225,12 +263,17 @@ export default function Select({
                 })}
             >
                 <div
-                    className={`rac-select-title ${selected?.type == 'boolean'
+                    className={`rac-select-title ${(!error && !loading && selected?.type == 'boolean')
                         ? selected.raw ? 'rac-true-option' : 'rac-false-option'
                         : ''
                     }`}
                 >
-                    {title}
+                    <span
+                        className='rac-title-text'
+                        key={title}
+                    >
+                        {title}
+                    </span>
                     <SlideLeft
                         visibility={loading && !error}
                         duration={duration}
@@ -246,24 +289,24 @@ export default function Select({
                     <SlideLeft
                         visibility={hasActualValue && hasOptions && !disabled && !loading && !error}
                         duration={duration}
+                        style={{display: 'grid'}}
                     >
-                        <XMarkIcon
-                            className='rac-select-cancel'
-                            role='button'
-                            aria-label='Clear selection'
-                            onClick={(e) => clear(e)}
-                        />
+                        {renderIcon(ClearIcon, { 
+                            className: 'rac-select-cancel', 
+                            onClick: (e) => clear(e)
+                        })}
                     </SlideLeft>
                     <SlideLeft
                         visibility={active}
                         duration={duration}
+                        style={{display: 'grid'}}
                     >
                         <span
                             className={`rac-select-arrow-wrapper ${visibility ? '--open' : ''}`}
                         >
-                            <ArrowUpIcon
-                                className='rac-select-arrow-wrapper'
-                            />
+                            {renderIcon(ArrowIcon, { 
+                                className: 'rac-select-arrow-wrapper' 
+                            })}
                         </span>
                     </SlideLeft>
                 </div>
@@ -288,4 +331,6 @@ export default function Select({
             </div>
         </SelectContext.Provider>
     )
-}
+})
+
+export default Select

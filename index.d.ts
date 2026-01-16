@@ -18,7 +18,7 @@ export interface SelectProps {
     options?: any[] | Record<string, any>
     value?: any
     defaultValue?: any
-    onChange?: (value: any, option: any) => void
+    onChange?: (data: any, id: any) => void
 
     disabled?: boolean
     loading?: boolean
@@ -35,14 +35,17 @@ export interface SelectProps {
     invalidOption?: string
 
     className?: string
-    id?: string
+    style?: CSSProperties
+    ArrowIcon?: ElementType | string | ReactNode
+    ClearIcon?: ElementType | string | ReactNode
 }
 
 export const Select: FC<SelectProps>
 
 export interface OptionProps {
-    value: any
-    children: ReactNode
+    value?: any
+    id?: any
+    children?: ReactNode
     disabled?: boolean
     className?: string
 }

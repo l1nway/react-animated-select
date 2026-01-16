@@ -4,8 +4,9 @@ import {useRef} from 'react'
 function SlideLeft({
     visibility,
     children,
-    duration,
-    unmount
+    duration = 300,
+    unmount,
+    style
 }) {
     const nodeRef = useRef(null)
 
@@ -26,7 +27,7 @@ function SlideLeft({
             <div
                 ref={nodeRef}
                 style={{
-                    display: 'grid',
+                    ...style,
                     overflow: 'hidden',
                     transition: `width ${duration}ms ease`
                 }}

@@ -21,6 +21,9 @@
     --rac-select-padding: 0em 0.5em;
     --rac-disabled-opacity: 0.75;
 
+    --rac-title-anim-shift: 4px;
+    --rac-title-anim-entry-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
+
     --rac-dots-height: 3px;
     --rac-dots-width: 3px;
     --rac-dots-color: currentColor;
@@ -97,11 +100,26 @@
     align-items: center;
 }
 
+.rac-title-text {
+    display: block;
+    animation: rac-fade-in var(--rac-duration-base) var(--rac-title-anim-entry-ease);
+}
+
+@keyframes rac-fade-in {
+    from {
+        opacity: 0;
+        transform: translateY(var(--rac-title-anim-shift));
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 .rac-loading-dots {
     display: inline-flex;
     gap: var(--rac-dots-gap);
     padding-left: var(--rac-dots-padding-left);
-    height: 90%;
     align-items: var(--rac-dots-align);
 }
 
@@ -153,6 +171,11 @@
 
 .rac-select-arrow-wrapper.--open {
     transform: rotate(180deg);
+}
+
+.rac-select-arrow, 
+.rac-select-cancel {
+    object-fit: contain;
 }
 
 .rac-select-list {

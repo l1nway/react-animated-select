@@ -73,7 +73,7 @@ function App() {
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `options` | Array \| Object | `[]` | Data source for options. The recommended format is an array of objects with `id`, `name`, and optional `disabled`. For compatibility, `value` may be used instead of `id`, and `label` instead of `name`. |
+| `options` | `Array \| Object` | `[]` | Data source for options. The recommended format is an array of objects with `id`, `name`, and optional `disabled`. For compatibility, `value` may be used instead of `id`, and `label` instead of `name`. |
 | `value` | `any` | `undefined` | The current value for a controlled component. |
 | `defaultValue` | `any` | `undefined` | Initial value for an uncontrolled component. |
 | `onChange` | `function` | `undefined` | Callback called when an option is selected. Arguments: (data, id). |
@@ -81,6 +81,10 @@ function App() {
 | `disabled` | `boolean` | `false` | Disables the entire component. |
 | `loading` | `boolean` | `false` | Shows a loading animation and disables interaction. |
 | `error` | `boolean` | `false` | Shows the error state and `errorText`. |
+| `style` | `object` | `{}` | Inline styles for the root container. |,
+| `className` | `string` | '' | Additional CSS class for the root container .rac-select. |,
+| `ArrowIcon` | `ElementType \ string \ JSX` | Default icon | Custom arrow icon. Accepts a component, image path, or JSX. |
+| `ClearIcon` | `ElementType \ string \ JSX` | Default icon | Custom clear icon. Accepts a component, image path, or JSX. |,
 
 ---
 
@@ -163,17 +167,33 @@ The component uses CSS variables for deep styling. These are based on system col
 | `--rac-select-height` | `2em` | Fixed height of the select. |
 | `--rac-select-padding` | `0em 0.5em` | Internal horizontal padding. |
 | `--rac-disabled-opacity` | `0.75` | Opacity when `disabled={true}`. |
+| `--rac-title-anim-shift` | 4px | Vertical offset for title change animation. |
+| `--rac-title-anim-entry-ease` | cubic-bezier(0.34, 1.56, 0.64, 1) | Easing function for text entry. |
 | **Loading Dots** | | |
 | `--rac-dots-color` | `currentColor` | Color of the loader dots. |
 | `--rac-dots-animation-duration`| `1.4s` | Full cycle of the dots animation. |
 | `--rac-dots-gap` | `3px` | Space between points. |
+| `--rac-dots-height` | `3px` | Diameter of the loader dots. |
+| `--rac-dots-width` | `3px` | Width of the loader dots. |
+| `--rac-dots-padding-left` | `0.25em` | Space between the title text and the dots. |
+| `--rac-dots-align` | `end` | Vertical alignment of the dots. |
+| `--rac-dots-animation-delay-1`| `0s` | Start delay for the first dot. |
+| `--rac-dots-animation-delay-2`| `0.2s` | Start delay for the second dot. |
+| `--rac-dots-animation-delay-3`| `0.4s` | Start delay for the third dot. |
 | **Icons & Buttons** | | |
-| `--rac-arrow-height` | `1em` | Dropdown arrow size. |
 | `--rac-cancel-height` | `0.9em` | Clear icon size. |
+| `--rac-cancel-width` | `0.9em` | Clear icon width. |
+| `--rac-arrow-height` | `1em` | Dropdown arrow size. |
+| `--rac-arrow-width` | `1em` | Dropdown arrow width. |
+| `--rac-arrow-padding` | `1px 0 2px` | Internal padding for arrow alignment. |
 | **Dropdown & Scroll** | | |
 | `--rac-list-background` | `color-mix(in srgb, Canvas 98%, CanvasText 2%)` | Dropdown list background. |
 | `--rac-list-max-height` | `250px` | Maximum height before scrolling. |
 | `--rac-scroll-color` | `color-mix(...)` | Scrollbar thumb color. |
+| `--rac-scroll-track` | `color-mix(...)` | Background color of the scrollbar track. |
+| `--rac-scroll-padding-top` | `0.5em` | Internal top padding of the list. |
+| `--rac-scroll-padding-bottom` | `0.5em` | Internal bottom padding of the list. |
+| `--rac-list-color` | `CanvasText` | Text color inside the dropdown list. |
 | **Options State** | | |
 | `--rac-option-hover` | `color-mix(...)` | Background on mouse hover. |
 | `--rac-option-highlight` | `color-mix(...)` | Background when keyboard navigating. |
@@ -181,6 +201,9 @@ The component uses CSS variables for deep styling. These are based on system col
 | `--rac-disabled-option-color`| `color-mix(...)` | Text color for disabled items. |
 | `--rac-true-option-color` | `color-mix(...)` | Text color for "Boolean True" items. |
 | `--rac-false-option-color` | `color-mix(...)` | Text color for "Boolean False" items. |
+| `--rac-option-padding` | `0.5em` | Internal padding for each option item. |
+| `--rac-invalid-option-color` | `color-mix(...)` | Text color for invalid options. |
+| `--rac-warning-option-color` | `color-mix(...)` | Text color for warning/caution options. |
 
 ---
 
@@ -190,6 +213,7 @@ The component uses CSS variables for deep styling. These are based on system col
 |:---|:---|:---|
 | `.rac-select` | **Main Wrapper** | The primary container of the select. |
 | `.rac-select-title` | **Value Display** | The area showing the selected option or placeholder. |
+| `.rac-title-text` | **Title text itself** | The container for the title text itself. |
 | `.rac-loading-dots` | **Loader** | Wrapper for the loading animation. |
 | `.rac-loading-dots i` | **Loader Point** | Directly target animated points for styling. |
 | `.rac-select-buttons` | **Action Group** | Wrapper for the Clear (X) and Arrow icons. |
@@ -211,6 +235,7 @@ The select and its options react to internal states by applying the following cl
 - `.rac-error-style`: Applied when `error={true}`.
 
 #### Option States (applied to `.rac-select-option`)
+- `.rac-selected`: Indicates the currently selected item.
 - `.rac-highlighted`: The option currently focused via keyboard or mouse hover.
 - `.rac-disabled-option`: Applied to options that have their own `disabled: true` property.
 - `.rac-invalid-option`: Applied to items that are not valid data types (e.g., functions).
@@ -221,29 +246,18 @@ The select and its options react to internal states by applying the following cl
 - `.rac-select-arrow-wrapper.--open`: Applied to the arrow icon when the dropdown is expanded.
 
 ## Change log
-### 0.2.5
-**Added**
-- System-Driven Theming: Implemented color-mix() utilizing CSS system colors (Canvas, CanvasText, AccentColor). This ensures the component is natively adaptive to Light/Dark modes and High Contrast accessibility settings.
+### 0.2.7
+#### **New Features**
+- **Custom Icons Support:** Added `ArrowIcon` and `ClearIcon` props. Users can now pass their own SVG components, image paths, or JSX elements to customize the interface.
+- **Ref Forwarding:** Implemented access to the internal ref. This enables manual focus management and integration with third-party libraries.
+- **Enhanced Styling:** Added `className` and `style` prop to the root `.rac-select` container for easier layout integration and style overrides.
+- **Animated Title Transitions:** Introduced a smooth "fade-and-slide" animation for the `title` element when the value changes.
 
-- Advanced UX Logic: Added a window-focus protection mechanism to prevent the dropdown from auto-opening when switching back to the browser tab (Alt+Tab).
+#### **Architecture & CSS**
+- **CSS Variable Injection:** Refactored animation parameters into CSS custom properties (`--rac-title-anim-shift`, `--rac-title-anim-entry-ease`
 
-**Fixed**
-
-- Duplicate ID Conflict: Resolved a critical bug where multiple options with identical IDs caused the highlighter to "stuck" on the first match. Now, every option receives a unique internal React ID while maintaining the user-provided ID for logic.
-
-**Customization & Props**
-
-- Total Styling Freedom: Exposed a full set of CSS variables (--rac-*) for durations, colors, offsets, and dimensions.
-- Animation Controls: Added new props:
-- - duration: Control the speed of all transitions.
-- - easing: Set custom cubic-bezier or ease functions.
-- - offset: Adjust the gap between the trigger and the dropdown.
-- - animateOpacity: Toggle fade effects on/off.
-- Behavioral Props:
-- - ownBehavior: Allows external control of the open/closed state.
-- - alwaysOpen: Debug/Special use mode where the list is permanently visible.
-- - unmount: Toggle between display: none and full DOM removal on close.
-- - visibility: Allows manually control the visibility of the list.
+#### **Bug Fixes**
+- **Opacity Animation:** Resolved an issue where the optional opacity transition for the dropdown list was not triggering correctly during the enter/exit phases.
 
 ## License
 
