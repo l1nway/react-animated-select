@@ -1,5 +1,4 @@
 import {useState, useMemo, useCallback, useId} from 'react'
-import {makeId} from './makeId'
 
 export function useSelectLogic({
     options = [],
@@ -46,18 +45,23 @@ export function useSelectLogic({
         )
     }
 
-    // normalization list of options; converting an object or an unsuitable array into a suitable one
+    // normalization list of options
     const normalizedPropOptions = useMemo(() => {
         if (!options) return []
 
         const flat = []
 
         const push = (key, value, originalItem) => {
+            let computedUserId = originalItem?.id ?? originalItem?.value
+            if (computedUserId === undefined || computedUserId === null) {
+                computedUserId = value ?? key
+            }
+
             if (typeof value === 'number' && value === 0) {
                 flat.push({
                     key: '0',
                     value: 0,
-                    userId: originalItem?.id ?? 0,
+                    userId: 0,
                     label: '0',
                     original: originalItem
                 })
@@ -68,7 +72,7 @@ export function useSelectLogic({
                 flat.push({
                     key: `bool-${flat.length}`,
                     value,
-                    userId: originalItem?.id ?? `bool-${flat.length}`,
+                    userId: computedUserId,
                     label: String(value),
                     type: 'boolean',
                     original: originalItem
@@ -80,7 +84,7 @@ export function useSelectLogic({
                 flat.push({
                     key: `empty-${flat.length}`,
                     value: null,
-                    userId: originalItem?.id ?? `empty-${flat.length}`,
+                    userId: computedUserId ?? `empty-${flat.length}`,
                     disabled: true,
                     label: emptyOption,
                     original: originalItem
@@ -92,7 +96,7 @@ export function useSelectLogic({
                 flat.push({
                     key: `invalid-${flat.length}`,
                     value: null,
-                    userId: originalItem?.id ?? `invalid-${flat.length}`,
+                    userId: computedUserId ?? `invalid-${flat.length}`,
                     disabled: true,
                     label: invalidOption,
                     original: originalItem
@@ -104,7 +108,7 @@ export function useSelectLogic({
                 flat.push({
                     key: value.id ?? value.value ?? value.name ?? key,
                     value,
-                    userId: value.id ?? value.value ?? value.name ?? key,
+                    userId: computedUserId,
                     disabled: !!value.disabled,
                     label: value.name ?? value.label ?? key,
                     original: originalItem
@@ -113,7 +117,7 @@ export function useSelectLogic({
                 flat.push({
                     key,
                     value,
-                    userId: key,
+                    userId: computedUserId,
                     label: String(value ?? key),
                     original: originalItem
                 })
@@ -132,7 +136,7 @@ export function useSelectLogic({
                     flat.push({
                         key: `disabled-${flat.length}`,
                         value: null,
-                        userId: item?.id ?? item ?? null,
+                        userId: null,
                         disabled: true,
                         label: disabledOption,
                         original: item
@@ -141,10 +145,14 @@ export function useSelectLogic({
                 }
 
                 if (isOptionObject(item)) {
+                    
+                    const stableUserId = item.id ?? 
+                        (typeof item.value !== 'object' ? item.value : (item.label ?? item.name ?? item.value));
+
                     flat.push({
                         key: item.id ?? item.value ?? item.name ?? `opt-${flat.length}`,
                         value: item.value ?? item.id ?? item,
-                        userId: item?.id ?? item?.value ?? item?.name ?? item?.label ?? item ?? null,
+                        userId: stableUserId,
                         disabled: !!item.disabled,
                         label: item.name ?? item.label ?? String(item.id ?? item.value),
                         original: item
@@ -166,19 +174,12 @@ export function useSelectLogic({
             }
         }
 
-        const used = new Map()
-
-        const makeUnique = (base) => {
-            const n = used.get(base) || 0
-            used.set(base, n + 1)
-            return n == 0 ? base : `${base}-${n}`
-        }
-
         return flat.map((item, i) => {
-            const baseId = makeId(item.key ?? item.label ?? i, 'invalid-option', stableId)
+            const internalId = `${stableId}-opt-${i}`
+
             return {
-                id: makeUnique(baseId),
-                userId: item.userId ?? item.key ?? i,
+                id: internalId,         
+                userId: item.userId,
                 name: String(item.label),
                 raw: item.value,
                 original: item.original,
@@ -191,11 +192,11 @@ export function useSelectLogic({
 
     const normalizedJsxOptions = useMemo(() => {
         return jsxOptions.map((opt, index) => {
-            const uniqueId = `jsx-${stableId.replace(/:/g, '')}-${opt.id}`
+            const uniqueId = `jsx-${stableId.replace(/:/g, '')}-${opt.id}-${index}`
 
             return {
                 id: uniqueId,
-                userId: opt.id,
+                userId: opt.id, 
                 value: opt.value,
                 raw: opt.value,
                 original: opt.value,
@@ -212,28 +213,34 @@ export function useSelectLogic({
         return [...normalizedPropOptions, ...normalizedJsxOptions]
     }, [normalizedPropOptions, normalizedJsxOptions])
 
-    // option availability status
     const hasOptions = normalizedOptions.length > 0
 
-    // select activity status
     const active = useMemo(() => (
         !error && !loading && !disabled && hasOptions
     ), [error, loading, disabled, hasOptions])
 
+    const controlledId = useMemo(() => {
+        if (!isControlled) return null
+        
+        if (internalValue) {
+            const currentCachedOption = normalizedOptions.find(o => o.id === internalValue)
+            if (currentCachedOption && currentCachedOption.userId === value) {
+                return internalValue
+            }
+        }
+
+        return normalizedOptions.find(o => o.userId === value)?.id ?? null
+    }, [isControlled, value, normalizedOptions, internalValue])
+
     const selected = useMemo(() => {
-        const current = isControlled ? value : internalValue
-        if (current === undefined || current === null) return null
+        const currentId = isControlled ? controlledId : internalValue
+        
+        if (!currentId) return null
 
-        return normalizedOptions.find(o =>
-            o.id === String(current) ||
-            o.userId === String(current) ||
-            o.raw === current ||
-            o.original === current ||
-            (typeof current === 'object' && current !== null && o.id === String(current.id || current.value))
-        ) ?? null
-    }, [isControlled, value, internalValue, normalizedOptions])
+        return normalizedOptions.find(o => o.id === currentId) ?? null
 
-    // option selection function
+    }, [isControlled, controlledId, internalValue, normalizedOptions])
+
     const selectOption = useCallback((option, e) => {
         if (option.disabled) {
             e.stopPropagation()
@@ -241,23 +248,21 @@ export function useSelectLogic({
             return
         }
         
-        if (!isControlled) {
-            setInternalValue(option?.original) 
-        }
+        setInternalValue(option.id) 
+        
         onChange?.(option?.original, option?.userId)
         
         setVisibility(false)
-    }, [isControlled, onChange, setVisibility])
+    }, [onChange, setVisibility])
 
-    // clear function of selected option    
     const clear = useCallback((e) => {
         e.preventDefault()
         e.stopPropagation()
-        if (!isControlled) {
-            setInternalValue(null)
-        }
+        
+        setInternalValue(null)
+        
         onChange?.(null, null)
-    }, [isControlled, onChange])
+    }, [onChange])
 
     return {normalizedOptions, selected, selectOption, clear, hasOptions, active, selectedValue, placeholder, emptyText, disabledText, loadingText, errorText, disabledOption, emptyOption, invalidOption, disabled, loading, error}
 }

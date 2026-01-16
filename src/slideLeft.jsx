@@ -1,7 +1,12 @@
 import {CSSTransition} from 'react-transition-group'
 import {useRef} from 'react'
 
-function SlideLeft({visibility, children, duration = 300, unmount}) {
+function SlideLeft({
+    visibility,
+    children,
+    duration,
+    unmount
+}) {
     const nodeRef = useRef(null)
 
     return (
@@ -21,12 +26,9 @@ function SlideLeft({visibility, children, duration = 300, unmount}) {
             <div
                 ref={nodeRef}
                 style={{
-                    overflow: 'hidden',
-                    // display: 'inline-block',
-                    transition: `width ${duration}ms ease`,
                     display: 'grid',
-                    height: '100%'
-                    // verticalAlign: 'top'
+                    overflow: 'hidden',
+                    transition: `width ${duration}ms ease`
                 }}
             >
                 {children}

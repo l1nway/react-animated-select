@@ -9,21 +9,27 @@ function useSelect({
     selected
 }) {
     const justFocused = useRef(false)
+    const lastWindowFocusTime = useRef(0)
     const [highlightedIndex, setHighlightedIndex] = useState(-1)
+
+    useEffect(() => {
+        const handleWindowFocus = () => {
+            lastWindowFocusTime.current = Date.now()
+        }
+        window.addEventListener('focus', handleWindowFocus)
+        return () => window.removeEventListener('focus', handleWindowFocus)
+    }, [])
 
     useEffect(() => {
         if (isOpen) {
             let index = -1
-
             if (selected) {
                 const selectedIndex = options.findIndex(o => o.id === selected.id && !o.disabled)
                 if (selectedIndex >= 0) index = selectedIndex
             }
-
             if (index === -1) {
                 index = options.findIndex(o => !o.disabled)
             }
-
             setHighlightedIndex(index)
         } else {
             setHighlightedIndex(-1)
@@ -32,16 +38,20 @@ function useSelect({
 
     const handleBlur = useCallback((e) => {
         if (e.currentTarget.contains(e.relatedTarget)) return
-        setIsOpen(false, 'force rerender if its in object')
+        setIsOpen(false)
     }, [setIsOpen])
 
     const handleFocus = useCallback(() => {
         if (disabled) return
-        if (document.hidden || !document.hasFocus()) return
+        
+        if (document.hidden) return
+
+        const timeSinceWindowFocus = Date.now() - lastWindowFocusTime.current
+        if (timeSinceWindowFocus < 100) return
+
         if (!isOpen) {
             setIsOpen(true)
             justFocused.current = true
-
             setTimeout(() => {
                 justFocused.current = false
             }, 200)
@@ -58,20 +68,16 @@ function useSelect({
 
     const getNextIndex = (current, direction) => {
         if (options.every(o => o.disabled)) return -1
-
         let next = current
         let loops = 0
-
         do {
             next += direction
             if (next < 0) next = options.length - 1
             if (next >= options.length) next = 0
             loops++
         } while (options[next]?.disabled && loops <= options.length)
-
         return next
     }
-
 
     const handleKeyDown = useCallback((e) => {
         if (disabled) return
@@ -88,12 +94,10 @@ function useSelect({
                     setIsOpen(true)
                 }
                 break
-            
             case 'Escape':
                 e.preventDefault()
                 setIsOpen(false)
                 break
-
             case 'ArrowDown':
                 e.preventDefault()
                 if (!isOpen) {
@@ -102,7 +106,6 @@ function useSelect({
                     setHighlightedIndex(prev => getNextIndex(prev, 1))
                 }
                 break
-
             case 'ArrowUp':
                 e.preventDefault()
                 if (!isOpen) {
@@ -111,15 +114,22 @@ function useSelect({
                     setHighlightedIndex(prev => getNextIndex(prev, -1))
                 }
                 break
-                
             case 'Tab':
                 if (isOpen) setIsOpen(false)
+                break
+            default:
                 break
         }
     }, [disabled, isOpen, setIsOpen, highlightedIndex, options, selectOption])
 
-    return useMemo(() => ({handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, setHighlightedIndex}),
-    [handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, setHighlightedIndex])
+    return useMemo(() => ({
+        handleBlur, 
+        handleFocus, 
+        handleToggle, 
+        handleKeyDown, 
+        highlightedIndex, 
+        setHighlightedIndex
+    }), [handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, setHighlightedIndex])
 }
 
 export default useSelect

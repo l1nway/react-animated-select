@@ -1,6 +1,17 @@
 import {FC, ReactNode} from 'react'
 
 export interface SelectProps {
+
+    duration?: number
+    easing?: string
+    offset?: number
+    animateOpacity?: boolean
+
+    visibility?: boolean
+    ownBehavior?: boolean
+    alwaysOpen?: boolean
+    unmount?: boolean
+
     children?: ReactNode
     renderedDropdown?: ReactNode
     

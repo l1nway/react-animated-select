@@ -10,7 +10,19 @@ import {makeId} from './makeId'
 import Options from './options'
 import SlideLeft from './slideLeft'
 
-export default function Select({children, renderedDropdown, ...props}) {
+export default function Select({
+    unmount,
+    children,
+    renderedDropdown,
+    visibility: externalVisibility,
+    ownBehavior = false,
+    alwaysOpen = false,
+    duration = 300,
+    easing = 'ease-out',
+    offset = 2,
+    animateOpacity = true,
+    ...props
+}) {
 
     const reactId = useId()
 
@@ -30,9 +42,26 @@ export default function Select({children, renderedDropdown, ...props}) {
     const selectRef = useRef(null)
 
     // open/closed status select
-    const [visibility, setVisibility] = useState(false)
+    const [internalVisibility, setInternalVisibility] = useState(false)
 
-    const {normalizedOptions, selected, selectOption, clear, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, options, value, defaultValue, isControlled, emptyText, disabledText, loadingText, errorText} = useSelectLogic({...props, visibility, setVisibility,jsxOptions})
+    const visibility = useMemo(() => {
+        if (alwaysOpen) return true
+        if (ownBehavior) return !!externalVisibility
+        
+        return internalVisibility
+    }, [alwaysOpen, ownBehavior, externalVisibility, internalVisibility])
+
+    const setVisibility = useCallback((newState) => {
+        if (alwaysOpen) return
+        if (ownBehavior) return 
+        
+        setInternalVisibility(prev => {
+            const next = typeof newState === 'function' ? newState(prev) : newState
+            return next
+        })
+    }, [alwaysOpen, ownBehavior])
+
+    const {normalizedOptions, selected, selectOption, clear, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, options, value, defaultValue, isControlled, emptyText, disabledText, loadingText, errorText} = useSelectLogic({...props, visibility, setVisibility, jsxOptions})
 
     // event handler functions for interacting with the select
     const {handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, setHighlightedIndex} = useSelect({
@@ -86,11 +115,15 @@ export default function Select({children, renderedDropdown, ...props}) {
         if (disabled) return disabledText
         
         if (selected) return selected.jsx ?? selected.name
-
+        
         if (hasActualValue) {
-            return typeof selectedValue === 'object' 
-                ? (selectedValue.name ?? selectedValue.label ?? String(selectedValue)) 
-                : String(selectedValue)
+            const recovered = normalizedOptions.find(o => o.raw === selectedValue)
+            if (recovered) return recovered.name
+
+            if (typeof selectedValue === 'object' && selectedValue !== null) {
+                return selectedValue.name ?? selectedValue.label ?? 'Selected Object'
+            }
+            return String(selectedValue)
         }
 
         if (!hasOptions) return emptyText
@@ -170,6 +203,7 @@ export default function Select({children, renderedDropdown, ...props}) {
             {children}
             {renderedDropdown}
             <div
+                style={{'--rac-duration': `${duration}ms`}}
                 className={`rac-select
                     ${(!hasOptions || disabled) ? 'rac-disabled-style' : ''}
                     ${loading ? 'rac-loading-style' : ''}
@@ -199,6 +233,7 @@ export default function Select({children, renderedDropdown, ...props}) {
                     {title}
                     <SlideLeft
                         visibility={loading && !error}
+                        duration={duration}
                     >
                         <span className='rac-loading-dots'>
                             <i/><i/><i/>
@@ -210,6 +245,7 @@ export default function Select({children, renderedDropdown, ...props}) {
                 >
                     <SlideLeft
                         visibility={hasActualValue && hasOptions && !disabled && !loading && !error}
+                        duration={duration}
                     >
                         <XMarkIcon
                             className='rac-select-cancel'
@@ -220,14 +256,10 @@ export default function Select({children, renderedDropdown, ...props}) {
                     </SlideLeft>
                     <SlideLeft
                         visibility={active}
+                        duration={duration}
                     >
                         <span
-                            className={`rac-select-arrow-wrapper
-                                ${visibility ? '--open' : ''}
-                                ${(!hasOptions || disabled) ? 'rac-disabled-style' : ''}
-                                ${loading ? 'rac-loading-style' : ''}
-                                ${error ? 'rac-error-style' : ''}`
-                            }
+                            className={`rac-select-arrow-wrapper ${visibility ? '--open' : ''}`}
                         >
                             <ArrowUpIcon
                                 className='rac-select-arrow-wrapper'
@@ -239,16 +271,16 @@ export default function Select({children, renderedDropdown, ...props}) {
                     visibility={visibility}
                     selectRef={selectRef}
                     onAnimationDone={() => setAnimationFinished(true)}
+                    unmount={unmount}
+                    duration={duration}
+                    easing={easing}
+                    offset={offset}
+                    animateOpacity={animateOpacity}
                 >
                     <div
                         className='rac-select-list'
                         role='listbox'
                         aria-label='Options'
-                        style={{
-                            // '--select-border': visibility ? '2px solid #2a2f38' : '2px solid transparent',
-                            '--select-background': visibility ? '#1f1f1f' : 'transparent',
-                            '--opacity': visibility ? 1 : 0
-                        }}
                     >
                         {renderOptions}
                     </div>

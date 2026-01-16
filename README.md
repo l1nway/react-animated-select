@@ -36,11 +36,11 @@ Built-in “Clear” button and intelligent state handling (loading, error, empt
 
 ```jsx
     import {Select} from 'react-animated-select'
-    import  {useState}  from  'react'
+    import {useState} from 'react'
     
-    function  App() {
-    const  options  = ['Apple', 'Banana',  'Orange']
-    const [value, setValue]  =  useState('')
+    function App() {
+    const options = ['Apple', 'Banana',  'Orange']
+    const [value, setValue] = useState('')
     
     return (
 	    <Select
@@ -73,14 +73,36 @@ function App() {
 
 | Prop | Type | Default | Description |
 |------|------|---------|-------------|
-| `options` | Array \| Object | `[]` | Data source for options. The recommended format is an array of objects with `id`, `name`, and optional `disabled`. For compatibility, `value` may be used instead of `id`, and `label` instead of `name` (lower priority). |
+| `options` | Array \| Object | `[]` | Data source for options. The recommended format is an array of objects with `id`, `name`, and optional `disabled`. For compatibility, `value` may be used instead of `id`, and `label` instead of `name`. |
 | `value` | `any` | `undefined` | The current value for a controlled component. |
 | `defaultValue` | `any` | `undefined` | Initial value for an uncontrolled component. |
-| `onChange` | `function` | `undefined` | Callback called when an option is selected. Arguments: (data, id). data is the original object/value, id is the primary key. |
+| `onChange` | `function` | `undefined` | Callback called when an option is selected. Arguments: (data, id). |
 | `placeholder` | `string` | `"Choose option"` | Text shown when no option is selected. |
 | `disabled` | `boolean` | `false` | Disables the entire component. |
 | `loading` | `boolean` | `false` | Shows a loading animation and disables interaction. |
 | `error` | `boolean` | `false` | Shows the error state and `errorText`. |
+
+---
+
+### Animation Controls
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `duration` | `number` | `300` | Speed of all transitions in milliseconds (mapped to CSS variable `--rac-duration`). |
+| `easing` | `string` | `'ease-out'` | CSS transition timing function (e.g., `cubic-bezier(.4,0,.2,1)`). |
+| `offset` | `number` | `2` | Vertical gap (in pixels) between the select trigger and the dropdown list. |
+| `animateOpacity` | `boolean` | `true` | Enables or disables the fade effect during opening and closing. |
+
+---
+
+### Behavioral Props
+
+| Prop | Type | Default | Description |
+|------|------|---------|-------------|
+| `visibility` | `boolean` | `false` | Manually controls the visibility of the list (used with `ownBehavior`). |
+| `ownBehavior` | `boolean` | `false` | If `true`, the component stops managing its own open/close state and relies on the `visibility` prop. |
+| `alwaysOpen` | `boolean` | `false` | Keeps the list permanently visible. Primarily used for debugging or specific UI layouts. |
+| `unmount` | `boolean` | `true` | When `true`, the list is removed from the DOM when closed. When `false`, it stays invisible in the DOM. |
 
 ---
 
@@ -119,24 +141,65 @@ function App() {
 
 The component is built with a consistent BEM-like naming convention using the `rac-` prefix. You can easily override these classes in your CSS.
 
+### CSS Variables (Theming)
+
+The component uses CSS variables for deep styling. These are based on system colors and `color-mix` for automatic theme adaptation. You can override these in your `:root` or on a specific `.rac-select` instance.
+
+| Variable | Default Value / Calculation | Description |
+|:---|:---|:---|
+| **Durations** | | |
+| `--rac-duration-fast` | `calc(var(--rac-duration) * 0.5)` | Used for micro-interactions. |
+| `--rac-duration-base` | `var(--rac-duration)` | Main transition speed. |
+| `--rac-duration-slow` | `calc(var(--rac-duration) * 1.3)` | Used for larger list transitions. |
+| **Colors** | | |
+| `--rac-base-red` | `#e7000b` | Base semantic red. |
+| `--rac-base-green` | `#4caf50` | Base semantic green. |
+| `--rac-base-yellow` | `#ffc107` | Base semantic yellow. |
+| **Select Trigger** | | |
+| `--rac-select-background`| `color-mix(in srgb, Canvas 98%, CanvasText 2%)` | Main background. |
+| `--rac-select-color` | `CanvasText` | Title text color. |
+| `--rac-select-border` | `2px solid ...` | Default border style. |
+| `--rac-select-border-error`| `2px solid ...` | Border style in error state. |
+| `--rac-select-height` | `2em` | Fixed height of the select. |
+| `--rac-select-padding` | `0em 0.5em` | Internal horizontal padding. |
+| `--rac-disabled-opacity` | `0.75` | Opacity when `disabled={true}`. |
+| **Loading Dots** | | |
+| `--rac-dots-color` | `currentColor` | Color of the loader dots. |
+| `--rac-dots-animation-duration`| `1.4s` | Full cycle of the dots animation. |
+| `--rac-dots-gap` | `3px` | Space between points. |
+| **Icons & Buttons** | | |
+| `--rac-arrow-height` | `1em` | Dropdown arrow size. |
+| `--rac-cancel-height` | `0.9em` | Clear icon size. |
+| **Dropdown & Scroll** | | |
+| `--rac-list-background` | `color-mix(in srgb, Canvas 98%, CanvasText 2%)` | Dropdown list background. |
+| `--rac-list-max-height` | `250px` | Maximum height before scrolling. |
+| `--rac-scroll-color` | `color-mix(...)` | Scrollbar thumb color. |
+| **Options State** | | |
+| `--rac-option-hover` | `color-mix(...)` | Background on mouse hover. |
+| `--rac-option-highlight` | `color-mix(...)` | Background when keyboard navigating. |
+| `--rac-option-selected` | `color-mix(...)` | Background of the active option. |
+| `--rac-disabled-option-color`| `color-mix(...)` | Text color for disabled items. |
+| `--rac-true-option-color` | `color-mix(...)` | Text color for "Boolean True" items. |
+| `--rac-false-option-color` | `color-mix(...)` | Text color for "Boolean False" items. |
+
+---
+
 ### CSS Class Hierarchy
 
 | Class Name | Target Element | Description |
 |:---|:---|:---|
 | `.rac-select` | **Main Wrapper** | The primary container of the select. |
 | `.rac-select-title` | **Value Display** | The area showing the selected option or placeholder. |
-| `.rac-loading-dots` | **Loader** | Wrapper for the loading animation (contains 3 `<i>` elements); each point is customized through `.rac-loading-dots  i`. |
-| `.rac-loading-dots i` | **Loader** | To customize directly animated points. |
-| `.rac-select-buttons` | **Action Group** | Wrapper for the Clear (X) and Arrow icons |
-| `.rac-select-cancel` | **Clear Button** | The "X" icon for clearing the selection.|
+| `.rac-loading-dots` | **Loader** | Wrapper for the loading animation. |
+| `.rac-loading-dots i` | **Loader Point** | Directly target animated points for styling. |
+| `.rac-select-buttons` | **Action Group** | Wrapper for the Clear (X) and Arrow icons. |
+| `.rac-select-cancel` | **Clear Button** | The "X" icon for clearing the selection. |
 | `.rac-select-arrow-wrapper` | **Arrow Icon** | Container for the dropdown arrow. |
 | `.rac-select-list` | **Dropdown List** | The `listbox` container that holds all options. |
 | `.rac-select-option` | **Option Item** | Individual item within the dropdown list. |
 
-**Note on Animation:** The Clear button and Dropdown List are wrapped in `react-transition-group`.
-*Clear button* uses: `rac-slide-left-enter`, `-active`, `-done` and `rac-slide-left-exit`, `-active`.
-*Dropdown list* uses: `rac-slide-down-enter`, `-active`, `-done` and `rac-slide-down-exit`, `-active`.
-**Edit with caution**, as overriding these may break the smooth transition behavior.
+**Note on Animation:** The Clear button and Dropdown List use `react-transition-group`. 
+Customizing `rac-slide-left-*` (Clear button) and `rac-options-*` (Dropdown) classes is possible, but do so with caution to maintain sync with the JS logic.
 
 ### Component States
 
@@ -158,30 +221,29 @@ The select and its options react to internal states by applying the following cl
 - `.rac-select-arrow-wrapper.--open`: Applied to the arrow icon when the dropdown is expanded.
 
 ## Change log
-### 0.2
-**Core Improvements**
+### 0.2.5
+**Added**
+- System-Driven Theming: Implemented color-mix() utilizing CSS system colors (Canvas, CanvasText, AccentColor). This ensures the component is natively adaptive to Light/Dark modes and High Contrast accessibility settings.
 
--   **Smart Normalization:** Enhanced handling of diverse data types (`number`, `boolean`, `string`, `object`, `null`, `function`).
+- Advanced UX Logic: Added a window-focus protection mechanism to prevent the dropdown from auto-opening when switching back to the browser tab (Alt+Tab).
 
--   **Stable IDs:** Implemented unique ID generation for JSX children and Boolean values (e.g., `true-0`, `false-1`) to prevent rendering conflicts and handle identical values.
-    
--   **Smart Highlighting:** On open, the selector now automatically highlights the already selected item or the first **available** (non-disabled) option.
-    
--   **Refined Keyboard Navigation:** Up/Down arrows now skip disabled items and cycle correctly. Navigation is disabled if no options are available.
-    
+**Fixed**
 
-**API & Logic Changes**
+- Duplicate ID Conflict: Resolved a critical bug where multiple options with identical IDs caused the highlighter to "stuck" on the first match. Now, every option receives a unique internal React ID while maintaining the user-provided ID for logic.
 
--   **`onChange` arguments:** Swapped for better DX. First argument: **Original user data**; Second argument: **Unique ID**.
-    
--   **Visual States:** Fixed "Hover vs. Selection" conflict. Hovering no longer clears the selection highlight; keyboard and mouse focus now coexist smoothly with polished CSS transitions.
+**Customization & Props**
 
-
-**Bug Fixes**
-    
--   **A11y & UI:** Added `scrollIntoView` support for keyboard navigation—the active option always remains visible.
-    
--   **Empty State:** Improved stability when receiving empty, null, or undefined option arrays.
+- Total Styling Freedom: Exposed a full set of CSS variables (--rac-*) for durations, colors, offsets, and dimensions.
+- Animation Controls: Added new props:
+- - duration: Control the speed of all transitions.
+- - easing: Set custom cubic-bezier or ease functions.
+- - offset: Adjust the gap between the trigger and the dropdown.
+- - animateOpacity: Toggle fade effects on/off.
+- Behavioral Props:
+- - ownBehavior: Allows external control of the open/closed state.
+- - alwaysOpen: Debug/Special use mode where the list is permanently visible.
+- - unmount: Toggle between display: none and full DOM removal on close.
+- - visibility: Allows manually control the visibility of the list.
 
 ## License
 
