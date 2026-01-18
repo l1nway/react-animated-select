@@ -38,7 +38,7 @@ function Options({
       marginTop: '2px',
       zIndex: '1',
       height: visibility ? 'auto' : '0px',
-      opacity: visibility ? 1 : 0,
+      opacity: animateOpacity ? (visibility ? 1 : 0) : 1,
       pointerEvents: visibility ? 'all' : 'none',
       visibility: selectHeight ? 'visible' : 'hidden'
   }
@@ -77,7 +77,7 @@ function Options({
     el.style.height = `${el.scrollHeight}px`
     if (animateOpacity) el.style.opacity = '1'
     
-    el.offsetHeight // force reflow
+    el.offsetHeight
     el.style.transition = transitionString
   }, [transitionString, animateOpacity])
 
