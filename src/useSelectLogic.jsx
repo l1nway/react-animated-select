@@ -1,17 +1,14 @@
-import {useState, useMemo, useCallback, useId} from 'react'
+import {useState, useMemo, useCallback, useId, useEffect} from 'react'
 
 export function useSelectLogic({
     options = [],
     jsxOptions = [],
-
     value,
     defaultValue = undefined,
     onChange,
-
     disabled = false,
     loading = false,
     error = false,
-
     placeholder = 'Choose option',
     emptyText = 'No options',
     disabledText = 'Disabled',
@@ -22,247 +19,200 @@ export function useSelectLogic({
     invalidOption = 'Invalid option',
     setVisibility
 }) {
-
     const stableId = useId()
-
-    // controlled select check
     const isControlled = value !== undefined
-
-    // filled in value of the select by the user via prop
-    const [internalValue, setInternalValue] = useState(defaultValue)
-
-    // value chosenness status
-    const selectedValue = isControlled ? value : internalValue
+    
+    const [selectedId, setSelectedId] = useState(null)
 
     const isOptionObject = (obj) => {
         if (!obj || typeof obj !== 'object' || Array.isArray(obj)) return false
-        return (
-            'id' in obj ||
-            'value' in obj ||
-            'name' in obj ||
-            'label' in obj ||
-            'disabled' in obj
-        )
+        return ('id' in obj || 'value' in obj || 'name' in obj || 'label' in obj || 'disabled' in obj)
     }
 
-    // normalization list of options
-    const normalizedPropOptions = useMemo(() => {
-        if (!options) return []
-
+    const normalizedOptions = useMemo(() => {
         const flat = []
-
-        const push = (key, value, originalItem) => {
-            let computedUserId = originalItem?.id ?? originalItem?.value
-            if (computedUserId === undefined || computedUserId === null) {
-                computedUserId = value ?? key
-            }
-
-            if (typeof value === 'number' && value === 0) {
-                flat.push({
-                    key: '0',
-                    value: 0,
-                    userId: 0,
-                    label: '0',
-                    original: originalItem
+        const push = (key, val, originalItem) => {
+            let computedUserId = originalItem?.id ?? originalItem?.value ?? val ?? key
+            
+            if (typeof val === 'function') {
+                flat.push({ 
+                    key: `invalid-${flat.length}`, 
+                    value: val, 
+                    userId: null, 
+                    disabled: true, 
+                    isInvalid: true,
+                    label: invalidOption, 
+                    original: originalItem 
                 })
                 return
             }
 
-            if (typeof value == 'boolean') {
+            if (val === '') {
+                flat.push({ 
+                    key: `empty-str-${flat.length}`, 
+                    value: '', 
+                    userId: null, 
+                    disabled: true, 
+                    label: emptyOption, 
+                    original: originalItem 
+                })
+                return
+            }
+
+            if (val === null || val === undefined) {
+                flat.push({ 
+                    key: `empty-${flat.length}`, 
+                    value: null, 
+                    userId: null, 
+                    disabled: true, 
+                    label: emptyOption, 
+                    original: originalItem 
+                })
+                return
+            }
+
+            if (typeof val === 'number' || typeof val === 'boolean') {
+                flat.push({ 
+                    key: `${typeof val}-${val}-${flat.length}`, 
+                    value: val, 
+                    userId: computedUserId, 
+                    label: String(val), 
+                    original: originalItem 
+                })
+                return
+            }
+
+            if (val && typeof val === 'object' && !Array.isArray(val)) {
                 flat.push({
-                    key: `bool-${flat.length}`,
-                    value,
+                    key: val.id ?? val.value ?? val.name ?? key ?? `obj-${flat.length}`,
+                    value: val,
                     userId: computedUserId,
-                    label: String(value),
-                    type: 'boolean',
-                    original: originalItem
-                })
-                return
-            }
-
-            if (value === '' || value === null || value === undefined) {
-                flat.push({
-                    key: `empty-${flat.length}`,
-                    value: null,
-                    userId: computedUserId ?? `empty-${flat.length}`,
-                    disabled: true,
-                    label: emptyOption,
-                    original: originalItem
-                })
-                return
-            }
-
-            if (typeof value == 'function') {
-                flat.push({
-                    key: `invalid-${flat.length}`,
-                    value: null,
-                    userId: computedUserId ?? `invalid-${flat.length}`,
-                    disabled: true,
-                    label: invalidOption,
-                    original: originalItem
-                })
-                return
-            }
-
-            if (value && typeof value === 'object' && !Array.isArray(value)) {
-                flat.push({
-                    key: value.id ?? value.value ?? value.name ?? key,
-                    value,
-                    userId: computedUserId,
-                    disabled: !!value.disabled,
-                    label: value.name ?? value.label ?? key,
+                    disabled: !!val.disabled,
+                    label: val.name ?? val.label ?? String(key),
                     original: originalItem
                 })
             } else {
-                flat.push({
-                    key,
-                    value,
-                    userId: computedUserId,
-                    label: String(value ?? key),
-                    original: originalItem
+                flat.push({ 
+                    key: key ?? `opt-${flat.length}`, 
+                    value: val, 
+                    userId: computedUserId, 
+                    label: String(val ?? key), 
+                    original: originalItem 
                 })
             }
         }
 
         if (Array.isArray(options)) {
-            for (const item of options) {
-                if (
-                    item &&
-                    typeof item == 'object' &&
-                    !Array.isArray(item) &&
-                    Object.keys(item).length == 1 &&
-                    item.disabled == true
-                ) {
+            options.forEach((item, index) => {
+                if (item && typeof item === 'object' && Object.keys(item).length === 1 && item.disabled === true) {
+                    flat.push({ key: `dis-${index}`, value: null, userId: null, disabled: true, label: disabledOption, original: item })
+                } else if (isOptionObject(item)) {
+                    const stableUserId = item.id ?? (typeof item.value !== 'object' ? item.value : (item.label ?? item.name ?? item.value));
                     flat.push({
-                        key: `disabled-${flat.length}`,
-                        value: null,
-                        userId: null,
-                        disabled: true,
-                        label: disabledOption,
-                        original: item
-                    })
-                    continue
-                }
-
-                if (isOptionObject(item)) {
-                    
-                    const stableUserId = item.id ?? 
-                        (typeof item.value !== 'object' ? item.value : (item.label ?? item.name ?? item.value));
-
-                    flat.push({
-                        key: item.id ?? item.value ?? item.name ?? `opt-${flat.length}`,
-                        value: item.value ?? item.id ?? item,
+                        key: item.id ?? item.value ?? item.name ?? `opt-${index}`,
+                        value: item.value !== undefined ? item.value : (item.id !== undefined ? item.id : item),
                         userId: stableUserId,
                         disabled: !!item.disabled,
                         label: item.name ?? item.label ?? String(item.id ?? item.value),
                         original: item
                     })
-                }
-                else if (item && typeof item == 'object') {
-                    for (const [k, v] of Object.entries(item)) {
-                        push(k, v, v) 
-                    }
-                }
-                else {
+                } else if (item && typeof item === 'object' && !Array.isArray(item)) {
+                    Object.entries(item).forEach(([k, v]) => push(k, v, v))
+                } else {
                     push(item, item, item)
                 }
-            }
-        }
-        else if (typeof options == 'object') {
-            for (const [k, v] of Object.entries(options)) {
-                push(k, v, v)
-            }
+            })
+        } else if (typeof options === 'object' && options !== null) {
+            Object.entries(options).forEach(([k, v]) => push(k, v, v))
         }
 
-        return flat.map((item, i) => {
-            const internalId = `${stableId}-opt-${i}`
+        const propOpts = flat.map((item, i) => ({
+            id: `${stableId}-opt-${i}`,
+            userId: item.userId,
+            name: String(item.label),
+            raw: item.value,
+            original: item.original,
+            disabled: item.disabled,
+            isInvalid: item.isInvalid,
+            type: typeof item.value === 'boolean' ? 'boolean' : 'normal'
+        }))
 
-            return {
-                id: internalId,         
-                userId: item.userId,
-                name: String(item.label),
-                raw: item.value,
-                original: item.original,
-                disabled: item.disabled,
-                type: typeof item.value === 'boolean' ? 'boolean' : 'normal'
-            }
-        })
+        const jsxOpts = jsxOptions.map((opt, index) => ({
+            ...opt,
+            id: `jsx-${stableId.replace(/:/g, '')}-${opt.id}-${index}`,
+            userId: opt.id,
+            raw: opt.value,
+            original: opt.value,
+            name: opt.label,
+            type: typeof opt.value === 'boolean' ? 'boolean' : 'normal'
+        }))
 
-    }, [options, stableId])
+        return [...propOpts, ...jsxOpts]
+    }, [options, jsxOptions, stableId, emptyOption, disabledOption])
 
-    const normalizedJsxOptions = useMemo(() => {
-        return jsxOptions.map((opt, index) => {
-            const uniqueId = `jsx-${stableId.replace(/:/g, '')}-${opt.id}-${index}`
-
-            return {
-                id: uniqueId,
-                userId: opt.id, 
-                value: opt.value,
-                raw: opt.value,
-                original: opt.value,
-                name: opt.label,
-                jsx: opt.jsx,
-                disabled: opt.disabled,
-                className: opt.className,
-                type: typeof opt.value === 'boolean' ? 'boolean' : 'normal'
-            }
-        })
-    }, [jsxOptions, stableId])
-
-    const normalizedOptions = useMemo(() => {
-        return [...normalizedPropOptions, ...normalizedJsxOptions]
-    }, [normalizedPropOptions, normalizedJsxOptions])
-
-    const hasOptions = normalizedOptions.length > 0
-
-    const active = useMemo(() => (
-        !error && !loading && !disabled && hasOptions
-    ), [error, loading, disabled, hasOptions])
-
-    const controlledId = useMemo(() => {
-        if (!isControlled) return null
+    const findIdByValue = useCallback((val) => {
+        if (val === undefined || val === null) return null
         
-        if (internalValue) {
-            const currentCachedOption = normalizedOptions.find(o => o.id === internalValue)
-            if (currentCachedOption && currentCachedOption.userId === value) {
-                return internalValue
-            }
+        const refMatch = normalizedOptions.find(o => o.original === val || o.raw === val)
+        if (refMatch) return refMatch.id
+
+        if (typeof val === 'object') {
+            try {
+                const str = JSON.stringify(val)
+                const structMatch = normalizedOptions.find(o => 
+                    o.original && typeof o.original === 'object' && JSON.stringify(o.original) === str
+                )
+                if (structMatch) return structMatch.id
+            } catch {}
         }
 
-        return normalizedOptions.find(o => o.userId === value)?.id ?? null
-    }, [isControlled, value, normalizedOptions, internalValue])
+        return normalizedOptions.find(o => o.userId === val)?.id ?? null
+    }, [normalizedOptions])
+
+    useEffect(() => {
+        const effectiveValue = isControlled ? value : defaultValue
+        
+        const currentSelected = normalizedOptions.find(o => o.id === selectedId)
+        const isStillValid = currentSelected && (
+            currentSelected.original === effectiveValue || 
+            currentSelected.raw === effectiveValue || 
+            currentSelected.userId === effectiveValue
+        )
+
+        if (!isStillValid) {
+            setSelectedId(findIdByValue(effectiveValue))
+        }
+    }, [value, defaultValue, isControlled, normalizedOptions, findIdByValue])
 
     const selected = useMemo(() => {
-        const currentId = isControlled ? controlledId : internalValue
-        
-        if (!currentId) return null
-
-        return normalizedOptions.find(o => o.id === currentId) ?? null
-
-    }, [isControlled, controlledId, internalValue, normalizedOptions])
+        return normalizedOptions.find(o => o.id === selectedId) ?? null
+    }, [selectedId, normalizedOptions])
 
     const selectOption = useCallback((option, e) => {
         if (option.disabled) {
-            e.stopPropagation()
-            e.preventDefault()
+            e?.stopPropagation()
+            e?.preventDefault()
             return
         }
         
-        setInternalValue(option.id) 
-        
-        onChange?.(option?.original, option?.userId)
-        
+        setSelectedId(option.id)
+        onChange?.(option.original, option.userId)
         setVisibility(false)
     }, [onChange, setVisibility])
 
     const clear = useCallback((e) => {
         e.preventDefault()
         e.stopPropagation()
-        
-        setInternalValue(null)
-        
+        setSelectedId(null)
         onChange?.(null, null)
     }, [onChange])
 
-    return {normalizedOptions, selected, selectOption, clear, hasOptions, active, selectedValue, placeholder, emptyText, disabledText, loadingText, errorText, disabledOption, emptyOption, invalidOption, disabled, loading, error}
+    return {
+        normalizedOptions, selected, selectOption, clear, 
+        hasOptions: normalizedOptions.length > 0,
+        active: !error && !loading && !disabled && normalizedOptions.length > 0,
+        selectedValue: value ?? defaultValue, 
+        placeholder, emptyText, disabledText, loadingText, errorText, 
+        disabledOption, emptyOption, invalidOption, disabled, loading, error
+    }
 }

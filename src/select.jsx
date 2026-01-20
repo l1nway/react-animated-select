@@ -179,6 +179,8 @@ const Select = forwardRef(({
         if (index === highlightedIndex) optionClass += ' rac-highlighted'
 
         if (element.disabled) optionClass += ' rac-disabled-option'
+
+        if (element.isInvalid) optionClass += ' rac-invalid-option'
         
         if (typeof element.raw === 'boolean') {
             optionClass += element.raw ? ' rac-true-option' : ' rac-false-option'
