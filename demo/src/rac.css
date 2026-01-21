@@ -217,15 +217,19 @@
     }
 }
 
+.select-arrow-wrapper {
+  margin-left: 0.5vw;
+}
+
 .rac-demo-select {
     --rac-list-background: #111111;
     --rac-scroll-color: var(--blck-bc-hvr);
     --rac-scroll-track: var(--blck-bc);
     --rac-arrow-padding: 0;
-    --rac-arrow-height: 1em;
-    --rac-arrow-width: 1em;
-    --rac-cancel-height: 1em;
-    --rac-cancel-width: 1em;
+    --rac-arrow-height: 1.5em;
+    --rac-arrow-width: 1.5em;
+    --rac-cancel-height: 1.5em;
+    --rac-cancel-width: 1.5em;
 
     --rac-option-hover: #777;
     --rac-option-highlight: #606060;
