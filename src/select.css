@@ -56,11 +56,13 @@
     --rac-list-max-height: 250px;
 
     --rac-option-padding: 0.5em;
+    --rac-option-min-height: 1em;
     --rac-disabled-option-color: color-mix(in srgb, GrayText, CanvasText 20%);
     --rac-invalid-option-color: color-mix(in srgb, var(--rac-base-red), CanvasText 10%);
     --rac-true-option-color: color-mix(in srgb, var(--rac-base-green), CanvasText 10%);
     --rac-false-option-color: color-mix(in srgb, var(--rac-base-red), CanvasText 10%);
     --rac-warning-option-color: color-mix(in srgb, var(--rac-base-yellow), CanvasText 10%);
+    --rac-loading-option-opacity: 0.75;
     
     background: var(--rac-select-background);
     padding: var(--rac-select-padding);
@@ -197,6 +199,7 @@
 }
 
 .rac-select-option {
+    min-height: var(--rac-option-min-height);
     padding: var(--rac-option-padding);
     transition: background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
 }
@@ -232,4 +235,8 @@
 
 .rac-false-option {
     color: var(--rac-false-option-color);
+}
+
+.rac-loading-option {
+    cursor: wait;
 }

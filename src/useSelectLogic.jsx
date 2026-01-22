@@ -1,6 +1,6 @@
 import {useState, useMemo, useCallback, useId, useEffect} from 'react'
 
-export function useSelectLogic({
+function useSelectLogic({
     options = [],
     jsxOptions = [],
     value,
@@ -17,7 +17,14 @@ export function useSelectLogic({
     disabledOption = 'Disabled option',
     emptyOption = 'Empty option',
     invalidOption = 'Invalid option',
-    setVisibility
+    setVisibility,
+    hasMore,
+    loadButton,
+    setLoadingTitle,
+    loadingTitle,
+    loadMoreText,
+    loadMore,
+    childrenFirst
 }) {
     const stableId = useId()
     const isControlled = value !== undefined
@@ -40,7 +47,7 @@ export function useSelectLogic({
                     value: val, 
                     userId: null, 
                     disabled: true, 
-                    isInvalid: true,
+                    invalid: true,
                     label: invalidOption, 
                     original: originalItem 
                 })
@@ -48,25 +55,25 @@ export function useSelectLogic({
             }
 
             if (val === '') {
-                flat.push({ 
-                    key: `empty-str-${flat.length}`, 
-                    value: '', 
-                    userId: null, 
-                    disabled: true, 
-                    label: emptyOption, 
-                    original: originalItem 
+                flat.push({
+                    key: `empty-str-${flat.length}`,
+                    value: '',
+                    userId: null,
+                    disabled: true,
+                    label: emptyOption,
+                    original: originalItem
                 })
                 return
             }
 
             if (val === null || val === undefined) {
-                flat.push({ 
-                    key: `empty-${flat.length}`, 
-                    value: null, 
-                    userId: null, 
-                    disabled: true, 
-                    label: emptyOption, 
-                    original: originalItem 
+                flat.push({
+                    key: `empty-${flat.length}`,
+                    value: null,
+                    userId: null,
+                    disabled: true,
+                    label: emptyOption,
+                    original: originalItem
                 })
                 return
             }
@@ -80,17 +87,6 @@ export function useSelectLogic({
                     original: originalItem 
                 })
                 return
-            }
-
-            if (val && typeof val === 'object' && !Array.isArray(val)) {
-                flat.push({
-                    key: val.id ?? val.value ?? val.name ?? key ?? `obj-${flat.length}`,
-                    value: val,
-                    userId: computedUserId,
-                    disabled: !!val.disabled,
-                    label: val.name ?? val.label ?? String(key),
-                    original: originalItem
-                })
             } else {
                 flat.push({ 
                     key: key ?? `opt-${flat.length}`, 
@@ -105,15 +101,30 @@ export function useSelectLogic({
         if (Array.isArray(options)) {
             options.forEach((item, index) => {
                 if (item && typeof item === 'object' && Object.keys(item).length === 1 && item.disabled === true) {
-                    flat.push({ key: `dis-${index}`, value: null, userId: null, disabled: true, label: disabledOption, original: item })
+                    flat.push({key: `dis-${index}`, value: null, userId: null, disabled: true, label: disabledOption, original: item})
                 } else if (isOptionObject(item)) {
-                    const stableUserId = item.id ?? (typeof item.value !== 'object' ? item.value : (item.label ?? item.name ?? item.value));
+                    const stableUserId = item.id ?? (typeof item.value !== 'object' ? item.value : (item.label ?? item.name ?? item.value))
+
+                    let rawLabel = item.name || item.label || item.id || item.value
+                    
+                    if (rawLabel === null || rawLabel === undefined || rawLabel === '') {
+                        const fallbackEntry = Object.entries(item).find(([k, v]) => 
+                            k !== 'disabled' && v !== null && v !== undefined && v !== ''
+                        )
+                        if (fallbackEntry) {
+                            rawLabel = fallbackEntry[1]
+                        }
+                    }
+    
+                    const hasNoContent = rawLabel === null || rawLabel === undefined || rawLabel === ''
+                    const finalLabel = hasNoContent ? emptyOption : String(rawLabel)
+
                     flat.push({
                         key: item.id ?? item.value ?? item.name ?? `opt-${index}`,
                         value: item.value !== undefined ? item.value : (item.id !== undefined ? item.id : item),
                         userId: stableUserId,
-                        disabled: !!item.disabled,
-                        label: item.name ?? item.label ?? String(item.id ?? item.value),
+                        disabled: hasNoContent || !!item.disabled,
+                        label: finalLabel,
                         original: item
                     })
                 } else if (item && typeof item === 'object' && !Array.isArray(item)) {
@@ -133,22 +144,44 @@ export function useSelectLogic({
             raw: item.value,
             original: item.original,
             disabled: item.disabled,
-            isInvalid: item.isInvalid,
+            invalid: item.invalid,
             type: typeof item.value === 'boolean' ? 'boolean' : 'normal'
         }))
 
-        const jsxOpts = jsxOptions.map((opt, index) => ({
-            ...opt,
-            id: `jsx-${stableId.replace(/:/g, '')}-${opt.id}-${index}`,
-            userId: opt.id,
-            raw: opt.value,
-            original: opt.value,
-            name: opt.label,
-            type: typeof opt.value === 'boolean' ? 'boolean' : 'normal'
-        }))
+        const jsxOpts = jsxOptions.map((opt, index) => {
+            const hasNoValue = opt.value === null || opt.value === undefined
+            const hasNoLabel = opt.label === null || opt.label === undefined || opt.label === ''
+            
+            const isActuallyEmpty = hasNoValue && hasNoLabel
 
-        return [...propOpts, ...jsxOpts]
-    }, [options, jsxOptions, stableId, emptyOption, disabledOption])
+            return {
+                ...opt,
+                id: `jsx-${stableId.replace(/:/g, '')}-${opt.id}-${index}`,
+                userId: opt.id,
+                raw: opt.value,
+                original: opt.value,
+                name: isActuallyEmpty ? emptyOption : opt.label,
+                disabled: opt.disabled || isActuallyEmpty,
+                type: typeof opt.value === 'boolean' ? 'boolean' : 'normal'
+            }
+        })
+
+        const combined = childrenFirst ? [...jsxOpts, ...propOpts] : [...propOpts, ...jsxOpts]
+
+        if (hasMore && loadButton) {
+            const isLoading = loadingTitle === loadMoreText
+
+            combined.push({
+                id: 'special-load-more-id',
+                name: loadingTitle,
+                loadMore: true,
+                loading: isLoading,
+                type: 'special'
+            })
+        }
+
+        return combined
+    }, [options, jsxOptions, stableId, emptyOption, disabledOption, hasMore, loadButton, loadingTitle, loadMoreText])
 
     const findIdByValue = useCallback((val) => {
         if (val === undefined || val === null) return null
@@ -189,9 +222,15 @@ export function useSelectLogic({
     }, [selectedId, normalizedOptions])
 
     const selectOption = useCallback((option, e) => {
-        if (option.disabled) {
+        if (option.disabled || option.loadMore) {
             e?.stopPropagation()
             e?.preventDefault()
+
+            if (loadingTitle !== loadMoreText) {
+                setLoadingTitle(loadMoreText)
+                loadMore()
+            }
+
             return
         }
         
@@ -200,9 +239,7 @@ export function useSelectLogic({
         setVisibility(false)
     }, [onChange, setVisibility])
 
-    const clear = useCallback((e) => {
-        e.preventDefault()
-        e.stopPropagation()
+    const clear = useCallback(() => {
         setSelectedId(null)
         onChange?.(null, null)
     }, [onChange])
@@ -216,3 +253,5 @@ export function useSelectLogic({
         disabledOption, emptyOption, invalidOption, disabled, loading, error
     }
 }
+
+export default useSelectLogic

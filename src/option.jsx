@@ -10,11 +10,15 @@ export default function Option({value, id, className, children, disabled}) {
         if (!ctx) return
 
         const textFallback = getText(children)
+
+        const finalLabel = (typeof children === 'string' && children !== '') 
+            ? children 
+            : (textFallback || String(value ?? id ?? ''))
         
         const option = {
             id: String(id ?? makeId(String(textFallback))),
             value: value !== undefined ? value : textFallback,
-            label: typeof children === 'string' ? children : String(value ?? id),
+            label: finalLabel,
             jsx: children,
             className,
             disabled: !!disabled

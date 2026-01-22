@@ -2,11 +2,11 @@ import './select.css'
 
 import {XMarkIcon, ArrowUpIcon} from './icons'
 import {forwardRef, useImperativeHandle, useRef, useMemo, useState, useEffect, useCallback, useId, isValidElement, cloneElement} from 'react'
-
 import {SelectContext} from './selectContext'
-import useSelect from './useSelect'
-import {useSelectLogic} from './useSelectLogic'
 import {makeId} from './makeId'
+
+import useSelect from './useSelect'
+import useSelectLogic from './useSelectLogic'
 import Options from './options'
 import SlideLeft from './slideLeft'
 
@@ -44,8 +44,18 @@ const Select = forwardRef(({
     className = '',
     ArrowIcon = ArrowUpIcon,
     ClearIcon = XMarkIcon,
+    hasMore = false,
+    loadMore = () => {},
+    loadButton = false,
+    loadButtonText = 'Load more',
+    loadMoreText = 'Loading',
+    loadOffset = 100,
+    loadAhead = 3,
+    childrenFirst = false,
     ...props
 }, ref) => {
+
+    const [loadingTitle, setLoadingTitle] = useState(loadButton ? loadButtonText : loadMoreText)
 
     const reactId = useId()
 
@@ -95,16 +105,22 @@ const Select = forwardRef(({
         })
     }, [alwaysOpen, ownBehavior])
 
-    const {normalizedOptions, selected, selectOption, clear, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, options, value, defaultValue, isControlled, emptyText, disabledText, loadingText, errorText} = useSelectLogic({...props, visibility, setVisibility, jsxOptions})
+    const {normalizedOptions, selected, selectOption, clear, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, emptyText, disabledText, loadingText, errorText} = useSelectLogic({...props, visibility, setVisibility, jsxOptions, hasMore,loadButton, loadingTitle, loadMore, loadMoreText, setLoadingTitle, childrenFirst})
 
     // event handler functions for interacting with the select
-    const {handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, setHighlightedIndex} = useSelect({
+    const {handleListScroll, handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, setHighlightedIndex} = useSelect({
+        setLoadingTitle,
+        loadButton,
+        loadButtonText,
+        hasMore,
+        loadMore,
         disabled,
         isOpen: visibility,
         setIsOpen: setVisibility,
         options: normalizedOptions,
-        selectOption: selectOption,
-        selected: selected
+        selectOption,
+        selected,
+        loadOffset
     })
 
     const [animationFinished, setAnimationFinished] = useState(false)
@@ -178,9 +194,11 @@ const Select = forwardRef(({
 
         if (index === highlightedIndex) optionClass += ' rac-highlighted'
 
-        if (element.disabled) optionClass += ' rac-disabled-option'
+        if (element.disabled || element.loading) optionClass += ' rac-disabled-option'
 
-        if (element.isInvalid) optionClass += ' rac-invalid-option'
+        if (element.invalid) optionClass += ' rac-invalid-option'
+
+        if (element.loadMore && loadingTitle == loadMoreText) optionClass += ' rac-loading-option'
         
         if (typeof element.raw === 'boolean') {
             optionClass += element.raw ? ' rac-true-option' : ' rac-false-option'
@@ -193,44 +211,30 @@ const Select = forwardRef(({
         return (
             <div
                 className={optionClass}
-                onClick={(e) => selectOption(element, e)}
-                onMouseEnter={() => !element.disabled && setHighlightedIndex(index)}
+                onClick={(e) => {
+                    if (element.loading) {
+                        e.stopPropagation()
+                        return
+                    }
+                    selectOption(element, e)
+                }}
+                onMouseEnter={() => (!element.disabled && !element.loading) && setHighlightedIndex(index)}
                 key={element.id}
                 id={optionId}
                 role='option'
                 aria-selected={selected?.id === element.id}
-                aria-disabled={element.disabled}
+                aria-disabled={element.disabled || element.loading}
+                data-loading={element.loading}
             >
                 {element.jsx ?? element.name}
+                {element.loading && (
+                    <span className='rac-loading-dots'>
+                        <i/><i/><i/>
+                    </span>
+                )}
             </div>
         )
     }), [normalizedOptions, selectOption, selectId, selected, highlightedIndex])
-
-    useEffect(() => {
-        if (process.env.NODE_ENV !== 'production') {
-            
-            const receivedType = typeof options
-            if (options && typeof options !== 'object') {
-                console.error(
-                    `%c[Select Library]:%c Invalid prop %coptions%c.\n` +
-                    `Expected %cArray%c or %cObject%c, but received %c${receivedType}%c.\n`,
-                    'color: #ff4d4f; font-weight: bold;', 'color: default;',
-                    'color: #1890ff; font-weight: bold;', 'color: default;',
-                    'color: #52c41a; font-weight: bold;', 'color: default;',
-                    'color: #52c41a; font-weight: bold;', 'color: default;',
-                    'color: #ff4d4f; font-weight: bold;', 'color: default;'
-                )
-            }
-
-            if (isControlled && defaultValue !== undefined) {
-                console.warn(
-                    `%c[Select Library]:%c .\n` +
-                    ``,
-                    'color: #faad14; font-weight: bold;', 'color: default;'
-                )
-            }
-        }
-    }, [options, value, defaultValue, isControlled])
 
     return(
         <SelectContext.Provider
@@ -294,8 +298,12 @@ const Select = forwardRef(({
                         style={{display: 'grid'}}
                     >
                         {renderIcon(ClearIcon, { 
-                            className: 'rac-select-cancel', 
-                            onClick: (e) => clear(e)
+                            className: 'rac-select-cancel',
+                            onMouseDown: (e) => {
+                                e.preventDefault()
+                                e.stopPropagation()
+                            },
+                            onClick: clear
                         })}
                     </SlideLeft>
                     <SlideLeft
@@ -323,11 +331,29 @@ const Select = forwardRef(({
                     animateOpacity={animateOpacity}
                 >
                     <div
+                        onScroll={handleListScroll}
+                        tabIndex='-1'
                         className='rac-select-list'
                         role='listbox'
                         aria-label='Options'
                     >
                         {renderOptions}
+                        {!loadButton && hasMore ?
+                            <div
+                                onClick={e => e.stopPropagation()}
+                                onMouseEnter={e => e.preventDefault()}
+                                className='rac-select-option rac-disabled-option rac-loading-option'
+                            >
+                                <span
+                                    className='rac-loading-option-title'
+                                >
+                                    Loading
+                                </span>
+                                <span className='rac-loading-dots'>
+                                    <i/><i/><i/>
+                                </span>
+                            </div>
+                        : null}
                     </div>
                 </Options>
             </div>

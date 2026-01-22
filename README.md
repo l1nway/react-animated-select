@@ -5,27 +5,21 @@ A lightweight, high-performance, and fully customizable Select component for Rea
 ## Features
 
 -  **Smooth Animations**
-
 Powered by `react-transition-group` with height-expanding dropdowns and sliding side-elements.
 
 -  **Accessible**
-
 Full keyboard support (Arrow keys, Enter, Space, Escape, Tab) and ARIA attributes built-in.
 
 -  **Flexible Data**
-
-Supports simple arrays, objects, or declarative JSX children (`<Option />`).
+Supports simple arrays, objects, or declarative JSX children (`<Option />`). **Smart deep parsing** extracts labels from any available object key.
 
 -  **Smart Auto-Positioning**
-
 Recalculates dropdown position using `ResizeObserver`.
 
 -  **Zero-Config Styles**
-
 The minimum styles required for the select to work are built into the project, but you can add your own on top of the basic ones.
 
 -  **Search & Clear**
-
 Built-in “Clear” button and intelligent state handling (loading, error, empty, disabled).
 
 ## Installation
@@ -81,10 +75,10 @@ function App() {
 | `disabled` | `boolean` | `false` | Disables the entire component. |
 | `loading` | `boolean` | `false` | Shows a loading animation and disables interaction. |
 | `error` | `boolean` | `false` | Shows the error state and `errorText`. |
-| `style` | `object` | `{}` | Inline styles for the root container. |,
-| `className` | `string` | '' | Additional CSS class for the root container .rac-select. |,
+| `style` | `object` | `{}` | Inline styles for the root container. |
+| `className` | `string` | '' | Additional CSS class for the root container .rac-select. |
 | `ArrowIcon` | `ElementType \ string \ JSX` | Default icon | Custom arrow icon. Accepts a component, image path, or JSX. |
-| `ClearIcon` | `ElementType \ string \ JSX` | Default icon | Custom clear icon. Accepts a component, image path, or JSX. |,
+| `ClearIcon` | `ElementType \ string \ JSX` | Default icon | Custom clear icon. Accepts a component, image path, or JSX. |
 
 ---
 
@@ -101,12 +95,20 @@ function App() {
 
 ### Behavioral Props
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `visibility` | `boolean` | `false` | Manually controls the visibility of the list (used with `ownBehavior`). |
-| `ownBehavior` | `boolean` | `false` | If `true`, the component stops managing its own open/close state and relies on the `visibility` prop. |
-| `alwaysOpen` | `boolean` | `false` | Keeps the list permanently visible. Primarily used for debugging or specific UI layouts. |
-| `unmount` | `boolean` | `true` | When `true`, the list is removed from the DOM when closed. When `false`, it stays invisible in the DOM. |
+| Prop            | Type       | Default    | Description |
+| --------------- | ---------- | ---------- | ------------------------------------------------------------------------------------------------------- |
+| `visibility`    | `boolean`  | `false`    | Manually controls the visibility of the list (used with `ownBehavior`). |
+| `ownBehavior`   | `boolean`  | `false`    | If `true`, the component stops managing its own open/close state and relies on the `visibility` prop. |
+| `alwaysOpen`    | `boolean`  | `false`    | Keeps the list permanently visible. Primarily used for debugging or specific UI layouts. |
+| `unmount`       | `boolean`  | `true`     | When `true`, the list is removed from the DOM when closed. When `false`, it stays invisible in the DOM. |
+| `hasMore`       | `boolean`  | `false`    | Indicates whether more options are available for loading (used for infinite loading). |
+| `loadMore`      | `function` | `() => {}` | Callback triggered when more options need to be loaded. |
+| `loadMoreText`  | `string`   | `'Loading'`  | Text displayed inside the options list during loading. |
+| `loadOffset`    | `number`   | `100`      | Distance (in pixels) from the bottom of the list that triggers `loadMore`. |
+| `loadAhead`     | `number`   | `3`        | Number of remaining options before the end at which loading is triggered during keyboard navigation. |
+| `loadButton`     | `boolean` | `false`       | Enables a manual “Load more” button instead of automatic loading. |
+| `loadButtonText` | `string`  | `'Load more'` | Text displayed on the load button.                                |
+| `childrenFirst` | `boolean`  | `false`    | Determines priority of JSX `<Option />` children over options passed via props. |
 
 ---
 
@@ -202,6 +204,7 @@ The component uses CSS variables for deep styling. These are based on system col
 | `--rac-true-option-color` | `color-mix(...)` | Text color for "Boolean True" items. |
 | `--rac-false-option-color` | `color-mix(...)` | Text color for "Boolean False" items. |
 | `--rac-option-padding` | `0.5em` | Internal padding for each option item. |
+| `--rac-option-min-height` | `1em` | Minimum option height. |
 | `--rac-invalid-option-color` | `color-mix(...)` | Text color for invalid options. |
 | `--rac-warning-option-color` | `color-mix(...)` | Text color for warning/caution options. |
 
@@ -246,18 +249,54 @@ The select and its options react to internal states by applying the following cl
 - `.rac-select-arrow-wrapper.--open`: Applied to the arrow icon when the dropdown is expanded.
 
 ## Change log
-### 0.2.7
-#### **New Features**
-- **Custom Icons Support:** Added `ArrowIcon` and `ClearIcon` props. Users can now pass their own SVG components, image paths, or JSX elements to customize the interface.
-- **Ref Forwarding:** Implemented access to the internal ref. This enables manual focus management and integration with third-party libraries.
-- **Enhanced Styling:** Added `className` and `style` prop to the root `.rac-select` container for easier layout integration and style overrides.
-- **Animated Title Transitions:** Introduced a smooth "fade-and-slide" animation for the `title` element when the value changes.
-
-#### **Architecture & CSS**
-- **CSS Variable Injection:** Refactored animation parameters into CSS custom properties (`--rac-title-anim-shift`, `--rac-title-anim-entry-ease`
-
-#### **Bug Fixes**
-- **Opacity Animation:** Resolved an issue where the optional opacity transition for the dropdown list was not triggering correctly during the enter/exit phases.
+### 0.3.0
+#### Features
+-   **Extended option format support**  
+    If standard option fields (`name`, `label`, `id`, `value`) are missing or empty, the parser performs a deep lookup and automatically uses the first meaningful content field as the option label.
+-   **Smart empty-state handling**
+    -   Option objects without meaningful content (e.g. `{value: null}`) are now automatically marked as `disabled` and display the `emptyOption` text.
+    -   JSX options with an empty `value` but valid textual content (e.g. `<Option value="">Text</Option>`) are now treated as valid and selectable.
+-   **Infinite loading support**
+    -   Added `loadMore` mechanism for infinite or paginated option lists.
+    -   Automatic loading when scrolling near the end of the list.
+    -   Automatic loading when navigating with keyboard near the last options.
+-   **Demo preview**
+    -   Added an interactive demo showcasing all Select component features.
+----------
+### Improvements
+-   **Keyboard navigation**
+    -   Navigation behaves predictably with infinite loading enabled.
+-   **Options handling**
+    -   Extended support for options passed both via props and JSX.
+    -   Improved internal merging logic for mixed option sources.
+-   **Focus management**
+    -   Removed unnecessary focus on the options list container.
+    -   Improved overall keyboard navigation flow.
+-   **Visual consistency**
+    -   Improved layout stability and rendering consistency across option states.
+----------
+### Fixes
+-   **Object value matching**
+    -   Fixed an issue where the Select could not correctly find the selected option when it was passed as an object.
+    -   Selection matching now works correctly using reference comparison and structural analysis.
+-   **Opacity rendering**
+    -   Fixed incorrect opacity handling for various option states.
+-   **JSX identifier validation**
+    -   Fixed an issue where passing an empty `id` to `<Option id="" />` caused the option text to be lost.
+    -   The parser now prioritizes any available meaningful content.
+-   **Focus issues**
+    -   Fixed extra and unintended focus being applied to the options list on open.
+----------
+### Styling & UI
+-   **UI stability**
+    -   Added `--rac-option-min-height` CSS variable to prevent layout breaking when option content is smaller than others.
+-   **Loading indication**
+    -   Added `.rac-loading-option` class for styling loading items.
+    -   Added `--rac-loading-option-opacity` CSS variable to control loading state transparency.
+----------
+### Accessibility
+-   Improved keyboard interaction consistency.
+-   Prevented non-interactive (loading) options from being focusable or selectable.
 
 ## License
 
