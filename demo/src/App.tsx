@@ -28,39 +28,70 @@ function App() {
   const [options, setOptions] = useState<SelectOption[]>(['Option 1', true, false, undefined, console.log, {name: 'Option 6', disabled: true}, 'Option 7', {name: 'Option 8'}, {disabled: true}, {name: 'Option 10', id: 2}, 'Option 11', 'Option 12', 'Option 13', 'Option 14', 'Option 15'])
 
   const [value, setValue] = useState<Primitive>()
-
   const [placeholder, setPlaceholder] = useState<string>('Choose option')
-
   const [emptyText, setEmptyText] = useState<string>('No options')
-
   const [loadingText, setLoadingText] = useState<string>('Loading')
-
   const [errorText, setErrorText] = useState<string>('Failed to load')
-
   const [disabledText, setDisabledText] = useState<string>('Disabled')
-
   const [duration, setDuration] = useState<number>(300)
-
   const [easing, setEasing] = useState<string>('ease-out')
-
   const [offset, setOffset] = useState<number>(2)
-
   const [animateOpacity, setAnimateOpacity] = useState<boolean>(true)
-
   const [alwaysOpen, setAlwaysOpen] = useState<boolean>(false)
+  const [hasMore, setHasMore] = useState<boolean>(false)
+  const [loadButton, setLoadButton] = useState<boolean>(false)
+  const [loadButtonText, setLoadButtonText] = useState<string>('Load more')
+  const [loadMoreText, setLoadMoreText] = useState<string>('Loading')
+  const [loadOffset, setLoadOffset] = useState<number>(100)
+  const [loadAhead, setLoadAhead] = useState<number>(3)
 
   type SettingItem = {
     label: string
-    state: boolean
-    setState: (value: boolean) => void
+    state: number | boolean
+    default?: number
+    min?: number
+    max?: number
+    step?: number
+    unit?: string
+    setState: (value: number | boolean) => void
   }
+
+  const ranges: SettingItem[] = [
+    {label: 'duration', default: 300, min: 0, max: 1000, step: 50, unit: 'ms', state: duration, setState: setDuration},
+    {label: 'offset', default: 3, min: 0, max: 25, step: 1, unit: 'px', state: offset, setState: setOffset},
+    {label: 'loadAhead', default: 3, min: 0, max: 15, step: 1, unit: 'options', state: loadAhead, setState: setLoadAhead},
+    {label: 'loadOffset', default: 100, min: 0, max: 1000, step: 50, unit: 'px', state: loadOffset, setState: setLoadOffset}
+  ]
+
+  const renderRanges: JSX.Element[] = ranges.map((item) => (
+    <label
+      className='rac-range-label'
+    >
+      <span
+        className='rac-prop-span'
+      >
+        {item.label}: {item.state ?? item.default}{item.unit}
+      </span>
+      <input
+        className='rac-range-input'
+        type='range'
+        min={item.min}
+        max={item.max}
+        step={item.step}
+        value={item.state ?? item.default}
+        onChange={(e) => item.setState(Number(e.target.value))}
+      />
+    </label>
+  ))
 
   const settings: SettingItem[] = [
     {label: 'loading', state: loading, setState: setLoading},
     {label: 'disabled', state: disabled, setState: setDisabled},
     {label: 'error', state: error, setState: setError},
     {label: 'alwaysOpen', state: alwaysOpen, setState: setAlwaysOpen},
-    {label: 'animateOpacity', state: animateOpacity, setState: setAnimateOpacity}
+    {label: 'animateOpacity', state: animateOpacity, setState: setAnimateOpacity},
+    {label: 'hasMore', state: hasMore, setState: setHasMore},
+    {label: 'loadButton', state: loadButton, setState: setLoadButton}
   ]
 
   const renderSettings: JSX.Element[] = settings.map((item) => (
@@ -90,6 +121,8 @@ function App() {
     {label: 'loadingText', value: loadingText, setValue: setLoadingText},
     {label: 'errorText', value: errorText, setValue: setErrorText},
     {label: 'disabledText', value: disabledText, setValue: setDisabledText},
+    {label: 'loadButtonText', value: loadButtonText, setValue: setLoadButtonText},
+    {label: 'loadMoreText', value: loadMoreText, setValue: setLoadMoreText}
   ]
 
   const renderTextSettings: JSX.Element[] = textSettings.map((item) => (
@@ -119,9 +152,7 @@ function App() {
 
   const addOption = (disabled: boolean) => {
     !inputValue && shake(buttonRef.current)
-    const newOption = inputValue
-      ? {name: inputValue, disabled: disabled}
-      : null
+    const newOption = {name: inputValue, disabled: disabled}
 
     setOptions((prev) => [newOption, ...prev])
     setInputValue('')
@@ -243,43 +274,7 @@ function App() {
               Select states
             </h2>
             {renderSettings}
-                <label
-                  className='rac-range-label'
-                >
-                  <span
-                    className='rac-prop-span'
-                  >
-                    duration: {duration ?? 300}ms
-                  </span>
-                  <input
-                    className='rac-range-input'
-                    type='range'
-                    min={0}
-                    max={1000}
-                    step={50}
-                    value={duration ?? 300}
-                    onChange={(e) => setDuration(Number(e.target.value))}
-                  />
-                </label>
-                <label
-                  className='rac-range-label'
-                >
-                  <span
-                    className='rac-prop-span'
-                  >
-                    offset: {offset}px
-                  </span>
-                  <input
-                    className='rac-range-input'
-                    type='range'
-                    min={0}
-                    max={25}
-                    step={1}
-                    value={offset ?? 3}
-                    onChange={(e) => setOffset(Number(e.target.value))}
-                  />
-                </label>
-                
+            {renderRanges}
                 <label
                   className='rac-prop-label'
                 >
@@ -323,6 +318,13 @@ function App() {
               react-animated-select overview
             </h3>
             <Select
+              loadMore={() => alert('subload triggered')}
+              hasMore={hasMore}
+              loadButton={loadButton}
+              loadButtonText={loadButtonText}
+              loadMoreText={loadMoreText}
+              loadOffset={loadOffset}
+              loadAhead={loadAhead}
               className='rac-demo-select'
               loading={loading}
               error={error}

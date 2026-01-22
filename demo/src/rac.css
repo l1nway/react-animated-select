@@ -402,7 +402,11 @@
     border-right: 1px solid #33353e;
     padding: 1.25vw;
     min-width: 33%;
-    height: auto;
+    overflow-y: auto;
+    overflow-x: hidden;
+    scrollbar-gutter: stable;
+    height: 0;
+    min-height: 100%;
 
     @media (max-width: 1024px) {
         border: none;

@@ -120,7 +120,8 @@ const Select = forwardRef(({
         options: normalizedOptions,
         selectOption,
         selected,
-        loadOffset
+        loadOffset,
+        loadAhead
     })
 
     const [animationFinished, setAnimationFinished] = useState(false)

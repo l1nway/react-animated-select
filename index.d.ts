@@ -1,4 +1,4 @@
-import {FC, ReactNode} from 'react'
+import {FC, ReactNode, CSSProperties, ElementType} from 'react'
 
 export interface SelectProps {
 
@@ -38,6 +38,15 @@ export interface SelectProps {
     style?: CSSProperties
     ArrowIcon?: ElementType | string | ReactNode
     ClearIcon?: ElementType | string | ReactNode
+
+    hasMore?: boolean
+    loadMore?: () => void
+    loadButton?: boolean
+    loadButtonText?: string
+    loadMoreText?: string
+    loadOffset?: number
+    loadAhead?: number
+    childrenFirst?: boolean
 }
 
 export const Select: FC<SelectProps>

@@ -1,6 +1,6 @@
 {
   "name": "react-animated-select",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "type": "module",
   "author": "l1nway (https://github.com/l1nway/)",
   "description": "Animated, accessible, and flexible select component for React",
@@ -40,6 +40,7 @@
     "react-transition-group": "^4.4.5"
   },
   "devDependencies": {
+    "@types/react": "^19.2.9",
     "@vitejs/plugin-react": "^5.1.2",
     "vite": "^7.3.1",
     "vite-plugin-lib-inject-css": "^2.2.2"
