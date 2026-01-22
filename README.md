@@ -2,6 +2,9 @@
 
 A lightweight, high-performance, and fully customizable Select component for React. Featuring smooth CSS animations, accessible keyboard navigation, and flexible option rendering.
 
+**Try it out:**
+[![Demo](https://img.shields.io/badge/demo-live_preview-brightgreen?style=for-the-badge&logo=vercel)](https://l1nway.github.io/react-animated-select/)
+
 ## Features
 
 -  **Smooth Animations**

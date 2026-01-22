@@ -16,7 +16,7 @@
     "url": "git+https://github.com/l1nway/react-animated-select.git"
   },
   "license": "MIT",
-  "homepage": "https://github.com/l1nway/react-animated-select#readme",
+  "homepage": "https://l1nway.github.io/react-animated-select/",
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch"
