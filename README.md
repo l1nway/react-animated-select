@@ -3,6 +3,7 @@
 A lightweight, high-performance, and fully customizable Select component for React. Featuring smooth CSS animations, accessible keyboard navigation, and flexible option rendering.
 
 **Try it out:**
+
 [![Demo](https://img.shields.io/badge/demo-live_preview-brightgreen?style=for-the-badge&logo=vercel)](https://l1nway.github.io/react-animated-select/)
 
 ## Features
@@ -130,9 +131,18 @@ function App() {
 
 | Prop | Type | Description |
 |------|------|-------------|
-| `id` | `string` | Optional unique ID (generated automatically if not provided). value may be used instead of id (lower priority)|
+| `id` | `string` | Optional unique ID (generated automatically if not provided). value may be used instead of id (lower priority). |
 | `disabled` | `boolean` | If true, this option cannot be selected or highlighted. |
 | `className` | `string` | Custom class for individual option styling. |
+
+---
+
+### `<OptGroup />`
+
+| Prop | Type | Description |
+|------|------|-------------|
+| `id` | `string` | Optional unique ID (generated automatically if not provided). value may be used instead of id (lower priority). |
+| `name` | `string` | OptGroup title. label may be used instead of id (lower priority). |
 
 ---
 
@@ -210,6 +220,14 @@ The component uses CSS variables for deep styling. These are based on system col
 | `--rac-option-min-height` | `1em` | Minimum option height. |
 | `--rac-invalid-option-color` | `color-mix(...)` | Text color for invalid options. |
 | `--rac-warning-option-color` | `color-mix(...)` | Text color for warning/caution options. |
+| **Group Headers** | | |
+| `--rac-group-header-font-size` | `1.25em` | Font size of the group header label. |
+| `--rac-group-header-font-weight` | `bold` | Font weight of the group header text. |
+| `--rac-group-header-min-height` | `1em` | Minimum height of the group header item. |
+| `--rac-group-header-padding` | `0.5em` | Internal padding for the group header. |
+| `--rac-group-arrow-height` | `1em` | Height of the group expand/collapse arrow icon. |
+| `--rac-group-arrow-width` | `1em` | Width of the group expand/collapse arrow icon. |
+| `--rac-group-arrow-padding` | `1px 0 2px` | Padding applied to the group arrow icon. |
 
 ---
 
@@ -247,59 +265,23 @@ The select and its options react to internal states by applying the following cl
 - `.rac-invalid-option`: Applied to items that are not valid data types (e.g., functions).
 - `.rac-true-option`: Specialized styling when the option's raw value is exactly `true`.
 - `.rac-false-option`: Specialized styling when the option's raw value is exactly `false`.
+#### Group Header States (applied to group-related elements)
+- `.rac-group-header`: Base class for the group header container.
+- `.rac-group-title-text`: Applied to the text/label inside the group header.
+- `.rac-group-arrow-wrapper`: Wrapper class for the group expand/collapse arrow icon.
 
 #### Trigger States
 - `.rac-select-arrow-wrapper.--open`: Applied to the arrow icon when the dropdown is expanded.
 
 ## Change log
-### 0.3.0
-#### Features
--   **Extended option format support**  
-    If standard option fields (`name`, `label`, `id`, `value`) are missing or empty, the parser performs a deep lookup and automatically uses the first meaningful content field as the option label.
--   **Smart empty-state handling**
-    -   Option objects without meaningful content (e.g. `{value: null}`) are now automatically marked as `disabled` and display the `emptyOption` text.
-    -   JSX options with an empty `value` but valid textual content (e.g. `<Option value="">Text</Option>`) are now treated as valid and selectable.
--   **Infinite loading support**
-    -   Added `loadMore` mechanism for infinite or paginated option lists.
-    -   Automatic loading when scrolling near the end of the list.
-    -   Automatic loading when navigating with keyboard near the last options.
--   **Demo preview**
-    -   Added an interactive demo showcasing all Select component features.
-----------
-### Improvements
--   **Keyboard navigation**
-    -   Navigation behaves predictably with infinite loading enabled.
--   **Options handling**
-    -   Extended support for options passed both via props and JSX.
-    -   Improved internal merging logic for mixed option sources.
--   **Focus management**
-    -   Removed unnecessary focus on the options list container.
-    -   Improved overall keyboard navigation flow.
--   **Visual consistency**
-    -   Improved layout stability and rendering consistency across option states.
-----------
-### Fixes
--   **Object value matching**
-    -   Fixed an issue where the Select could not correctly find the selected option when it was passed as an object.
-    -   Selection matching now works correctly using reference comparison and structural analysis.
--   **Opacity rendering**
-    -   Fixed incorrect opacity handling for various option states.
--   **JSX identifier validation**
-    -   Fixed an issue where passing an empty `id` to `<Option id="" />` caused the option text to be lost.
-    -   The parser now prioritizes any available meaningful content.
--   **Focus issues**
-    -   Fixed extra and unintended focus being applied to the options list on open.
-----------
-### Styling & UI
--   **UI stability**
-    -   Added `--rac-option-min-height` CSS variable to prevent layout breaking when option content is smaller than others.
--   **Loading indication**
-    -   Added `.rac-loading-option` class for styling loading items.
-    -   Added `--rac-loading-option-opacity` CSS variable to control loading state transparency.
-----------
-### Accessibility
--   Improved keyboard interaction consistency.
--   Prevented non-interactive (loading) options from being focusable or selectable.
+### 0.3.5
+### New Features
+- **Hierarchical Grouping Engine**: Added full support for nested options using a flat-array normalization technique. This allows for clear visual separation of categories with zero performance overhead.
+-   **Smart "SlideDown" Groups**: Implemented collapsible group headers with smooth animations.
+    -   _Self-Aware UI:_ Group arrows now automatically hide if a group contains no items, providing a cleaner look for empty categories.
+-   **Flexible Data Normalization**: The logic now seamlessly handles `Arrays`, `Objects` (maps), and `JSX` children simultaneously.
+### Bug Fixes
+-   **Dynamic Load Button Toggle**: Fixed a critical bug where the "Load More" button's visibility wouldn't update dynamically. The component now correctly reacts to real-time changes in the `loadButton` and `hasMore` props.
 
 ## License
 

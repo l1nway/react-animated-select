@@ -66,6 +66,7 @@ function App() {
   const renderRanges: JSX.Element[] = ranges.map((item) => (
     <label
       className='rac-range-label'
+      key={item.label}
     >
       <span
         className='rac-prop-span'
@@ -187,6 +188,7 @@ function App() {
 
   const renderOptionList = options.map((element, index) =>
     <motion.div
+      key={index}
       tabIndex={0}
       className='rac-option-demo'
       style={{ 

@@ -1,32 +1,48 @@
-import {useEffect, useContext} from 'react'
+import {useEffect, useContext, useMemo, useId} from 'react'
 import {SelectContext} from './selectContext'
-import {makeId} from './makeId'
+import {GroupContext} from './optgroup'
 import getText from './getText'
 
-export default function Option({value, id, className, children, disabled}) {
+export default function Option({value, id, className, children, disabled, group: manualGroup}) {
     const ctx = useContext(SelectContext)
+    const contextGroup = useContext(GroupContext)
+    
+    const registerOption = ctx?.registerOption;
+    const unregisterOption = ctx?.unregisterOption;
+
+    const uniqueId = useId()
+    const stableId = useMemo(() => {
+        return id ? String(id) : uniqueId.replace(/:/g, '')
+    }, [id, uniqueId])
 
     useEffect(() => {
-        if (!ctx) return
+        if (!registerOption) return
 
         const textFallback = getText(children)
+        let finalLabel = ''
 
-        const finalLabel = (typeof children === 'string' && children !== '') 
-            ? children 
-            : (textFallback || String(value ?? id ?? ''))
-        
+        if (typeof children === 'string' && children !== '') {
+            finalLabel = children
+        } else if (textFallback) {
+            finalLabel = textFallback
+        } else if (value !== undefined && value !== null) {
+            finalLabel = String(value)
+        } 
+
         const option = {
-            id: String(id ?? makeId(String(textFallback))),
+            id: stableId,
             value: value !== undefined ? value : textFallback,
             label: finalLabel,
             jsx: children,
             className,
-            disabled: !!disabled
+            disabled: !!disabled,
+            group: manualGroup || contextGroup || null 
         }
 
-        ctx.registerOption(option)
-        return () => ctx.unregisterOption(option.id)
-    }, [id, value, children, className, disabled])
+        registerOption(option)
+        return () => unregisterOption(stableId)
+        
+    }, [stableId, value, children, className, disabled, manualGroup, contextGroup, registerOption, unregisterOption])
 
     return null
 }

@@ -1,17 +1,3 @@
-  @font-face {
-    font-family: 'E-Ukraine';
-    src: url('./fonts/e-Ukraine/E-Ukraine-Regular.otf') format('opentype');
-    font-weight: 400;
-    font-style: normal;
-  }
-
-  @font-face {
-    font-family: 'E-Ukraine';
-    src: url('./fonts/e-Ukraine/E-Ukraine-Bold.otf') format('opentype');
-    font-weight: 700;
-    font-style: normal;
-  }
-
   :root {
     --def-white: white;
     --blck-bc: #151515;
@@ -48,7 +34,6 @@
     scroll-behavior: smooth;
     height: 100%;
     margin: 0;
-    font-family: 'E-Ukraine', sans-serif;
   }
 
   #root {
@@ -58,10 +43,6 @@
   input[type=radio] {
     display: none;
   }
-
-:root {
-
-}
 
 *::-webkit-scrollbar {
   width: 6px;
@@ -392,10 +373,6 @@
     }
 }
 
-/* .rac-select-wrapper>.slideDown-enter-done {
-    overflow: visible !important;
-} */
-
 .rac-visual {
     background-color: #17181e;
     border-left: 1px solid #33353e;
@@ -482,7 +459,7 @@
     font-size: 1.5vw;
     transition: 300ms border;
 
-    &:placeholder {
+    &::placeholder {
         color: gray;
     }
 

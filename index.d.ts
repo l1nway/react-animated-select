@@ -60,3 +60,12 @@ export interface OptionProps {
 }
 
 export const Option: FC<OptionProps>
+
+export interface OptGroupProps {
+    value?: any
+    id?: any
+    name?: any
+    label?: any
+}
+
+export const OptGroup: FC<OptGroup>

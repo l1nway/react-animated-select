@@ -1,10 +1,10 @@
-import {useState, useRef, useCallback, useMemo, useEffect} from 'react'
+import {useState, useRef, useCallback, useEffect, useMemo} from 'react'
 
 function useSelect({
     disabled,
-    isOpen,
-    setIsOpen, 
-    options,
+    open,
+    setOpen,
+    options = [],
     selectOption,
     selected,
     hasMore,
@@ -17,136 +17,118 @@ function useSelect({
 }) {
     const justFocused = useRef(false)
     const lastWindowFocusTime = useRef(0)
+    const loadingTriggered = useRef(false)
     const [highlightedIndex, setHighlightedIndex] = useState(-1)
 
-    const loadingTriggered = useRef(false)
-
-    const prevOptionsLength = useRef(options?.length || 0)
-
+    // loading state synchronization
     useEffect(() => {
-        if (options && options.length !== prevOptionsLength.current) {
-            loadingTriggered.current = false
-            prevOptionsLength.current = options.length
-            loadButton && setLoadingTitle(loadButtonText)
-        }
-    }, [options])
+        // flag is reset if value of the loadButton or hasMore props has changed
+        loadingTriggered.current = false
 
+        if (loadButton) {
+            setLoadingTitle(loadButtonText)
+        }
+    }, [options.length, hasMore, loadButton, loadButtonText, setLoadingTitle])
+
+    // safely call loadMore prop
     const safeLoadMore = useCallback(() => {
         if (!hasMore || loadingTriggered.current) return
-
         loadingTriggered.current = true
         loadMore()
     }, [hasMore, loadMore])
 
+    // calling a function when scrolling almost to the end;
+    // loadOffset is a prop indicating how many pixels before end loadMore will be called
     const handleListScroll = useCallback((e) => {
         if (loadButton || !hasMore || loadingTriggered.current) return
 
         const {scrollTop, scrollHeight, clientHeight} = e.currentTarget
-        
-        const threshold = loadOffset 
-
-        if (scrollHeight - scrollTop <= clientHeight + threshold) {
+        if (scrollHeight - scrollTop <= clientHeight + loadOffset) {
             safeLoadMore()
         }
-    }, [loadButton, hasMore, safeLoadMore])
+    }, [loadButton, hasMore, loadOffset, safeLoadMore])
 
+    // call a function when scrolling through options using keys;
+    // loadAhead prop how many options before the end it will be called
     useEffect(() => {
-        if (loadButton) return
-
-        if (isOpen && hasMore && highlightedIndex >= 0) {
-            const threshold = loadAhead
-            if (highlightedIndex >= options.length - threshold) {
-                safeLoadMore()
-            }
+        if (!loadButton && open && hasMore && highlightedIndex >= options.length - loadAhead) {
+            safeLoadMore()
         }
-    }, [loadButton, highlightedIndex, isOpen, hasMore, options.length, safeLoadMore])
+    }, [highlightedIndex, open, hasMore, options.length, loadAhead, loadButton, safeLoadMore])
 
+    // force refocus blocking if the user exits the browser or the page
     useEffect(() => {
-        const handleWindowFocus = () => {
-            lastWindowFocusTime.current = Date.now()
-        }
+        const handleWindowFocus = () => {lastWindowFocusTime.current = Date.now()}
         window.addEventListener('focus', handleWindowFocus)
         return () => window.removeEventListener('focus', handleWindowFocus)
     }, [])
 
+    // set highlighting to the first available option by default unless otherwise selected
     useEffect(() => {
-        if (isOpen) {
-            if (highlightedIndex >= 0 && highlightedIndex < options.length) {
-                return 
-            }
-
-            let index = -1
-            if (selected) {
-                const selectedIndex = options.findIndex(o => o.id === selected.id && !o.disabled)
-                if (selectedIndex >= 0) index = selectedIndex
-            }
-            if (index === -1) {
-                index = options.findIndex(o => !o.disabled)
-            }
-            setHighlightedIndex(index)
-        } else {
+        if (!open) {
             setHighlightedIndex(-1)
+            return
         }
-    }, [isOpen, options])
 
-    const handleBlur = useCallback((e) => {
-        if (e.currentTarget.contains(e.relatedTarget)) return
-        setIsOpen(false)
-    }, [setIsOpen])
+        // blocking the reset of an index if it is already within the array (exmpl after loading)
+        if (highlightedIndex >= 0 && highlightedIndex < options.length) return
 
-    const handleFocus = useCallback(() => {
-        if (disabled) return
+        let index = -1
+        if (selected) {
+            index = options.findIndex(o => o.id === selected.id && !o.disabled)
+        }
         
-        if (document.hidden) return
-
-        const timeSinceWindowFocus = Date.now() - lastWindowFocusTime.current
-        if (timeSinceWindowFocus < 100) return
-
-        if (!isOpen) {
-            setIsOpen(true)
-            justFocused.current = true
-            setTimeout(() => {
-                justFocused.current = false
-            }, 200)
+        if (index === -1) {
+            index = options.findIndex(o => !o.disabled)
         }
-    }, [disabled, isOpen, setIsOpen])
+        setHighlightedIndex(index)
+    }, [open, options, selected])
 
-    const handleToggle = useCallback((e) => {
-        if (disabled) return
-        if (e.target.closest && e.target.closest('.rac-select-cancel')) return
-        if (justFocused.current) return
-
-        setIsOpen(!isOpen)
-    }, [disabled, isOpen, setIsOpen])
-
-    const getNextIndex = (current, direction) => {
+    // find the next available option to switch to using the keyboard
+    const getNextIndex = useCallback((current, direction) => {
         const isNavigable = (opt) => opt && !opt.disabled && !opt.loading
-
-        if (!options.some(isNavigable)) return -1
+        const len = options.length
+        if (len === 0) return -1
 
         let next = current
-        let loops = 0
+        // я не шарю нихуя в математике
+        for (let i = 0; i < len; i++) {
+            next = (next + direction + len) % len
 
-        do {
-            next += direction
-
-            if (next >= options.length) {
-                if (hasMore && !loadButton) return current
-                next = 0
+            // if autoloading is active but loadButton is inactive, then infinite scrolling is blocked
+            if (!loadButton && hasMore) {
+                if (direction > 0 && next === 0) return current
+                if (direction < 0 && next === len - 1) return current
             }
 
-            if (next < 0) {
-                if (hasMore && !loadButton) return current
-                next = options.length - 1
-            }
+            if (isNavigable(options[next])) return next
+        }
+        return current
+    }, [options, hasMore, loadButton])
 
-            loops++
-        } while (!isNavigable(options[next]) && loops <= options.length)
+    // closing the selector if focus is lost
+    const handleBlur = useCallback((e) => {
+        if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false)
+    }, [setOpen])
 
-        return next
-    }
+    // opening the selector when receiving focus
+    const handleFocus = useCallback(() => {
+        if (disabled || document.hidden || (Date.now() - lastWindowFocusTime.current < 100)) return
+        
+        if (!open) {
+            setOpen(true)
+            justFocused.current = true
+            setTimeout(() => {justFocused.current = false}, 200)
+        }
+    }, [disabled, open, setOpen])
 
+    // processing toggle click on select
+    const handleToggle = useCallback((e) => {
+        if (disabled || e.target.closest('.rac-select-cancel') || justFocused.current) return
+        setOpen(!open)
+    }, [disabled, open, setOpen])
 
+    // hotkey processing
     const handleKeyDown = useCallback((e) => {
         if (disabled) return
 
@@ -154,51 +136,34 @@ function useSelect({
             case 'Enter':
             case ' ':
                 e.preventDefault()
-                if (isOpen) {
+                if (open) {
                     if (highlightedIndex !== -1 && options[highlightedIndex]) {
                         selectOption(options[highlightedIndex], e)
                     }
-                } else {
-                    setIsOpen(true)
-                }
+                } else setOpen(true)
                 break
             case 'Escape':
                 e.preventDefault()
-                setIsOpen(false)
+                setOpen(false)
                 break
             case 'ArrowDown':
                 e.preventDefault()
-                if (!isOpen) {
-                    setIsOpen(true)
-                } else {
-                    setHighlightedIndex(prev => getNextIndex(prev, 1))
-                }
+                open ? setHighlightedIndex(prev => getNextIndex(prev, 1)) : setOpen(true)
                 break
             case 'ArrowUp':
                 e.preventDefault()
-                if (!isOpen) {
-                    setIsOpen(true)
-                } else {
-                    setHighlightedIndex(prev => getNextIndex(prev, -1))
-                }
+                open ? setHighlightedIndex(prev => getNextIndex(prev, -1)) : setOpen(true)
                 break
             case 'Tab':
-                if (isOpen) setIsOpen(false)
-                break
-            default:
+                if (open) setOpen(false)
                 break
         }
-    }, [disabled, isOpen, setIsOpen, highlightedIndex, options, selectOption])
+    }, [disabled, open, setOpen, highlightedIndex, options, selectOption, getNextIndex])
 
     return useMemo(() => ({
-        handleBlur, 
-        handleFocus, 
-        handleToggle, 
-        handleKeyDown, 
-        highlightedIndex, 
-        setHighlightedIndex,
-        handleListScroll
-    }), [handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, setHighlightedIndex])
+        handleBlur, handleFocus, handleToggle, handleKeyDown,
+        highlightedIndex, setHighlightedIndex, handleListScroll
+    }), [handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, handleListScroll])
 }
 
 export default useSelect

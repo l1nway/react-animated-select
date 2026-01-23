@@ -62,7 +62,14 @@
     --rac-true-option-color: color-mix(in srgb, var(--rac-base-green), CanvasText 10%);
     --rac-false-option-color: color-mix(in srgb, var(--rac-base-red), CanvasText 10%);
     --rac-warning-option-color: color-mix(in srgb, var(--rac-base-yellow), CanvasText 10%);
-    --rac-loading-option-opacity: 0.75;
+    
+    --rac-group-header-font-size: 1.25em;
+    --rac-group-header-font-weight: bold;
+    --rac-group-header-min-height: 1em;
+    --rac-group-header-padding: 0.5em;
+    --rac-group-arrow-height: 1em;
+    --rac-group-arrow-width: 1em;
+    --rac-group-arrow-padding: 1px 0 2px;
     
     background: var(--rac-select-background);
     padding: var(--rac-select-padding);
@@ -204,7 +211,7 @@
     transition: background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
 }
 
-.rac-select-option:not(.rac-disabled-option):hover {
+.rac-select-option:not(.rac-disabled-option):not(.rac-group-option):hover {
     background-color: var(--rac-option-hover);
 }
 
@@ -239,4 +246,34 @@
 
 .rac-loading-option {
     cursor: wait;
+}
+
+.rac-group-header {
+    cursor: pointer;
+    min-height: var(--rac-group-header-min-height);
+    padding: var(--rac-group-header-padding);
+    transition: background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-weight: var(--rac-group-header-font-weight);
+    font-size: var(--rac-group-header-font-size);
+}
+
+.rac-group-arrow-wrapper {
+    display: block;
+    height: var(--rac-group-arrow-height);
+    width: var(--rac-group-arrow-width);
+    padding: var(--rac-group-arrow-padding);
+
+    will-change: transform;
+    transition:
+        transform var(--rac-duration-base) cubic-bezier(.4,0,.2,1),
+        padding var(--rac-duration-fast);
+    transform-origin: 50% 50%;
+    transform: translateZ(0);
+}
+
+.rac-group-arrow-wrapper.--open {
+    transform: rotate(180deg);
 }

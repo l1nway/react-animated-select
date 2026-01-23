@@ -30,17 +30,17 @@ function Options({
   const transitionString = `height ${duration}ms ${easing}${animateOpacity ? `, opacity ${duration}ms ${easing}` : ''}`
 
   const baseStyles = {
-      position: 'absolute',
-      top: `calc(100% + ${offset}px)`, 
-      left: '0',
-      width: '100%',
-      overflow: 'hidden',
-      marginTop: '2px',
-      zIndex: '1',
-      height: visibility ? 'auto' : '0px',
-      opacity: animateOpacity ? (visibility ? 1 : 0) : 1,
-      pointerEvents: visibility ? 'all' : 'none',
-      visibility: selectHeight ? 'visible' : 'hidden'
+    position: 'absolute',
+    top: `calc(100% + ${offset}px)`, 
+    left: '0',
+    width: '100%',
+    overflow: 'hidden',
+    marginTop: '2px',
+    zIndex: '1',
+    height: visibility ? 'auto' : '0px',
+    opacity: animateOpacity ? (visibility ? 1 : 0) : 1,
+    pointerEvents: visibility ? 'all' : 'none',
+    visibility: selectHeight ? 'visible' : 'hidden'
   }
 
   const handleEnter = useCallback(() => {
