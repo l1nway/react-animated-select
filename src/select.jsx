@@ -1,9 +1,9 @@
 import './select.css'
-import {XMarkIcon, ArrowUpIcon} from './icons'
+import {XMarkIcon, ArrowUpIcon, CheckmarkIcon} from './icons'
 import {forwardRef, useImperativeHandle, useRef, useMemo, useState, useEffect, useCallback, useId, isValidElement, cloneElement} from 'react'
 import {makeId} from './makeId'
 
-import SelectJSX from './selectJSX'
+import SelectJSX from './SelectJSX'
 import useSelect from './useSelect'
 import useSelectLogic from './useSelectLogic'
 import SlideDown from './slideDown'
@@ -22,7 +22,9 @@ const renderIcon = (Icon, defaultProps) => {
 }
 
 // adding classes to style options according to their state
-const getOptionClassName = (element, index, highlightedIndex, selectedId, loadingTitle, loadMoreText, invalidOption) => {
+const getOptionClassName = (element, index, highlightedIndex, selectedId, loadingTitle, loadMoreText, invalidOption, selectedIDs) => {
+    const multipleSelected = selectedIDs.some(o => o.id === element.id)
+
     if (element.groupHeader) {
         return 'rac-select-option rac-group-option'
     }
@@ -30,7 +32,7 @@ const getOptionClassName = (element, index, highlightedIndex, selectedId, loadin
     return [
         'rac-select-option',
         element.className,
-        selectedId === element.id && 'rac-selected',
+        (multipleSelected || selectedId === element.id) && 'rac-selected',
         index === highlightedIndex && 'rac-highlighted',
         (element.disabled || element.loading) && 'rac-disabled-option',
         (element.invalid || element.name === invalidOption) && 'rac-invalid-option',
@@ -54,6 +56,8 @@ const Select = forwardRef(({
     className = '',
     ArrowIcon = ArrowUpIcon,
     ClearIcon = XMarkIcon,
+    DelIcon = XMarkIcon,
+    CheckIcon = CheckmarkIcon,
     hasMore = false,
     loadMore = () => {console.warn('loadMore not implemented')},
     loadButton = false,
@@ -62,6 +66,7 @@ const Select = forwardRef(({
     loadOffset = 100,
     loadAhead = 3,
     childrenFirst = false,
+    groupsClosed = false,
     ...props
 }, ref) => {
 
@@ -112,12 +117,12 @@ const Select = forwardRef(({
 
     const logic = useSelectLogic({
         ...props, visibility, setVisibility, jsxOptions, hasMore, 
-        loadButton, loadingTitle, loadMore, loadMoreText, setLoadingTitle, childrenFirst
+        loadButton, loadingTitle, loadMore, loadMoreText, setLoadingTitle, childrenFirst, groupsClosed
     })
 
-    const {normalizedOptions, selected, selectOption, clear, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, emptyText, disabledText, loadingText, errorText, expandedGroups} = logic
+    const {multiple, normalizedOptions, selected, selectOption, clear, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, emptyText, disabledText, loadingText, errorText, expandedGroups, selectedIDs, setSelectedIds} = logic
 
-    const behavior = useSelect({setLoadingTitle, loadButton, loadButtonText, hasMore, loadMore, disabled, open: visibility, setOpen: setVisibility, options: normalizedOptions, selectOption, selected, loadOffset, loadAhead})
+    const behavior = useSelect({setLoadingTitle, loadButton, loadButtonText, hasMore, loadMore, disabled, multiple, open: visibility, setOpen: setVisibility, options: normalizedOptions, selectOption, selected, loadOffset, loadAhead, expandedGroups})
 
     const {handleListScroll, handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, setHighlightedIndex} = behavior
 
@@ -136,7 +141,7 @@ const Select = forwardRef(({
             const option = normalizedOptions[highlightedIndex]
             if (option) {
                 const domElement = document.getElementById(`opt-${selectId}-${makeId(option.id)}`)
-                domElement?.scrollIntoView({ block: 'nearest' })
+                domElement?.scrollIntoView({block: 'nearest'})
             }
         }
     }, [highlightedIndex, visibility, animationFinished, normalizedOptions, selectId])
@@ -197,12 +202,26 @@ const Select = forwardRef(({
                 role='option'
                 aria-selected={selected?.id === element.id}
                 aria-disabled={element.disabled || element.loading}
-                className={getOptionClassName(element, index, highlightedIndex, selected?.id, loadingTitle, loadMoreText, invalidOption)}
+                className={getOptionClassName(element, index, highlightedIndex, selected?.id, loadingTitle, loadMoreText, invalidOption, selectedIDs)}
                 onClick={(e) => !element.loading && selectOption(element, e)}
                 onMouseEnter={() => (!element.disabled && !element.loading) && setHighlightedIndex(index)}
             >
                 {element.jsx ?? element.name}
                 {element.loading && <span className='rac-loading-dots'><i/><i/><i/></span>}
+                {multiple && !element.disabled ? 
+                    <div className='rac-checkbox'>
+                        {renderIcon(
+                            CheckmarkIcon, {
+                                className: `
+                                    rac-checkmark
+                                    ${selectedIDs.some(o => o.id === element.id)
+                                        ?
+                                            '--checked'
+                                        :
+                                            ''
+                        }`})}
+                    </div> : null}
+                
             </div>
         )
 
@@ -223,12 +242,15 @@ const Select = forwardRef(({
                 nodes.push(
                     <div 
                         key={element.id} 
-                        className='rac-group-header'
+                        className={[
+                            'rac-group-header',
+                            element.disabled && 'rac-disabled-group'
+                        ].filter(Boolean).join(' ')}
                         onClick={(e) => selectOption(element, e)}
                     >
                         <span className='rac-group-title-text'>{element.name}</span>
                         <SlideLeft
-                            visibility={hasChildren}
+                            visibility={hasChildren && !element.disabled}
                             duration={duration}
                             style={{display: 'grid'}}
                         >
@@ -258,7 +280,10 @@ const Select = forwardRef(({
         <SelectJSX 
             selectRef={selectRef}
             selectId={selectId}
-            
+            selectedIDs={selectedIDs}
+            setSelectedIds={setSelectedIds}
+            multiple={multiple}
+
             renderIcon={renderIcon}
             normalizedOptions={normalizedOptions}
             renderOptions={renderOptions}
@@ -300,6 +325,7 @@ const Select = forwardRef(({
             unmount={unmount}
             ArrowIcon={ArrowIcon}
             ClearIcon={ClearIcon}
+            DelIcon={DelIcon}
             hasMore={hasMore}
             loadButton={loadButton}
         />

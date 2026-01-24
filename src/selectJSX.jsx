@@ -1,7 +1,47 @@
-import {memo} from 'react'
+import {memo, useCallback} from 'react'
 import {SelectContext} from './selectContext'
 import Options from './options'
 import SlideLeft from './slideLeft'
+import Animated from './animated'
+import {TransitionGroup} from 'react-transition-group'
+
+const SelectedItem = memo(({element, index, remove, renderIcon, DelIcon, normalizedOptions}) => {
+    let label = null
+
+    if (element?.jsx) {
+        label = element.jsx
+    } else if (element?.name) {
+        label = element.name
+    } else if (element?.raw !== undefined) {
+        const recovered = normalizedOptions.find(o =>
+            o.raw === element.raw ||
+            o.original === element.raw ||
+            o.userId === element.raw
+        )
+        if (recovered) {
+            label = recovered.jsx ?? recovered.name
+        }
+    }
+
+    if (label == null) {
+        label = typeof element === 'object' 
+            ? (element.label ?? element.name ?? element.value ?? 'Selected item') 
+            : String(element)
+    }
+
+    const handleDelete = useCallback((e) => {
+        e.stopPropagation()
+        e.preventDefault()
+        remove(element.id)
+    }, [element.id, remove])
+
+    return (
+        <div className='rac-multiple-selected-option'>
+            {label} 
+            {renderIcon(DelIcon, {onClick: handleDelete})}
+        </div>
+    )
+})
 
 const SelectJSX = memo(({
     selectRef,
@@ -9,6 +49,9 @@ const SelectJSX = memo(({
     
     renderOptions,
     selected,
+    selectedIDs,
+    setSelectedIds,
+    normalizedOptions,
     title,
     visibility,
     active,
@@ -41,10 +84,33 @@ const SelectJSX = memo(({
     unmount,
     ArrowIcon,
     ClearIcon,
+    DelIcon,
     renderIcon,
     hasMore,
     loadButton
 }) => {
+
+    const remove = useCallback((id) => {
+        setSelectedIds(prev => prev.filter(o => o.id !== id))
+    }, [setSelectedIds])
+
+    const renderSelectIDs = selectedIDs.map((element, index) => (
+        <Animated
+            key={element.id ?? index}
+            duration={duration}
+        >
+            <SelectedItem 
+                key={element.id ?? index}
+                element={element}
+                index={index}
+                remove={remove}
+                renderIcon={renderIcon}
+                DelIcon={DelIcon}
+                normalizedOptions={normalizedOptions}
+            />
+        </Animated>
+    ))
+
     return (
         <SelectContext.Provider
             value={{registerOption, unregisterOption}}
@@ -74,11 +140,28 @@ const SelectJSX = memo(({
                     onKeyDown: handleKeyDown
                 })}
             >
-                <div className={`rac-select-title ${(!error && !loading && selected?.type === 'boolean') ? (selected.raw ? 'rac-true-option' : 'rac-false-option') : ''}`}>
-                    <span className='rac-title-text' key={title}>{title}</span>
-                    <SlideLeft visibility={loading && !error} duration={duration}>
-                        <span className='rac-loading-dots'><i/><i/><i/></span>
-                    </SlideLeft>
+                <div
+                    className={
+                        `rac-select-title
+                                ${(!error && !loading && selected?.type === 'boolean')
+                            ?
+                                (selected.raw ? 'rac-true-option' : 'rac-false-option')
+                            : ''}
+                    `}
+                >
+                    <TransitionGroup component={null}>
+                        {selectedIDs.length ? renderSelectIDs :
+                            <Animated
+                                key='placeholder-content'
+                                duration={duration}
+                            >
+                                <span className='rac-title-text' key={title}>{title}</span>
+                                <SlideLeft visibility={loading && !error} duration={duration}>
+                                    <span className='rac-loading-dots'><i/><i/><i/></span>
+                                </SlideLeft>
+                            </Animated>
+                        }
+                    </TransitionGroup>
                 </div>
 
                 <div className='rac-select-buttons'>

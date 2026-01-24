@@ -70,16 +70,21 @@
     --rac-group-arrow-height: 1em;
     --rac-group-arrow-width: 1em;
     --rac-group-arrow-padding: 1px 0 2px;
+    --rac-disabled-group-color: color-mix(in srgb, GrayText, CanvasText 20%);
     
     background: var(--rac-select-background);
     padding: var(--rac-select-padding);
     border: var(--rac-select-border);
     color: var(--rac-select-color);
 
-    height: var(--rac-select-height);
-    transition: border-color var(--rac-duration-base);
+    min-height: var(--rac-select-height);
+    interpolate-size: allow-keywords;
+    transition:
+        border-color var(--rac-duration-base) ease, 
+        height var(--rac-duration-base) ease;
     justify-content: space-between;
     box-sizing: border-box;
+    align-items: center;
     position: relative;
     cursor: pointer;
     display: flex;
@@ -107,11 +112,15 @@
 .rac-select-title {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5em 0;
 }
 
 .rac-title-text {
     display: block;
     animation: rac-fade-in var(--rac-duration-base) var(--rac-title-anim-entry-ease);
+    height: 100%;
+    align-content: center;
 }
 
 @keyframes rac-fade-in {
@@ -206,9 +215,12 @@
 }
 
 .rac-select-option {
+    transition: background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
     min-height: var(--rac-option-min-height);
     padding: var(--rac-option-padding);
-    transition: background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
+    justify-content: space-between;
+    align-items: center;
+    display: flex;
 }
 
 .rac-select-option:not(.rac-disabled-option):not(.rac-group-option):hover {
@@ -276,4 +288,58 @@
 
 .rac-group-arrow-wrapper.--open {
     transform: rotate(180deg);
+}
+
+.rac-disabled-group {
+    cursor: not-allowed;
+    color: var(--rac-disabled-group-color);
+}
+
+.rac-select-selected {
+    display: flex;
+    align-items: center;
+}
+
+.rac-multiple-selected-option {
+    border: 0.1em solid gray;
+    border-radius: 5px;
+    min-height: 1.5em;
+    transition: background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
+
+    display: inline-flex;
+    align-items: center;
+    vertical-align: middle;
+    line-height: normal;
+    padding: 0em 0.25em;
+    margin: 0em 0.25em;
+    white-space: nowrap;
+}
+
+.rac-multiple-selected-option:hover {
+    background-color: color-mix(in srgb, CanvasText 6%, Canvas);
+}
+
+.rac-checkbox {
+    min-height: var(--rac-option-min-height);
+    min-width: var(--rac-option-min-height);
+    border: 1px solid gray;
+    justify-content: center;
+    align-items: center;
+    display: flex;
+    height: 100%;
+    margin-right: 0.20em;
+}
+
+.rac-checkmark {
+    color: var(--rac-base-green);
+    opacity: 0;
+    max-width: 0;
+    max-height: 0;
+    transition: opacity var(--rac-duration-base), max-height var(--rac-duration-base), max-width var(--rac-duration-base);
+}
+
+.rac-checkmark.--checked {
+    opacity: 1;
+    max-height: var(--rac-option-min-height);
+    max-width: var(--rac-option-min-height);
 }

@@ -1,20 +1,27 @@
-import {useState, useMemo, useCallback, useId, useEffect} from 'react'
+import {useState, useMemo, useCallback, useId, useEffect, useRef} from 'react'
 
-// keys that cannot be taken as a name if labelKeys are unavailable
-const systemKeys = ['group', 'disabled', 'options', 'items', 'children']
+const SYSTEM_KEYS = ['group', 'disabled', 'options', 'items', 'children']
+const LABEL_KEYS = ['name', 'label', 'id', 'value']
 
-// main keys in order of priority that can be taken for the name
-const labelKeys = ['name', 'label', 'id', 'value']
+const getLabel = (obj, isGroup = false) => {
+    if (isGroup && typeof obj.group === 'string') return obj.group
+    const foundKey = LABEL_KEYS.find(k => obj[k] != null && obj[k] !== '')
+    if (foundKey) return String(obj[foundKey])
+    
+    const fallback = Object.entries(obj).find(([k, v]) => !SYSTEM_KEYS.includes(k) && v != null && v !== '')
+    return fallback ? String(fallback[1]) : null
+}
 
 function useSelectLogic({
     options = [],
     jsxOptions = [],
     value,
-    defaultValue = undefined,
+    defaultValue,
     onChange,
     disabled = false,
     loading = false,
     error = false,
+    multiple = false,
     placeholder = 'Choose option',
     emptyText = 'No options',
     disabledText = 'Disabled',
@@ -30,191 +37,204 @@ function useSelectLogic({
     loadingTitle,
     loadMoreText,
     loadMore,
-    childrenFirst
+    childrenFirst,
+    groupsClosed
 }) {
     const stableId = useId()
     const isControlled = value !== undefined
     const [selectedId, setSelectedId] = useState(null)
-
-    // getting option name
-    const getLabelFromObject = useCallback((obj, fallback = false) => {
-        // 
-        const foundKey = labelKeys.find(k => obj[k] !== undefined && obj[k] !== null && obj[k] !== '')
-        if (foundKey) return String(obj[foundKey])
-
-        const fallbackEntry = Object.entries(obj).find(([k, v]) => 
-            !systemKeys.includes(k) && v != null && v !== ''
-        )
-        
-        if (fallbackEntry) return String(fallbackEntry[1])
-        return fallback
-    }, [])
-
-    const createNormalizedOption = useCallback((rawItem, index, type = 'normal', injectedGroup = null, injectedDisabled = false) => {
-        let label = ''
-        let itemValue = rawItem
-        let isDisabled = injectedDisabled
-        let userId = null
-        let group = injectedGroup
-
-        if (rawItem == null || rawItem === '') {
-            return {
-                id: `${stableId}-${type}-${index}`,
-                userId: null,
-                name: emptyOption,
-                raw: null,
-                disabled: true,
-                type: 'normal',
-                group: group
-            }
-        }
-
-        if (typeof rawItem === 'function') {
-            return {
-                id: `${stableId}-inv-${index}`,
-                userId: null,
-                name: invalidOption,
-                raw: rawItem,
-                disabled: true,
-                invalid: true,
-                type: 'normal',
-                group: group
-            }
-        }
-
-        if (typeof rawItem === 'object' && !Array.isArray(rawItem)) {
-            if (!group) group = rawItem.group || null
-            isDisabled = isDisabled || !!rawItem.disabled 
-
-            userId = rawItem.id ?? rawItem.value ?? rawItem.name ?? rawItem.label
-            itemValue = rawItem.value !== undefined ? rawItem.value : (rawItem.id !== undefined ? rawItem.id : rawItem)
-
-            label = getLabelFromObject(rawItem, isDisabled ? disabledOption : emptyOption)
-            if (label === emptyOption && !isDisabled) isDisabled = true
-        } else {
-            label = String(rawItem)
-            userId = rawItem
-            itemValue = rawItem
-        }
-
-        return {
-            id: `${stableId}-${type}-${index}`,
-            userId: userId,
-            name: label,
-            raw: itemValue,
-            original: rawItem,
-            disabled: isDisabled,
-            type: typeof itemValue === 'boolean' ? 'boolean' : 'normal',
-            group: group
-        }
-    }, [stableId, emptyOption, invalidOption, disabledOption, getLabelFromObject])
-
+    const [selectedIDs, setSelectedIds] = useState([])
     const [expandedGroups, setExpandedGroups] = useState(new Set())
+
+    const orderCache = useRef(null)
 
     const toggleGroup = useCallback((groupName) => {
         setExpandedGroups(prev => {
             const next = new Set(prev)
-            if (next.has(groupName)) next.delete(groupName)
-            else next.add(groupName)
+            next.has(groupName) ? next.delete(groupName) : next.add(groupName)
             return next
         })
     }, [])
 
-    const normalizedOptions = useMemo(() => {
-        const combined = []
+    const normalize = useCallback((rawItem, index, prefix = 'n', group = null, groupDisabled = false) => {
+        const id = `${stableId}-${prefix}-${index}`
+        
+        if (rawItem == null || rawItem === '') {
+            return {id, userId: null, name: emptyOption, raw: null, disabled: true, type: 'normal', group, groupDisabled}
+        }
 
-        const processItem = (opt, uniqueIdx, parentGroup = null, parentDisabled = false) => {
-            if (opt && typeof opt === 'object' && !Array.isArray(opt) && 'options' in opt) {
-                const groupName = getLabelFromObject(opt, 'Empty group', true)
-                const isGroupDisabled = parentDisabled || !!opt.disabled
-                const innerData = opt.options
+        if (typeof rawItem === 'function') {
+            return {id, userId: null, name: invalidOption, raw: rawItem, disabled: true, invalid: true, type: 'normal', group}
+        }
 
-                if (Array.isArray(innerData)) {
-                    innerData.forEach((child, i) => processItem(child, `${uniqueIdx}-${i}`, groupName, isGroupDisabled))
-                } else if (innerData && typeof innerData === 'object') {
-                    Object.entries(innerData).forEach(([k, v], i) => processItem(v, `${uniqueIdx}-${i}`, groupName, isGroupDisabled))
-                } else {
-                    processItem(innerData, `${uniqueIdx}-0`, groupName, isGroupDisabled)
-                }
-                return
-            }
-
-            const isMapObj = opt && typeof opt === 'object' && !Array.isArray(opt) && 
-                !labelKeys.some(k => k in opt) && !('group' in opt)
+        if (typeof rawItem === 'object' && !Array.isArray(rawItem)) {
+            const currentGroup = group || rawItem.group || null
+            const isItemDisabled = groupDisabled || rawItem.disabled === true
+            const userId = rawItem.id ?? rawItem.value ?? rawItem.name ?? rawItem.label
+            const itemValue = rawItem.value !== undefined ? rawItem.value : (rawItem.id !== undefined ? rawItem.id : rawItem)
             
-            if (isMapObj) {
-                Object.entries(opt).forEach(([k, v], j) => {
-                    combined.push(createNormalizedOption(v, `${uniqueIdx}-${j}`, 'normal', parentGroup, parentDisabled))
-                })
-                return
+            let label = getLabel(rawItem) || (isItemDisabled ? disabledOption : emptyOption)
+            
+            return {
+                id,
+                userId,
+                name: label,
+                raw: itemValue,
+                original: rawItem,
+                disabled: isItemDisabled || (label === emptyOption && !isItemDisabled),
+                type: typeof itemValue === 'boolean' ? 'boolean' : 'normal',
+                group: currentGroup,
+                groupDisabled
             }
-
-            combined.push(createNormalizedOption(opt, uniqueIdx, 'normal', parentGroup, parentDisabled))
         }
 
-        if (Array.isArray(options)) {
-            options.forEach((opt, i) => processItem(opt, i))
+        return {
+            id,
+            userId: rawItem,
+            name: String(rawItem),
+            raw: rawItem,
+            original: rawItem,
+            disabled: groupDisabled,
+            type: typeof rawItem === 'boolean' ? 'boolean' : 'normal',
+            group
         }
+    }, [stableId, emptyOption, invalidOption, disabledOption])
 
-        const jsxMapped = jsxOptions.map(opt => {
-            if (opt.isGroupMarker) return { ...opt, type: 'group-marker' }
-            const isActuallyEmpty = (opt.value == null || opt.value === '') && !opt.label
+    const normalizedOptions = useMemo(() => {
+        const groupsMap = new Map()
+        const flatBase = []
+
+        const preparedJsx = jsxOptions.map((opt, index) => {
+            if (opt.isGroupMarker) return {...opt, type: 'group-marker'}
+            const isActuallyEmpty = 
+                !opt.label &&
+                !opt.userId &&
+                !opt.value &&
+                (opt.value === undefined || opt.value === null || opt.value === '') &&
+                !opt.hasJsx
             return {
                 ...opt,
                 id: `jsx-${opt.id}`,
-                userId: opt.id,
+                index: index,
+                userId: opt.userId,
                 raw: opt.value,
                 original: opt.value,
-                name: isActuallyEmpty ? emptyOption : opt.label,
+                name: isActuallyEmpty ? emptyOption : (opt.label || opt.userId || String(opt.value || '')),
                 disabled: !!opt.disabled || isActuallyEmpty,
                 type: typeof opt.value === 'boolean' ? 'boolean' : 'normal',
                 group: opt.group || null
             }
         })
 
-        const baseList = childrenFirst ? [...jsxMapped, ...combined] : [...combined, ...jsxMapped]
+        let flatIndex = 0
 
-        const finalFlattened = []
-        const groupsMap = new Map()
-        const order = []
+        const collect = (items, parentGroup = null, parentDisabled = false, depth = '0') => {
+            if (!Array.isArray(items)) items = [items]
+            
+            items.forEach((item, i) => {
+                if (!item) return
+                const currentId = `${depth}-${i}`
+                const isObj = typeof item === 'object' && !Array.isArray(item)
+                
+                const isGroup = isObj && ('options' in item || ('group' in item && !LABEL_KEYS.some(k => k in item)))
 
-        baseList.forEach(opt => {
-            if (!opt.group) {
-                order.push({type: 'item', data: opt})
-            } else {
-                if (!groupsMap.has(opt.group)) {
-                    groupsMap.set(opt.group, [])
-                    order.push({type: 'group', name: opt.group})
+                if (isGroup) {
+                    const groupName = getLabel(item, true) || 'Empty group'
+                    if (!groupsMap.has(groupName)) {
+                        groupsMap.set(groupName, {disabled: !!item.disabled, closedByDefault: !!item.disabled || groupsClosed, items: []})
+                    }
+                    if (item.options) {
+                        collect(item.options, groupName, parentDisabled || !!item.disabled, currentId)
+                    } else {
+                        flatBase.push({id: `empty-${groupName}-${currentId}`, name: groupName, group: groupName, isPlaceholder: true, type: 'group-marker',index: flatIndex++})
+                    }
+                } else if (isObj && !LABEL_KEYS.some(k => k in item) && !item.group) {
+                    Object.entries(item).forEach(([k, v], j) => {
+                        const norm = normalize(v, `${currentId}-${j}`, 'normal', parentGroup, parentDisabled)
+                            flatBase.push({ ...norm, index: flatIndex++ })
+                    })
+                } else {
+                    const norm = normalize(item, currentId, 'normal', parentGroup, parentDisabled);
+                        flatBase.push({ ...norm, index: flatIndex++ })
                 }
-                if (!opt.isGroupMarker) {
-                    const visible = expandedGroups.has(opt.group)
-                    groupsMap.get(opt.group).push({...opt, hidden: !visible})
+            })
+        }
+
+        collect(options)
+
+        const combined = childrenFirst
+        ? [...preparedJsx, ...flatBase]
+        : [...flatBase, ...preparedJsx]
+        
+        if (!orderCache.current) {
+            orderCache.current = new Map(combined.map((item, i) => [item.id, i]))
+        } else {
+            let hasNewItems = false;
+            combined.forEach(item => {
+                if (!orderCache.current.has(item.id)) hasNewItems = true;
+            })
+
+            if (hasNewItems) {
+                const newMap = new Map()
+                combined.forEach((item, index) => {
+                    newMap.set(item.id, index)
+                })
+                orderCache.current = newMap
+            }
+        }
+
+        const orderedList = [...combined].sort((a, b) => {
+            const indexA = orderCache.current.get(a.id) ?? 999999
+            const indexB = orderCache.current.get(b.id) ?? 999999
+            return indexA - indexB
+        })
+
+        const structure = []
+        const seenGroups = new Set()
+
+        orderedList.forEach(opt => {
+            if (!opt.group) {
+                structure.push({type: 'item', data: opt})
+            } else {
+                if (!seenGroups.has(opt.group)) {
+                    seenGroups.add(opt.group)
+                    structure.push({type: 'group', name: opt.group})
+                }
+                if (!opt.isPlaceholder && !opt.isGroupMarker) {
+                    const groupStore = groupsMap.get(opt.group) || {items: []}
+                    if (!groupsMap.has(opt.group)) groupsMap.set(opt.group, groupStore)
+                    groupStore.items.push(opt)
                 }
             }
         })
 
-        order.forEach((entry, idx) => {
+        const final = []
+        structure.forEach((entry) => {
             if (entry.type === 'item') {
-                finalFlattened.push(entry.data)
+                final.push(entry.data)
             } else {
-                const expanded = expandedGroups.has(entry.name)
-                finalFlattened.push({
-                    id: `group-header-${entry.name}-${idx}`,
-                    name: entry.name,
-                    disabled: false,
+                const groupName = entry.name
+                const meta = groupsMap.get(groupName)
+                const expanded = expandedGroups.has(groupName)
+                
+                final.push({
+                    id: `group-header-${groupName}`,
+                    name: groupName,
+                    disabled: !!meta?.disabled,
                     groupHeader: true,
                     expanded,
-                    type: 'group'
+                    type: 'group',
+                    hidden: false
                 })
-                
-                const items = groupsMap.get(entry.name)
-                finalFlattened.push(...items)
-                
+
+                meta?.items.forEach(item => {
+                    final.push({...item, hidden: !expanded})
+                })
             }
         })
 
         if (hasMore && loadButton) {
-            finalFlattened.push({
+            final.push({
                 id: 'special-load-more-id',
                 name: loadingTitle,
                 loadMore: true,
@@ -223,8 +243,19 @@ function useSelectLogic({
             })
         }
 
-        return finalFlattened
-    }, [options, jsxOptions, stableId, createNormalizedOption, childrenFirst, hasMore, loadButton, loadingTitle, loadMoreText, emptyText, emptyOption, getLabelFromObject])
+        return final
+    }, [options, jsxOptions, stableId, normalize, childrenFirst, hasMore, loadButton, loadingTitle, loadMoreText, groupsClosed, expandedGroups, emptyOption])
+
+    useEffect(() => {
+        if (expandedGroups.size > 0) return
+        const initial = new Set()
+        normalizedOptions.forEach(opt => {
+            if (opt.groupHeader && !opt.disabled && opt.expanded !== false) {
+                initial.add(opt.name)
+            }
+        })
+        if (initial.size > 0) setExpandedGroups(initial)
+    }, [normalizedOptions])
 
     const findIdByValue = useCallback((val) => {
         if (val == null) return null
@@ -265,23 +296,41 @@ function useSelectLogic({
         if (option.groupHeader) {
             e?.stopPropagation()
             e?.preventDefault()
-            toggleGroup(option.name)
+            if (!option.disabled) toggleGroup(option.name)
             return
         }
 
         if (option.disabled || option.loadMore) {
             e?.stopPropagation()
             e?.preventDefault()
-            if (option.loadMore) {
+            if (option.loadMore && !option.loading) {
                 setLoadingTitle(loadMoreText)
                 loadMore()
             }
             return
         }
+
+        if (multiple) {
+            if (option.disabled || option.groupHeader || option.loadMore) {
+                e?.stopPropagation()
+                e?.preventDefault()
+                return
+            }
+
+            e?.stopPropagation()
+            e?.preventDefault()
+            setSelectedIds(prev => {
+                if (prev.some(o => o.id === option.id)) {
+                    return prev.filter(o => o.id !== option.id)
+                }
+                return [...prev, option]
+            })
+            return
+        }
         setSelectedId(option.id)
         onChange?.(option.original, option.userId)
         setVisibility(false)
-    }, [onChange, setVisibility, loadMore, loadMoreText, setLoadingTitle])
+    }, [onChange, setVisibility, loadMore, loadMoreText, setLoadingTitle, toggleGroup])
 
     const clear = useCallback(() => {
         setSelectedId(null)
@@ -295,7 +344,7 @@ function useSelectLogic({
         selectedValue: value ?? defaultValue, 
         placeholder, emptyText, disabledText, loadingText, errorText, 
         disabledOption, emptyOption, invalidOption, disabled, loading, error,
-        expandedGroups, toggleGroup, visibleOptions: normalizedOptions.filter(o => !o.hidden)
+        expandedGroups, toggleGroup, selectedIDs, multiple, setSelectedIds
     }
 }
 

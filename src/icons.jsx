@@ -27,3 +27,17 @@ export const ArrowUpIcon = ({className = '', ...props}) => (
       <path d="M34.9 289.5l175.9-175.8c9.4-9.4 24.6-9.4 33.9 0L420.1 289.5c15.1 15.1 4.4 41-17 41H51.9c-21.4 0-32.1-25.9-17-41z"/>
     </svg>
 )
+
+export const CheckmarkIcon = ({className = '', ...props}) => (
+  <svg
+    className={className}
+    xmlns="http://www.w3.org/2000/svg"
+    viewBox="0 0 24 24"
+    width="1em"
+    height="1em"
+    fill="currentColor"
+    {...props}
+  >
+    <path d="M20.285 6.708a1 1 0 0 0-1.414-1.416l-9.192 9.192-4.243-4.244a1 1 0 1 0-1.414 1.416l5 5a1 1 0 0 0 1.414 0l9.849-9.948z"/>
+  </svg>
+)

@@ -209,6 +209,8 @@
     --rac-arrow-padding: 0;
     --rac-arrow-height: 1.5em;
     --rac-arrow-width: 1.5em;
+    --rac-group-arrow-height: 1.5em;
+    --rac-group-arrow-width: 1.5em;
     --rac-cancel-height: 1.5em;
     --rac-cancel-width: 1.5em;
 
@@ -233,6 +235,11 @@
         border-radius: 2vw;
         padding: 2vw;
     }
+}
+
+.rac-group-header {
+  background-color: #1e1e1e;
+  border-radius: 10px;
 }
 
 .rac-error-style {
@@ -369,7 +376,9 @@
     min-height: 100%;
 
     @media (max-width: 1024px) {
-        min-height: min-content;
+      min-height: auto;
+      height: fit-content;
+      overflow: visible;
     }
 }
 
@@ -388,7 +397,10 @@
     @media (max-width: 1024px) {
         border: none;
         background-color: initial;
+        min-height: auto;
+        height: fit-content;
     }
+    
 }
 
 .rac-option-title {
@@ -728,7 +740,6 @@
 }
 
 .rac-select-option {
-    padding: 0.4vw 0.5vw;
     border-radius: 1vw;
     text-overflow: ellipsis;
     overflow: hidden;

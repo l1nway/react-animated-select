@@ -1,5 +1,5 @@
 import {JSX, useEffect, useRef, useState} from 'react'
-import {Select} from 'react-animated-select'
+import {Select, Option, OptGroup} from 'react-animated-select'
 import SlideDown from './slideDown'
 import {motion, useInView} from 'framer-motion'
 import {shake, clearShake} from './shake'
@@ -44,6 +44,8 @@ function App() {
   const [loadMoreText, setLoadMoreText] = useState<string>('Loading')
   const [loadOffset, setLoadOffset] = useState<number>(100)
   const [loadAhead, setLoadAhead] = useState<number>(3)
+  const [gropValue, setGroupValue] = useState<string>('')
+  const [group, setGroup] = useState<boolean>(false)
 
   type SettingItem = {
     label: string
@@ -153,10 +155,11 @@ function App() {
 
   const addOption = (disabled: boolean) => {
     !inputValue && shake(buttonRef.current)
-    const newOption = {name: inputValue, disabled: disabled}
+    const newOption = {name: inputValue, disabled: disabled, group: gropValue}
 
     setOptions((prev) => [newOption, ...prev])
     setInputValue('')
+    setGroupValue('')
   }
 
 
@@ -320,7 +323,6 @@ function App() {
               react-animated-select overview
             </h3>
             <Select
-              loadMore={() => alert('subload triggered')}
               hasMore={hasMore}
               loadButton={loadButton}
               loadButtonText={loadButtonText}
@@ -374,6 +376,13 @@ function App() {
                     Disabled
                   </span>
                 </label>
+                <input
+                  className='rac-add-option'
+                  type='text'
+                  value={gropValue}
+                  placeholder='group'
+                  onChange={(e) => setGroupValue(e.target.value)}
+                />
                 <button
                   ref={buttonRef}
                   onClick={() => {
