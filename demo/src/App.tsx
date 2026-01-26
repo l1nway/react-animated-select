@@ -25,7 +25,7 @@ function App() {
 
   type SelectOption = Primitive | ObjectOption
 
-  const [options, setOptions] = useState<SelectOption[]>(['Option 1', true, false, undefined, console.log, {name: 'Option 6', disabled: true}, 'Option 7', {name: 'Option 8'}, {disabled: true}, {name: 'Option 10', id: 2}, 'Option 11', 'Option 12', 'Option 13', 'Option 14', 'Option 15'])
+  const [options, setOptions] = useState<SelectOption[]>(['Option 1', true, false, undefined, console.log, {name: 'Option 6', disabled: true}, 'Option 7', {name: 'Option 8'}, {disabled: true}, {name: 'Option 10', id: 2, group: 2}, 'Option 11', 'Option 12', 'Option 13', 'Option 14', 'Option 15'])
 
   const [value, setValue] = useState<Primitive>()
   const [placeholder, setPlaceholder] = useState<string>('Choose option')
@@ -46,6 +46,7 @@ function App() {
   const [loadAhead, setLoadAhead] = useState<number>(3)
   const [gropValue, setGroupValue] = useState<string>('')
   const [group, setGroup] = useState<boolean>(false)
+  const [multiple, setMultiple] = useState<boolean>(false)
 
   type SettingItem = {
     label: string
@@ -88,6 +89,7 @@ function App() {
   ))
 
   const settings: SettingItem[] = [
+    {label: 'multiple', state: multiple, setState: setMultiple},
     {label: 'loading', state: loading, setState: setLoading},
     {label: 'disabled', state: disabled, setState: setDisabled},
     {label: 'error', state: error, setState: setError},
@@ -323,6 +325,7 @@ function App() {
               react-animated-select overview
             </h3>
             <Select
+              multiple={multiple}
               hasMore={hasMore}
               loadButton={loadButton}
               loadButtonText={loadButtonText}

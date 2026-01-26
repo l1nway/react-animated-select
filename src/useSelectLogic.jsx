@@ -21,7 +21,7 @@ function useSelectLogic({
     disabled = false,
     loading = false,
     error = false,
-    multiple = false,
+    multiple = true,
     placeholder = 'Choose option',
     emptyText = 'No options',
     disabledText = 'Disabled',

@@ -17,7 +17,7 @@
     "@fortawesome/react-fontawesome": "^3.1.1",
     "framer-motion": "^12.29.0",
     "react": "^19.2.3",
-    "react-animated-select": "^0.3.6",
+    "react-animated-select": "^0.4.0",
     "react-dom": "^19.2.3",
     "vite": "^7.3.1"
   },
