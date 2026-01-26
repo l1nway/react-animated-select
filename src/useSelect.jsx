@@ -7,13 +7,15 @@ function useSelect({
     options = [],
     selectOption,
     selected,
+    multiple,
     hasMore,
     loadMore,
     loadButton,
     loadButtonText,
     setLoadingTitle,
     loadOffset,
-    loadAhead
+    loadAhead,
+    expandedGroups
 }) {
     const justFocused = useRef(false)
     const lastWindowFocusTime = useRef(0)
@@ -71,22 +73,33 @@ function useSelect({
         }
 
         // blocking the reset of an index if it is already within the array (exmpl after loading)
-        if (highlightedIndex >= 0 && highlightedIndex < options.length) return
+        if (highlightedIndex >= 0 && highlightedIndex < options.length) {
+            if (!options[highlightedIndex] || options[highlightedIndex].hidden || options[highlightedIndex].groupHeader) {
+            } else return
+        }
 
         let index = -1
         if (selected) {
-            index = options.findIndex(o => o.id === selected.id && !o.disabled)
+            const firstSelected = multiple ? selected[0] : selected
+            if (firstSelected) {
+                index = options.findIndex(o => o.id === firstSelected.id && !o.disabled && !o.hidden && !o.groupHeader)
+            }
         }
         
         if (index === -1) {
-            index = options.findIndex(o => !o.disabled)
+            index = options.findIndex(o => !o.disabled && !o.hidden && !o.groupHeader)
         }
         setHighlightedIndex(index)
     }, [open, options, selected])
 
     // find the next available option to switch to using the keyboard
     const getNextIndex = useCallback((current, direction) => {
-        const isNavigable = (opt) => opt && !opt.disabled && !opt.loading
+        const isNavigable = (opt) => 
+            opt &&
+            !opt?.groupHeader &&
+            (!opt?.group || expandedGroups?.has(opt?.group)) &&
+            !opt?.disabled &&
+            !opt?.loading
         const len = options.length
         if (len === 0) return -1
 
@@ -104,7 +117,7 @@ function useSelect({
             if (isNavigable(options[next])) return next
         }
         return current
-    }, [options, hasMore, loadButton])
+    }, [options, hasMore, loadButton, expandedGroups])
 
     // closing the selector if focus is lost
     const handleBlur = useCallback((e) => {

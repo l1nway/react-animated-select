@@ -19,21 +19,23 @@ export default function Option({value, id, className, children, disabled, group:
         if (!registerOption) return
 
         const textFallback = getText(children)
+        const hasJsx = children !== undefined && children !== null
         let finalLabel = ''
 
-        if (typeof children === 'string' && children !== '') {
-            finalLabel = children
-        } else if (textFallback) {
+        if (textFallback) {
             finalLabel = textFallback
-        } else if (value !== undefined && value !== null) {
+        } else if (id !== undefined && id !== null && id !== '') {
+            finalLabel = String(id)
+        } else if (value !== undefined && value !== null && value !== '') {
             finalLabel = String(value)
-        } 
+        }
 
         const option = {
             id: stableId,
             value: value !== undefined ? value : textFallback,
             label: finalLabel,
             jsx: children,
+            hasJsx,
             className,
             disabled: !!disabled,
             group: manualGroup || contextGroup || null 
