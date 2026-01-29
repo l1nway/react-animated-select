@@ -44,7 +44,6 @@ const getOptionClassName = (element, index, highlightedIndex, selectedId, loadin
 const Select = forwardRef(({
     unmount,
     children,
-    renderedDropdown,
     visibility: externalVisibility,
     ownBehavior = false,
     alwaysOpen = false,
@@ -63,10 +62,12 @@ const Select = forwardRef(({
     loadButton = false,
     loadButtonText = 'Load more',
     loadMoreText = 'Loading',
+    selectedText = undefined,
     loadOffset = 100,
     loadAhead = 3,
     childrenFirst = false,
     groupsClosed = false,
+    optionsClassName = '',
     ...props
 }, ref) => {
 
@@ -156,6 +157,8 @@ const Select = forwardRef(({
         if (error) return errorText
         if (loading) return loadingText
         if (disabled) return disabledText
+        if (hasActualValue && selectedText) return selectedText
+
         if (selected) return selected.jsx ?? selected.name
         
         if (hasActualValue) {
@@ -277,12 +280,14 @@ const Select = forwardRef(({
 
     return (
         <SelectJSX
+            selectedText={selectedText}
             selectRef={selectRef}
             selectId={selectId}
             selectedIDs={selectedIDs}
             setSelectedIds={setSelectedIds}
             multiple={multiple}
             removeOption={removeOption}
+            optionsClassName={optionsClassName}
             
             renderIcon={renderIcon}
             normalizedOptions={normalizedOptions}
@@ -314,7 +319,6 @@ const Select = forwardRef(({
             unregisterOption={unregisterOption}
             
             children={children}
-            renderedDropdown={renderedDropdown}
             placeholder={placeholder}
             className={className}
             style={style}

@@ -1,4 +1,4 @@
-import {memo, useCallback, useEffect} from 'react'
+import {memo, useCallback, useEffect, useRef} from 'react'
 import {SelectContext} from './selectContext'
 import Options from './options'
 import SlideLeft from './slideLeft'
@@ -62,7 +62,9 @@ const SelectJSX = memo(({
     active,
     hasOptions,
     hasActualValue,
-    
+    optionsClassName,
+    selectedText,
+
     disabled,
     loading,
     error,
@@ -78,7 +80,6 @@ const SelectJSX = memo(({
     clear,
     
     children,
-    renderedDropdown,
     placeholder,
     className,
     style,
@@ -95,6 +96,15 @@ const SelectJSX = memo(({
     loadButton
 }) => {
 
+    const internalRef = useRef(null)
+
+    useEffect(() => {
+        if (selectRef) {
+            if (typeof selectRef === 'function') selectRef(internalRef.current)
+            else selectRef.current = internalRef.current
+        }
+    }, [selectRef])
+
     const remove = useCallback((id) => {
         if (removeOption) {
             removeOption(id)
@@ -103,17 +113,11 @@ const SelectJSX = memo(({
         }
     }, [removeOption, setSelectedIds])
 
-    useEffect(() => {
-        document.documentElement.style.setProperty('--rac-duration', `${duration}ms`)
-        return () => {
-            document.documentElement.style.removeProperty('--rac-duration')
-        }
-    }, [duration])
-
     const renderSelectIDs = selectedIDs?.map((element, index) => (
         <Animated
             key={element.id ?? index}
             duration={duration}
+            widthMode
         >
             <SelectedItem 
                 key={element.id ?? index}
@@ -132,10 +136,15 @@ const SelectJSX = memo(({
             value={{registerOption, unregisterOption}}
         >
             {children}
-            {renderedDropdown}
             <div
-                ref={selectRef}
-                style={style}
+                ref={internalRef}
+                style={{
+                    ...style,
+                    '--rac-duration': `${duration}ms`,
+                    '--rac-duration-fast': 'calc(var(--rac-duration) * 0.5)',
+                    '--rac-duration-base': 'var(--rac-duration)',
+                    '--rac-duration-slow': 'calc(var(--rac-duration) * 1.3)'
+                }}
                 className={
                     `rac-select
                     ${className}
@@ -166,17 +175,21 @@ const SelectJSX = memo(({
                     `}
                 >
                     <TransitionGroup component={null}>
-                        {selectedIDs?.length ? renderSelectIDs :
+                        {selectedIDs?.length && !selectedText ? (
+                            renderSelectIDs
+                        ) : (
                             <Animated
-                                key='placeholder-content'
+                                key={title}
                                 duration={duration}
+                                widthMode
                             >
-                                <span className='rac-title-text' key={title}>{title}</span>
+                                <span className='rac-title-text'>{title}</span>
+                                
                                 <SlideLeft visibility={loading && !error} duration={duration}>
                                     <span className='rac-loading-dots'><i/><i/><i/></span>
                                 </SlideLeft>
                             </Animated>
-                        }
+                        )}
                     </TransitionGroup>
                 </div>
 
@@ -211,6 +224,7 @@ const SelectJSX = memo(({
                 </div>
 
                 <Options
+                    className={optionsClassName}
                     visibility={visibility}
                     selectRef={selectRef}
                     onAnimationDone={() => setAnimationFinished(true)}
@@ -219,6 +233,10 @@ const SelectJSX = memo(({
                     easing={easing}
                     offset={offset}
                     animateOpacity={animateOpacity}
+                    style={{
+                        ...style,
+                        '--rac-duration': `${duration}ms`
+                    }}
                 >
                     <div
                         onScroll={handleListScroll}

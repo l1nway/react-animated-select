@@ -11,7 +11,9 @@ function Options({
   duration,
   easing,
   offset,
-  animateOpacity
+  animateOpacity,
+  style,
+  className
 }) {
   
   const nodeRef = useRef(null)
@@ -53,7 +55,7 @@ function Options({
     }
   }, [visibility, updateCoords])
 
-  const transitionString = `height ${duration}ms ${easing}${animateOpacity ? `, opacity ${duration}ms ${easing}` : ''}`
+  const transitionString = `height var(--rac-duration) ${easing}${animateOpacity ? `, opacity var(--rac-duration) ${easing}` : ''}`;
 
   useEffect(() => {
     if (!selectRef?.current) return
@@ -68,16 +70,17 @@ function Options({
 
   const baseStyles = {
     position: 'fixed',
+    '--rac-duration': `${duration}ms`,
+    '--rac-easing': easing,
     left: `${coords.left}px`,
     width: `${coords.width}px`,
     overflow: 'hidden',
-    zIndex: '1000',
+    zIndex: '1',
     height: visibility ? 'auto' : '0px',
     opacity: animateOpacity ? (visibility ? 1 : 0) : 1,
     pointerEvents: visibility ? 'all' : 'none',
     visibility: selectHeight ? 'visible' : 'hidden',
     boxSizing: 'border-box',
-    '--rac-duration': `${duration}ms`,
     transformOrigin: coords.isUpward ? 'bottom' : 'top',
     
     ...(coords.isUpward ? {
@@ -86,7 +89,13 @@ function Options({
     } : {
       top: `${coords.bottom + offset}px`,
       bottom: 'auto'
-    })
+    }),
+    ...Object.fromEntries(
+      Object.entries(style || {}).map(([key, value]) => [
+        key.startsWith('--') ? key : `--rac-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`,
+        value
+      ])
+    )
   }
 
   const handleEnter = useCallback(() => {
@@ -157,8 +166,15 @@ function Options({
     >
       <div
         ref={nodeRef}
-        className='rac-options'
-        style={baseStyles}
+        className={`rac-options ${className || ''}`}
+        style={{
+            ...baseStyles,
+            '--rac-duration': `${duration}ms`,
+            '--rac-duration-fast': 'calc(var(--rac-duration) * 0.5)',
+            '--rac-duration-base': 'var(--rac-duration)',
+            '--rac-duration-slow': 'calc(var(--rac-duration) * 1.3)',
+
+        }}
         onMouseDown={(e) => {
           e.preventDefault()
         }}
@@ -176,5 +192,6 @@ export default memo(Options, (prev, next) => {
          prev.offset === next.offset &&
          prev.animateOpacity === next.animateOpacity &&
          prev.selectRef === next.selectRef &&
-         prev.children === next.children
+         prev.children === next.children &&
+         JSON.stringify(prev.style) === JSON.stringify(next.style)
 })

@@ -1,38 +1,63 @@
 import {useRef} from 'react'
 import {CSSTransition} from 'react-transition-group'
 
-const Animated = ({children, duration, ...props}) => {
+const Animated = ({children, duration, widthMode = false, ...props}) => {
     const nodeRef = useRef(null)
-
     return (
         <CSSTransition
             nodeRef={nodeRef}
             timeout={duration}
             classNames='rac-slide-left'
             {...props}
-            
             onEnter={() => {
-                nodeRef.current.style.width = '0px'
-                nodeRef.current.style.opacity = '0'
+        const el = nodeRef.current
+        if (widthMode) {
+          el.style.width = '0px'
+        } else {
+          el.style.height = '0px'
+          el.style.transform = 'translateY(-10px)'
+        }
+        el.style.opacity = '0'
             }}
             onEntering={() => {
-                nodeRef.current.style.width = nodeRef.current.scrollWidth + 'px'
-                nodeRef.current.style.opacity = '1'
+                const el = nodeRef.current
+                el.offsetHeight 
+                if (widthMode) {
+                    el.style.width = el.scrollWidth + 'px'
+                } else {
+                el.style.height = el.scrollHeight + 'px'
+                el.style.transform = 'translateY(0)'
+                }
+                el.style.opacity = '1'
             }}
             onEntered={() => {
-                nodeRef.current.style.width = 'auto'
-                nodeRef.current.style.opacity = '1'
+                const el = nodeRef.current
+                el.style.width = widthMode ? 'auto' : ''
+                el.style.height = widthMode ? '' : 'auto'
+                el.style.opacity = '1'
+                el.style.transform = ''
             }}
             onExit={() => {
-                nodeRef.current.style.width = nodeRef.current.scrollWidth + 'px'
-                nodeRef.current.style.opacity = '1'
+                const el = nodeRef.current
+                if (widthMode) {
+                    el.style.width = el.offsetWidth + 'px'
+                } else {
+                    el.style.height = el.offsetHeight + 'px'
+                    el.style.position = 'absolute'
+                }
+                el.style.opacity = '1'
             }}
             onExiting={() => {
-                nodeRef.current.style.width = '0px'
-                nodeRef.current.style.opacity = '0'
-                nodeRef.current.style.margin = '0'
+                const el = nodeRef.current
+                if (widthMode) {
+                    el.style.width = '0px'
+                } else {
+                    el.style.height = '0px'
+                    el.style.transform = 'translateY(10px)'
+                }
+                    el.style.opacity = '0'
             }}
-        >
+            >
             <div 
                 ref={nodeRef} 
                 style={{
@@ -41,7 +66,9 @@ const Animated = ({children, duration, ...props}) => {
                     height: '100%',
                     overflow: 'hidden',
                     whiteSpace: 'nowrap',
-                    transition: `all ${duration}ms ease`
+                    transition: `all ${duration}ms ease`,
+                    top: 0,
+                    left: 0
                 }}
             >
                 {children}

@@ -13,7 +13,6 @@ export interface SelectProps {
     unmount?: boolean
 
     children?: ReactNode
-    renderedDropdown?: ReactNode
     
     options?: any[] | Record<string, any>
     value?: any
@@ -36,7 +35,9 @@ export interface SelectProps {
     invalidOption?: string
 
     className?: string
+    optionsClassName?: string
     style?: CSSProperties
+    
     ArrowIcon?: ElementType | string | ReactNode
     ClearIcon?: ElementType | string | ReactNode
     DelIcon?: ElementType | string | ReactNode
