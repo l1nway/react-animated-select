@@ -23,7 +23,7 @@ const renderIcon = (Icon, defaultProps) => {
 
 // adding classes to style options according to their state
 const getOptionClassName = (element, index, highlightedIndex, selectedId, loadingTitle, loadMoreText, invalidOption, selectedIDs) => {
-    const multipleSelected = selectedIDs.some(o => o.id === element.id)
+    const multipleSelected = selectedIDs?.some(o => o.id === element.id)
 
     if (element.groupHeader) {
         return 'rac-select-option rac-group-option'
@@ -50,7 +50,7 @@ const Select = forwardRef(({
     alwaysOpen = false,
     duration = 300,
     easing = 'ease-out',
-    offset = 2,
+    offset = 0,
     animateOpacity = true,
     style = {},
     className = '',
@@ -77,7 +77,6 @@ const Select = forwardRef(({
     const [loadingTitle, setLoadingTitle] = useState(loadButton ? loadButtonText : loadMoreText)
     const [animationFinished, setAnimationFinished] = useState(false)
     const selectRef = useRef(null)
-
 
     const registerOption = useCallback((opt) => {
         setJsxOptions(prev => {
@@ -120,7 +119,7 @@ const Select = forwardRef(({
         loadButton, loadingTitle, loadMore, loadMoreText, setLoadingTitle, childrenFirst, groupsClosed
     })
 
-    const {multiple, normalizedOptions, selected, selectOption, clear, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, emptyText, disabledText, loadingText, errorText, expandedGroups, selectedIDs, setSelectedIds} = logic
+    const {multiple, normalizedOptions, selected, selectOption, clear, removeOption, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, emptyText, disabledText, loadingText, errorText, expandedGroups, selectedIDs, setSelectedIds} = logic
 
     const behavior = useSelect({setLoadingTitle, loadButton, loadButtonText, hasMore, loadMore, disabled, multiple, open: visibility, setOpen: setVisibility, options: normalizedOptions, selectOption, selected, loadOffset, loadAhead, expandedGroups})
 
@@ -214,7 +213,7 @@ const Select = forwardRef(({
                             CheckmarkIcon, {
                                 className: `
                                     rac-checkmark
-                                    ${selectedIDs.some(o => o.id === element.id)
+                                    ${selectedIDs?.some(o => o.id === element.id)
                                         ?
                                             '--checked'
                                         :
@@ -277,13 +276,14 @@ const Select = forwardRef(({
     ])
 
     return (
-        <SelectJSX 
+        <SelectJSX
             selectRef={selectRef}
             selectId={selectId}
             selectedIDs={selectedIDs}
             setSelectedIds={setSelectedIds}
             multiple={multiple}
-
+            removeOption={removeOption}
+            
             renderIcon={renderIcon}
             normalizedOptions={normalizedOptions}
             renderOptions={renderOptions}

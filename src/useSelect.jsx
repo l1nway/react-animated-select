@@ -121,7 +121,11 @@ function useSelect({
 
     // closing the selector if focus is lost
     const handleBlur = useCallback((e) => {
-        if (!e.currentTarget.contains(e.relatedTarget)) setOpen(false)
+        const clickedInsidePortal = e.relatedTarget?.closest('.rac-options')
+        
+        if (!e.currentTarget.contains(e.relatedTarget) && !clickedInsidePortal) {
+            setOpen(false)
+        }
     }, [setOpen])
 
     // opening the selector when receiving focus

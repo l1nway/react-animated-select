@@ -75,6 +75,7 @@ function App() {
 | `value` | `any` | `undefined` | The current value for a controlled component. |
 | `defaultValue` | `any` | `undefined` | Initial value for an uncontrolled component. |
 | `onChange` | `function` | `undefined` | Callback called when an option is selected. Arguments: (data, id). |
+| `multiple` | `boolean` | `false` | Allows select multiple options. |
 | `placeholder` | `string` | `"Choose option"` | Text shown when no option is selected. |
 | `disabled` | `boolean` | `false` | Disables the entire component. |
 | `loading` | `boolean` | `false` | Shows a loading animation and disables interaction. |
@@ -113,6 +114,7 @@ function App() {
 | `loadButton`     | `boolean` | `false`       | Enables a manual “Load more” button instead of automatic loading. |
 | `loadButtonText` | `string`  | `'Load more'` | Text displayed on the load button.                                |
 | `childrenFirst` | `boolean`  | `false`    | Determines priority of JSX `<Option />` children over options passed via props. |
+| `groupsClosed` | `boolean` | `false` | Default open status of groups. |
 
 ---
 
@@ -274,14 +276,13 @@ The select and its options react to internal states by applying the following cl
 - `.rac-select-arrow-wrapper.--open`: Applied to the arrow icon when the dropdown is expanded.
 
 ## Change log
-### 0.3.5
+### 0.5.0
 ### New Features
-- **Hierarchical Grouping Engine**: Added full support for nested options using a flat-array normalization technique. This allows for clear visual separation of categories with zero performance overhead.
--   **Smart "SlideDown" Groups**: Implemented collapsible group headers with smooth animations.
-    -   _Self-Aware UI:_ Group arrows now automatically hide if a group contains no items, providing a cleaner look for empty categories.
--   **Flexible Data Normalization**: The logic now seamlessly handles `Arrays`, `Objects` (maps), and `JSX` children simultaneously.
-### Bug Fixes
--   **Dynamic Load Button Toggle**: Fixed a critical bug where the "Load More" button's visibility wouldn't update dynamically. The component now correctly reacts to real-time changes in the `loadButton` and `hasMore` props.
+- **Multi-Selection Core**: Integrated a robust multi-select mode with dedicated tag rendering and animated entry/exit for selected items.
+- **Adaptive Portal Positioning**: Migrated the dropdown to a `React Portal`, decoupling the list from the parent's overflow constraints.
+    - _Context-Aware Placement:_ The engine now detects screen edges and automatically toggles between `upward` and `downward` opening.
+- **Initial Group States**: Added `groupsClosed` prop support, allowing developers to control whether hierarchical categories are collapsed or expanded by default.
+- **Icon Customization Suite**: Expanded the icon system to support custom `DelIcon` and `CheckmarkIcon` for multi-select states.
 
 ## License
 

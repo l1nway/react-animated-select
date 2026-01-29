@@ -19,6 +19,7 @@ export interface SelectProps {
     value?: any
     defaultValue?: any
     onChange?: (data: any, id: any) => void
+    multiple?: boolean
 
     disabled?: boolean
     loading?: boolean
@@ -38,6 +39,8 @@ export interface SelectProps {
     style?: CSSProperties
     ArrowIcon?: ElementType | string | ReactNode
     ClearIcon?: ElementType | string | ReactNode
+    DelIcon?: ElementType | string | ReactNode
+    CheckIcon?: ElementType | string | ReactNode
 
     hasMore?: boolean
     loadMore?: () => void
@@ -46,7 +49,9 @@ export interface SelectProps {
     loadMoreText?: string
     loadOffset?: number
     loadAhead?: number
+    
     childrenFirst?: boolean
+    groupsClosed?: boolean
 }
 
 export const Select: FC<SelectProps>

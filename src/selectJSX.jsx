@@ -1,4 +1,4 @@
-import {memo, useCallback} from 'react'
+import {memo, useCallback, useEffect} from 'react'
 import {SelectContext} from './selectContext'
 import Options from './options'
 import SlideLeft from './slideLeft'
@@ -35,10 +35,15 @@ const SelectedItem = memo(({element, index, remove, renderIcon, DelIcon, normali
         remove(element.id)
     }, [element.id, remove])
 
+    const preventFocus = useCallback((e) => {
+        e.stopPropagation()
+        e.preventDefault()
+    }, [])
+
     return (
         <div className='rac-multiple-selected-option'>
             {label} 
-            {renderIcon(DelIcon, {onClick: handleDelete})}
+            {renderIcon(DelIcon, {onClick: handleDelete, onMouseDown: preventFocus})}
         </div>
     )
 })
@@ -46,7 +51,7 @@ const SelectedItem = memo(({element, index, remove, renderIcon, DelIcon, normali
 const SelectJSX = memo(({
     selectRef,
     selectId,
-    
+    removeOption, 
     renderOptions,
     selected,
     selectedIDs,
@@ -91,10 +96,21 @@ const SelectJSX = memo(({
 }) => {
 
     const remove = useCallback((id) => {
-        setSelectedIds(prev => prev.filter(o => o.id !== id))
-    }, [setSelectedIds])
+        if (removeOption) {
+            removeOption(id)
+        } else {
+            setSelectedIds(prev => prev.filter(o => o.id !== id))
+        }
+    }, [removeOption, setSelectedIds])
 
-    const renderSelectIDs = selectedIDs.map((element, index) => (
+    useEffect(() => {
+        document.documentElement.style.setProperty('--rac-duration', `${duration}ms`)
+        return () => {
+            document.documentElement.style.removeProperty('--rac-duration')
+        }
+    }, [duration])
+
+    const renderSelectIDs = selectedIDs?.map((element, index) => (
         <Animated
             key={element.id ?? index}
             duration={duration}
@@ -119,7 +135,7 @@ const SelectJSX = memo(({
             {renderedDropdown}
             <div
                 ref={selectRef}
-                style={{'--rac-duration': `${duration}ms`, ...style}}
+                style={style}
                 className={
                     `rac-select
                     ${className}
@@ -150,7 +166,7 @@ const SelectJSX = memo(({
                     `}
                 >
                     <TransitionGroup component={null}>
-                        {selectedIDs.length ? renderSelectIDs :
+                        {selectedIDs?.length ? renderSelectIDs :
                             <Animated
                                 key='placeholder-content'
                                 duration={duration}

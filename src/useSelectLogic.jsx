@@ -228,7 +228,11 @@ function useSelectLogic({
                 })
 
                 meta?.items.forEach(item => {
-                    final.push({...item, hidden: !expanded})
+                    const hidden = expandedGroups.size > 0 
+                        ? !expanded 
+                        : !!groupsClosed
+                        
+                    final.push({...item, hidden: hidden})
                 })
             }
         })
@@ -248,14 +252,15 @@ function useSelectLogic({
 
     useEffect(() => {
         if (expandedGroups.size > 0) return
+        if (groupsClosed) return
         const initial = new Set()
         normalizedOptions.forEach(opt => {
-            if (opt.groupHeader && !opt.disabled && opt.expanded !== false) {
+            if (opt.groupHeader && !opt.disabled) {
                 initial.add(opt.name)
             }
         })
         if (initial.size > 0) setExpandedGroups(initial)
-    }, [normalizedOptions])
+    }, [normalizedOptions, groupsClosed])
 
     const findIdByValue = useCallback((val) => {
         if (val == null) return null
@@ -319,12 +324,14 @@ function useSelectLogic({
 
             e?.stopPropagation()
             e?.preventDefault()
-            setSelectedIds(prev => {
-                if (prev.some(o => o.id === option.id)) {
-                    return prev.filter(o => o.id !== option.id)
-                }
-                return [...prev, option]
-            })
+
+            const isSelected = selectedIDs?.some(item => item.id === option.id)
+            const next = isSelected 
+                ? selectedIDs.filter(item => item.id !== option.id) 
+                : [...selectedIDs, option]
+
+            setSelectedIds(next)
+            onChange?.(next.map(o => o.original), next.map(o => o.userId))
             return
         }
         setSelectedId(option.id)
@@ -334,11 +341,18 @@ function useSelectLogic({
 
     const clear = useCallback(() => {
         setSelectedId(null)
+        setSelectedIds([])
         onChange?.(null, null)
     }, [onChange])
 
+    const removeOption = useCallback((id) => {
+        const next = selectedIDs.filter(item => item.id !== id)
+        setSelectedIds(next)
+        onChange?.(next.map(o => o.original), next.map(o => o.userId))
+    }, [selectedIDs, onChange])
+
     return {
-        normalizedOptions, selected, selectOption, clear, 
+        normalizedOptions, selected, selectOption, clear, removeOption,
         hasOptions: normalizedOptions.length > 0,
         active: !error && !loading && !disabled && normalizedOptions.length > 0,
         selectedValue: value ?? defaultValue, 

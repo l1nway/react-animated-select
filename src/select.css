@@ -4,7 +4,7 @@
   }
 }
 
-.rac-select {
+:root {
     --rac-duration-fast: calc(var(--rac-duration) * 0.5);
     --rac-duration-base: var(--rac-duration);
     --rac-duration-slow: calc(var(--rac-duration) * 1.3);
@@ -71,7 +71,9 @@
     --rac-group-arrow-width: 1em;
     --rac-group-arrow-padding: 1px 0 2px;
     --rac-disabled-group-color: color-mix(in srgb, GrayText, CanvasText 20%);
-    
+}
+
+.rac-select {
     background: var(--rac-select-background);
     padding: var(--rac-select-padding);
     border: var(--rac-select-border);
@@ -84,8 +86,6 @@
         height var(--rac-duration-base) ease;
     justify-content: space-between;
     box-sizing: border-box;
-    align-items: center;
-    position: relative;
     cursor: pointer;
     display: flex;
 }
@@ -221,6 +221,7 @@
     justify-content: space-between;
     align-items: center;
     display: flex;
+    cursor: pointer;
 }
 
 .rac-select-option:not(.rac-disabled-option):not(.rac-group-option):hover {

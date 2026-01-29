@@ -1,5 +1,6 @@
 import {CSSTransition} from 'react-transition-group'
 import {useRef, useState, useEffect, useCallback, memo} from 'react'
+import {createPortal} from 'react-dom'
 
 function Options({
   visibility,
@@ -16,6 +17,44 @@ function Options({
   const nodeRef = useRef(null)
   const [selectHeight, setSelectHeight] = useState(0)
 
+  const [coords, setCoords] = useState({top: 0, left: 0, width: 0})
+
+  const updateCoords = useCallback(() => {
+    if (selectRef?.current) {
+      const rect = selectRef.current.getBoundingClientRect()
+      const windowHeight = window.innerHeight
+
+      const dropdownHeight = nodeRef.current?.scrollHeight || 250
+      
+      const spaceBelow = windowHeight - rect.bottom
+      const showUpward = spaceBelow < dropdownHeight && rect.top > spaceBelow
+
+      setCoords({
+        top: rect.top,
+        bottom: rect.bottom,
+        left: rect.left,
+        width: rect.width,
+        isUpward: showUpward
+      })
+    }
+  }, [selectRef])
+
+  useEffect(() => {
+    if (visibility) {
+      updateCoords()
+      
+      window.addEventListener('scroll', updateCoords, true)
+      window.addEventListener('resize', updateCoords)
+      
+      return () => {
+        window.removeEventListener('scroll', updateCoords, true)
+        window.removeEventListener('resize', updateCoords)
+      }
+    }
+  }, [visibility, updateCoords])
+
+  const transitionString = `height ${duration}ms ${easing}${animateOpacity ? `, opacity ${duration}ms ${easing}` : ''}`
+
   useEffect(() => {
     if (!selectRef?.current) return
     const updateHeight = () => setSelectHeight(selectRef.current.offsetHeight)
@@ -27,20 +66,27 @@ function Options({
     return () => resizeObserver.disconnect()
   }, [selectRef])
 
-  const transitionString = `height ${duration}ms ${easing}${animateOpacity ? `, opacity ${duration}ms ${easing}` : ''}`
-
   const baseStyles = {
-    position: 'absolute',
-    top: `calc(100% + ${offset}px)`, 
-    left: '0',
-    width: '100%',
+    position: 'fixed',
+    left: `${coords.left}px`,
+    width: `${coords.width}px`,
     overflow: 'hidden',
-    marginTop: '2px',
-    zIndex: '1',
+    zIndex: '1000',
     height: visibility ? 'auto' : '0px',
     opacity: animateOpacity ? (visibility ? 1 : 0) : 1,
     pointerEvents: visibility ? 'all' : 'none',
-    visibility: selectHeight ? 'visible' : 'hidden'
+    visibility: selectHeight ? 'visible' : 'hidden',
+    boxSizing: 'border-box',
+    '--rac-duration': `${duration}ms`,
+    transformOrigin: coords.isUpward ? 'bottom' : 'top',
+    
+    ...(coords.isUpward ? {
+      bottom: `${window.innerHeight - coords.top + offset}px`,
+      top: 'auto'
+    } : {
+      top: `${coords.bottom + offset}px`,
+      bottom: 'auto'
+    })
   }
 
   const handleEnter = useCallback(() => {
@@ -95,7 +141,7 @@ function Options({
     el.style.transition = ''
   }, [])
 
-  return (
+  return createPortal(
     <CSSTransition
       in={visibility}
       timeout={duration}
@@ -113,10 +159,13 @@ function Options({
         ref={nodeRef}
         className='rac-options'
         style={baseStyles}
+        onMouseDown={(e) => {
+          e.preventDefault()
+        }}
       >
         {children}
       </div>
-    </CSSTransition>
+    </CSSTransition>, document.body
   )
 }
 
