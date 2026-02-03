@@ -17,7 +17,7 @@ export interface SelectProps {
     options?: any[] | Record<string, any>
     value?: any
     defaultValue?: any
-    onChange?: (data: any, id: string | number) => void
+    onChange?: (data: any, id: any) => void
     multiple?: boolean
 
     disabled?: boolean

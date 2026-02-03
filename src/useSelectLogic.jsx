@@ -264,44 +264,88 @@ function useSelectLogic({
         if (initial.size > 0) setExpandedGroups(initial)
     }, [normalizedOptions, groupsClosed])
 
+    const findIdByValue = useCallback((val) => {
+        if (val == null) return null
+        const match = normalizedOptions.find(o => o.original === val)
+        if (match) return match.id
+
+        if (typeof val === 'object') {
+            try {
+                const str = JSON.stringify(val)
+                return normalizedOptions.find(o => 
+                    o.original && typeof o.original === 'object' && JSON.stringify(o.original) === str
+                )?.id ?? null
+            } catch { return null }
+        }
+        return null
+    }, [normalizedOptions])
+
     useEffect(() => {
         const effectiveValue = isControlled ? value : defaultValue
+        
+        if (effectiveValue == null || (Array.isArray(effectiveValue) && effectiveValue.length === 0)) {
+            setSelectedId(null)
+            setSelectedIds([])
+            return
+        }
 
-        const normalizeValue = (val, idx) => {
-            const found = normalizedOptions.find(o => o.original === val || o.raw === val || o.userId === val)
+        const getOrVirtualize = (val) => {
+            const id = findIdByValue(val)
+            const found = normalizedOptions.find(o => o.id === id)
             if (found) return found
 
-            return normalize(val, `virtual-${idx}`, 'virtual')
+            const stableKey = typeof val === 'object' ? (val.id || val.value || JSON.stringify(val)) : String(val)
+
+            if (typeof val === 'object' && val !== null) {
+                return {
+                    id: `virtual-${stableKey}`,
+                    name: getLabel(val) || String(val.id || 'Selected Object'),
+                    raw: val.value ?? val.id ?? val,
+                    original: val,
+                    userId: val.id ?? val.value ?? null,
+                    virtual: true
+                }
+            }
+            return {
+                id: `virtual-${stableKey}`,
+                name: String(val),
+                raw: val,
+                original: val,
+                userId: val,
+                virtual: true
+            }
         }
 
         if (multiple) {
             const vals = Array.isArray(effectiveValue) ? effectiveValue : [effectiveValue]
-            const newSelected = vals.map(normalizeValue)
+            const newSelected = vals.map(getOrVirtualize)
+
             setSelectedIds(newSelected)
         } else {
             const val = Array.isArray(effectiveValue) ? effectiveValue[0] : effectiveValue
-            const opt = normalizeValue(val, 0)
-            setSelectedId(opt.id)
+            const opt = getOrVirtualize(val)
+            
+            setSelectedId(prevId => prevId === opt.id ? prevId : opt.id)
         }
     }, [])
 
     const selected = useMemo(() => {
-    const found = normalizedOptions.find(o => o.id === selectedId)
-    if (found) return found
-    
-    if (!multiple && selectedId?.startsWith('virtual-')) {
-        const effectiveValue = isControlled ? value : defaultValue
-        const val = Array.isArray(effectiveValue) ? effectiveValue[0] : effectiveValue
-        if (val) {
-            return {
-                id: selectedId,
-                name: typeof val === 'object' ? getLabel(val) : String(val),
-                original: val
+        const found = normalizedOptions.find(o => o.id === selectedId)
+        if (found) return found
+        
+        if (!multiple && selectedId?.startsWith('virtual-')) {
+            const effectiveValue = isControlled ? value : defaultValue
+            const val = Array.isArray(effectiveValue) ? effectiveValue[0] : effectiveValue
+            if (val) {
+                return {
+                    id: selectedId,
+                    name: typeof val === 'object' ? getLabel(val) : String(val),
+                    original: val
+                }
             }
         }
-    }
-    return null
-}, [selectedId, normalizedOptions, multiple, isControlled, value, defaultValue])
+        return null
+    }, [selectedId, normalizedOptions, multiple, isControlled, value, defaultValue])
 
     const selectOption = useCallback((option, e) => {
         if (option.groupHeader) {
