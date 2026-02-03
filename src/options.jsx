@@ -1,5 +1,5 @@
 import {CSSTransition} from 'react-transition-group'
-import {useRef, useState, useEffect, useCallback, memo} from 'react'
+import {useRef, useState, useEffect, useCallback, memo, useLayoutEffect} from 'react'
 import {createPortal} from 'react-dom'
 
 function Options({
@@ -20,6 +20,12 @@ function Options({
   const [selectHeight, setSelectHeight] = useState(0)
 
   const [coords, setCoords] = useState({top: 0, left: 0, width: 0})
+
+  const coordsRef = useRef(coords)
+  
+  useEffect(() => {
+    coordsRef.current = coords
+  }, [coords])
 
   const updateCoords = useCallback(() => {
     if (selectRef?.current) {
@@ -57,16 +63,35 @@ function Options({
 
   const transitionString = `height var(--rac-duration) ${easing}${animateOpacity ? `, opacity var(--rac-duration) ${easing}` : ''}`;
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (!selectRef?.current) return
+    
     const updateHeight = () => setSelectHeight(selectRef.current.offsetHeight)
     updateHeight()
+
     const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) setSelectHeight(entry.target.offsetHeight)
+      for (let entry of entries) {
+        setSelectHeight(entry.target.offsetHeight)
+
+        if (visibility && nodeRef.current && selectRef.current) {
+            const rect = selectRef.current.getBoundingClientRect()
+            const { isUpward } = coordsRef.current
+
+            nodeRef.current.style.width = `${rect.width}px`
+            nodeRef.current.style.left = `${rect.left}px`
+
+            if (isUpward) {
+                nodeRef.current.style.bottom = `${window.innerHeight - rect.top + offset}px`
+            } else {
+                nodeRef.current.style.top = `${rect.bottom + offset}px`
+            }
+        }
+      }
     })
+
     resizeObserver.observe(selectRef.current)
     return () => resizeObserver.disconnect()
-  }, [selectRef])
+  }, [selectRef, visibility, offset])
 
   const baseStyles = {
     position: 'fixed',
@@ -75,7 +100,7 @@ function Options({
     left: `${coords.left}px`,
     width: `${coords.width}px`,
     overflow: 'hidden',
-    zIndex: '1',
+    zIndex: '2147483647',
     height: visibility ? 'auto' : '0px',
     opacity: animateOpacity ? (visibility ? 1 : 0) : 1,
     pointerEvents: visibility ? 'all' : 'none',

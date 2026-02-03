@@ -2,6 +2,7 @@ import {useState, useMemo, useCallback, useId, useEffect, useRef} from 'react'
 
 const SYSTEM_KEYS = ['group', 'disabled', 'options', 'items', 'children']
 const LABEL_KEYS = ['name', 'label', 'id', 'value']
+const EMPTY_ARRAY = []
 
 const getLabel = (obj, isGroup = false) => {
     if (isGroup && typeof obj.group === 'string') return obj.group
@@ -13,8 +14,8 @@ const getLabel = (obj, isGroup = false) => {
 }
 
 function useSelectLogic({
-    options = [],
-    jsxOptions = [],
+    options = EMPTY_ARRAY,
+    jsxOptions = EMPTY_ARRAY,
     value,
     defaultValue,
     onChange,
@@ -251,6 +252,7 @@ function useSelectLogic({
     }, [options, jsxOptions, stableId, normalize, childrenFirst, hasMore, loadButton, loadingTitle, loadMoreText, groupsClosed, expandedGroups, emptyOption])
 
     useEffect(() => {
+        if (!normalizedOptions || normalizedOptions.length === 0) return
         if (expandedGroups.size > 0) return
         if (groupsClosed) return
         const initial = new Set()
@@ -262,70 +264,26 @@ function useSelectLogic({
         if (initial.size > 0) setExpandedGroups(initial)
     }, [normalizedOptions, groupsClosed])
 
-    const findIdByValue = useCallback((val) => {
-        if (val == null) return null
-        const match = normalizedOptions.find(o => o.original === val)
-        if (match) return match.id
-
-        if (typeof val === 'object') {
-            try {
-                const str = JSON.stringify(val)
-                return normalizedOptions.find(o => 
-                    o.original && typeof o.original === 'object' && JSON.stringify(o.original) === str
-                )?.id ?? null
-            } catch { return null }
-        }
-        return null
-    }, [normalizedOptions])
-
     useEffect(() => {
         const effectiveValue = isControlled ? value : defaultValue
-        
-        if (effectiveValue == null || (Array.isArray(effectiveValue) && effectiveValue.length === 0)) {
-            setSelectedId(null)
-            setSelectedIds([])
-            return
-        }
 
-        const getOrVirtualize = (val) => {
-            const id = findIdByValue(val)
-            const found = normalizedOptions.find(o => o.id === id)
+        const normalizeValue = (val, idx) => {
+            const found = normalizedOptions.find(o => o.original === val || o.raw === val || o.userId === val)
             if (found) return found
 
-            const stableKey = typeof val === 'object' ? (val.id || val.value || JSON.stringify(val)) : String(val)
-
-            if (typeof val === 'object' && val !== null) {
-                return {
-                    id: `virtual-${stableKey}`,
-                    name: getLabel(val) || String(val.id || 'Selected Object'),
-                    raw: val.value ?? val.id ?? val,
-                    original: val,
-                    userId: val.id ?? val.value ?? null,
-                    virtual: true
-                }
-            }
-            return {
-                id: `virtual-${stableKey}`,
-                name: String(val),
-                raw: val,
-                original: val,
-                userId: val,
-                virtual: true
-            }
+            return normalize(val, `virtual-${idx}`, 'virtual')
         }
 
         if (multiple) {
             const vals = Array.isArray(effectiveValue) ? effectiveValue : [effectiveValue]
-            const newSelected = vals.map(getOrVirtualize)
-
+            const newSelected = vals.map(normalizeValue)
             setSelectedIds(newSelected)
         } else {
             const val = Array.isArray(effectiveValue) ? effectiveValue[0] : effectiveValue
-            const opt = getOrVirtualize(val)
-            
-            setSelectedId(prevId => prevId === opt.id ? prevId : opt.id)
+            const opt = normalizeValue(val, 0)
+            setSelectedId(opt.id)
         }
-    }, [value, defaultValue, isControlled, normalizedOptions, findIdByValue, multiple])
+    }, [])
 
     const selected = useMemo(() => {
     const found = normalizedOptions.find(o => o.id === selectedId)

@@ -7,6 +7,7 @@ function useSelect({
     options = [],
     selectOption,
     selected,
+    selectedIDs,
     multiple,
     hasMore,
     loadMore,
@@ -79,11 +80,22 @@ function useSelect({
         }
 
         let index = -1
-        if (selected) {
+        if (selected && !multiple) {
             const firstSelected = multiple ? selected[0] : selected
             if (firstSelected) {
                 index = options.findIndex(o => o.id === firstSelected.id && !o.disabled && !o.hidden && !o.groupHeader)
             }
+        }
+
+        if (multiple && selectedIDs.length) {
+            const ids = new Set(selectedIDs.map(o => o.id))
+            index = options.findIndex(
+                o =>
+                ids.has(o.id) &&
+                !o.disabled &&
+                !o.hidden &&
+                !o.groupHeader
+            )
         }
         
         if (index === -1) {

@@ -122,7 +122,7 @@ const Select = forwardRef(({
 
     const {multiple, normalizedOptions, selected, selectOption, clear, removeOption, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, emptyText, disabledText, loadingText, errorText, expandedGroups, selectedIDs, setSelectedIds} = logic
 
-    const behavior = useSelect({setLoadingTitle, loadButton, loadButtonText, hasMore, loadMore, disabled, multiple, open: visibility, setOpen: setVisibility, options: normalizedOptions, selectOption, selected, loadOffset, loadAhead, expandedGroups})
+    const behavior = useSelect({setLoadingTitle, loadButton, loadButtonText, hasMore, loadMore, disabled, multiple, open: visibility, setOpen: setVisibility, options: normalizedOptions, selectOption, selected, loadOffset, loadAhead, expandedGroups, selectedIDs})
 
     const {handleListScroll, handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, setHighlightedIndex} = behavior
 
@@ -208,7 +208,11 @@ const Select = forwardRef(({
                 onClick={(e) => !element.loading && selectOption(element, e)}
                 onMouseEnter={() => (!element.disabled && !element.loading) && setHighlightedIndex(index)}
             >
-                {element.jsx ?? element.name}
+                {element.jsx
+                    ??
+                <span className='rac-option-title'>
+                    {element.name}
+                </span>}
                 {element.loading && <span className='rac-loading-dots'><i/><i/><i/></span>}
                 {multiple && !element.disabled ? 
                     <div className='rac-checkbox'>
@@ -254,7 +258,7 @@ const Select = forwardRef(({
                         <SlideLeft
                             visibility={hasChildren && !element.disabled}
                             duration={duration}
-                            style={{display: 'grid'}}
+                            // style={{display: 'grid'}}
                         >
                             <span className={`rac-group-arrow-wrapper ${open ? '--open' : ''}`}>
                                 {renderIcon(ArrowIcon, {className: 'rac-select-arrow-wrapper'})}

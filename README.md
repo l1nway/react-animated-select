@@ -276,13 +276,20 @@ The select and its options react to internal states by applying the following cl
 - `.rac-select-arrow-wrapper.--open`: Applied to the arrow icon when the dropdown is expanded.
 
 ## Change log
-### 0.5.0
+### 0.5.5
 ### New Features
-- **Multi-Selection Core**: Integrated a robust multi-select mode with dedicated tag rendering and animated entry/exit for selected items.
-- **Adaptive Portal Positioning**: Migrated the dropdown to a `React Portal`, decoupling the list from the parent's overflow constraints.
-    - _Context-Aware Placement:_ The engine now detects screen edges and automatically toggles between `upward` and `downward` opening.
-- **Initial Group States**: Added `groupsClosed` prop support, allowing developers to control whether hierarchical categories are collapsed or expanded by default.
-- **Icon Customization Suite**: Expanded the icon system to support custom `DelIcon` and `CheckmarkIcon` for multi-select states.
+-   **Dynamic Content Normalization**: Rewrote the "Virtual Options" engine to ensure selected values are correctly displayed even if they aren't present in the current paginated list.
+-   **Smart Width Calculation**: Implemented an auto-sizing mechanism where the select height animatedly adapts to the minimum height required by options lenght.
+-   **Enhanced UI Structure**: Wrapped option labels in internal `<span>` elements for better text truncation control and CSS styling flexibility.
+
+### Bug Fixes
+-   **Infinite Loop Protection**: Fixed a `Maximum update depth exceeded` error that occurred when the component was initialized without an `options` array.
+-   **Intelligent Selection Highlighting**: Resolved an issue where the first option was always highlighted in multi-select mode; the hook now correctly identifies and focuses the first _selected_ item in the list.
+-   **Z-Index Layering**: Elevated the dropdown portal's `z-index` to `2147483647`, ensuring the options list remains globally visible over any other UI layer.
+-   **Selection State Stability**: Fixed a bug where incorrect dependency tracking in `useEffect` caused redundant parsing of options, which previously led to broken multi-selection states.
+-   **Single-Option Swap Animation**: Corrected the transition logic when switching between single options to prevent flickering or abrupt layout shifts.
+### Type Safety
+-   **Prop Type Definitions**: Finalized the TypeScript definitions for the select component, covering all optional and mandatory props for better developer experience.
 
 ## License
 

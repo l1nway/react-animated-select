@@ -1,4 +1,4 @@
-import {memo, useCallback, useEffect, useRef} from 'react'
+import {memo, useCallback, useEffect, useLayoutEffect, useRef, useState} from 'react'
 import {SelectContext} from './selectContext'
 import Options from './options'
 import SlideLeft from './slideLeft'
@@ -12,7 +12,8 @@ const SelectedItem = memo(({element, index, remove, renderIcon, DelIcon, normali
         label = element.jsx
     } else if (element?.name) {
         label = element.name
-    } else if (element?.raw !== undefined) {
+    } 
+    else if (element?.raw !== undefined) {
         const recovered = normalizedOptions.find(o =>
             o.raw === element.raw ||
             o.original === element.raw ||
@@ -98,6 +99,30 @@ const SelectJSX = memo(({
 
     const internalRef = useRef(null)
 
+    const [titleHeight, setTitleHeight] = useState(null)
+    const titleContentRef = useRef(null)
+
+    useLayoutEffect(() => {
+        const element = titleContentRef.current
+        if (!element) return
+
+        const observer = new ResizeObserver((entries) => {
+            window.requestAnimationFrame(() => {
+                if (!Array.isArray(entries) || !entries.length) return
+                
+                const newHeight = entries[0].contentRect.height
+                
+                setTitleHeight(newHeight)
+            })
+        })
+
+        observer.observe(element)
+
+        return () => {
+            observer.disconnect()
+        }
+    }, [])
+
     useEffect(() => {
         if (selectRef) {
             if (typeof selectRef === 'function') selectRef(internalRef.current)
@@ -167,30 +192,40 @@ const SelectJSX = memo(({
             >
                 <div
                     className={
-                        `rac-select-title
+                        `rac-select-title-wrapper
                                 ${(!error && !loading && selected?.type === 'boolean')
                             ?
                                 (selected.raw ? 'rac-true-option' : 'rac-false-option')
                             : ''}
                     `}
+                    style={{
+                        height: titleHeight ? `${titleHeight}px` : 'auto',
+                        boxSizing: 'content-box',
+                        overflow: 'hidden'
+                    }}
                 >
-                    <TransitionGroup component={null}>
-                        {selectedIDs?.length && !selectedText ? (
-                            renderSelectIDs
-                        ) : (
-                            <Animated
-                                key={title}
-                                duration={duration}
-                                widthMode
-                            >
-                                <span className='rac-title-text'>{title}</span>
-                                
-                                <SlideLeft visibility={loading && !error} duration={duration}>
-                                    <span className='rac-loading-dots'><i/><i/><i/></span>
-                                </SlideLeft>
-                            </Animated>
-                        )}
-                    </TransitionGroup>
+                    <div
+                        className='rac-select-title'
+                        ref={titleContentRef}
+                    >
+                        <TransitionGroup component={null}>
+                            {selectedIDs?.length && !selectedText ? (
+                                renderSelectIDs
+                            ) : (
+                                <Animated
+                                    key={title}
+                                    duration={duration}
+                                    widthMode
+                                >
+                                    <span className='rac-title-text'>{title}</span>
+                                    
+                                    <SlideLeft visibility={loading && !error} duration={duration}>
+                                        <span className='rac-loading-dots'><i/><i/><i/></span>
+                                    </SlideLeft>
+                                </Animated>
+                            )}
+                        </TransitionGroup>
+                    </div>
                 </div>
 
                 <div className='rac-select-buttons'>

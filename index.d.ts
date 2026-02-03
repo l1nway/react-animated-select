@@ -17,7 +17,7 @@ export interface SelectProps {
     options?: any[] | Record<string, any>
     value?: any
     defaultValue?: any
-    onChange?: (data: any, id: any) => void
+    onChange?: (data: any, id: string | number) => void
     multiple?: boolean
 
     disabled?: boolean
@@ -29,6 +29,7 @@ export interface SelectProps {
     disabledText?: string
     loadingText?: string
     errorText?: string
+    selectedText?: string
 
     disabledOption?: string
     emptyOption?: string
@@ -74,4 +75,4 @@ export interface OptGroupProps {
     label?: any
 }
 
-export const OptGroup: FC<OptGroup>
+export const OptGroup: FC<OptGroupProps>
