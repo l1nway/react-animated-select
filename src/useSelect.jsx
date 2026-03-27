@@ -1,23 +1,6 @@
 import {useState, useRef, useCallback, useEffect, useMemo} from 'react'
 
-function useSelect({
-    disabled,
-    open,
-    setOpen,
-    options = [],
-    selectOption,
-    selected,
-    selectedIDs,
-    multiple,
-    hasMore,
-    loadMore,
-    loadButton,
-    loadButtonText,
-    setLoadingTitle,
-    loadOffset,
-    loadAhead,
-    expandedGroups
-}) {
+function useSelect({disabled, open, setOpen, options = [], selectOption, setDeleting, selected, selectedIDs, multiple, hasMore, loadMore, loadButton, loadButtonText, setLoadingTitle, loadOffset, loadAhead, expandedGroups, onOpen, onClose, deleting}) {
     const justFocused = useRef(false)
     const lastWindowFocusTime = useRef(0)
     const loadingTriggered = useRef(false)
@@ -28,9 +11,7 @@ function useSelect({
         // flag is reset if value of the loadButton or hasMore props has changed
         loadingTriggered.current = false
 
-        if (loadButton) {
-            setLoadingTitle(loadButtonText)
-        }
+        loadButton && setLoadingTitle(loadButtonText)
     }, [options.length, hasMore, loadButton, loadButtonText, setLoadingTitle])
 
     // safely call loadMore prop
@@ -46,18 +27,12 @@ function useSelect({
         if (loadButton || !hasMore || loadingTriggered.current) return
 
         const {scrollTop, scrollHeight, clientHeight} = e.currentTarget
-        if (scrollHeight - scrollTop <= clientHeight + loadOffset) {
-            safeLoadMore()
-        }
+        (scrollHeight - scrollTop <= clientHeight + loadOffset) && safeLoadMore()
     }, [loadButton, hasMore, loadOffset, safeLoadMore])
 
     // call a function when scrolling through options using keys;
     // loadAhead prop how many options before the end it will be called
-    useEffect(() => {
-        if (!loadButton && open && hasMore && highlightedIndex >= options.length - loadAhead) {
-            safeLoadMore()
-        }
-    }, [highlightedIndex, open, hasMore, options.length, loadAhead, loadButton, safeLoadMore])
+    useEffect(() => {(!loadButton && open && hasMore && highlightedIndex >= options.length - loadAhead) && safeLoadMore()}, [highlightedIndex, open, hasMore, options.length, loadAhead, loadButton, safeLoadMore])
 
     // force refocus blocking if the user exits the browser or the page
     useEffect(() => {
@@ -74,10 +49,10 @@ function useSelect({
         }
 
         // blocking the reset of an index if it is already within the array (exmpl after loading)
-        if (highlightedIndex >= 0 && highlightedIndex < options.length) {
-            if (!options[highlightedIndex] || options[highlightedIndex].hidden || options[highlightedIndex].groupHeader) {
-            } else return
-        }
+        const currentOption = options[highlightedIndex]
+        const valid = currentOption && !currentOption.hidden && !currentOption.groupHeader
+
+        if (highlightedIndex >= 0 && highlightedIndex < options.length && valid) return
 
         let index = -1
         if (selected && !multiple) {
@@ -135,27 +110,43 @@ function useSelect({
     const handleBlur = useCallback((e) => {
         const clickedInsidePortal = e.relatedTarget?.closest('.rac-options')
         
-        if (!e.currentTarget.contains(e.relatedTarget) && !clickedInsidePortal) {
-            setOpen(false)
-        }
+        if (!e.currentTarget.contains(e.relatedTarget) && !clickedInsidePortal) {setOpen(false); setDeleting(false)}
     }, [setOpen])
 
     // opening the selector when receiving focus
     const handleFocus = useCallback(() => {
-        if (disabled || document.hidden || (Date.now() - lastWindowFocusTime.current < 100)) return
+        if (disabled || deleting || document.hidden || (Date.now() - lastWindowFocusTime.current < 100)) return
         
         if (!open) {
             setOpen(true)
             justFocused.current = true
-            setTimeout(() => {justFocused.current = false}, 200)
+            setTimeout(() => justFocused.current = false, 200)
         }
-    }, [disabled, open, setOpen])
+    }, [disabled, open, setOpen, deleting])
+
+    // переписать на useEffectEvent когда он станет стандартом
+    const prevOpen = useRef(open)
+    const onOpenRef = useRef(onOpen)
+    const onCloseRef = useRef(onClose)
+
+    useEffect(() => {
+        onOpenRef.current = onOpen
+        onCloseRef.current = onClose
+    }, [onOpen, onClose])
+
+    useEffect(() => {
+        if (prevOpen.current === open) return
+        
+        open ? onOpenRef.current?.() : onCloseRef.current?.()
+        
+        prevOpen.current = open
+    }, [open])
 
     // processing toggle click on select
-    const handleToggle = useCallback((e) => {
-        if (disabled || e.target.closest('.rac-select-cancel') || justFocused.current) return
+    const toggleVisibility = useCallback((e) => {
+        if (disabled || deleting || e?.target?.closest('.rac-select-cancel') || justFocused.current) return
         setOpen(!open)
-    }, [disabled, open, setOpen])
+    }, [disabled, open, setOpen, onOpen, onClose, deleting])
 
     // hotkey processing
     const handleKeyDown = useCallback((e) => {
@@ -189,10 +180,7 @@ function useSelect({
         }
     }, [disabled, open, setOpen, highlightedIndex, options, selectOption, getNextIndex])
 
-    return useMemo(() => ({
-        handleBlur, handleFocus, handleToggle, handleKeyDown,
-        highlightedIndex, setHighlightedIndex, handleListScroll
-    }), [handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, handleListScroll])
+    return useMemo(() => ({handleBlur, handleFocus, toggleVisibility, handleKeyDown, highlightedIndex, setHighlightedIndex, handleListScroll}), [handleBlur, handleFocus, toggleVisibility, handleKeyDown, highlightedIndex, handleListScroll])
 }
 
 export default useSelect

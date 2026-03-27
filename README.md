@@ -93,7 +93,7 @@ function App() {
 |------|------|---------|-------------|
 | `duration` | `number` | `300` | Speed of all transitions in milliseconds (mapped to CSS variable `--rac-duration`). |
 | `easing` | `string` | `'ease-out'` | CSS transition timing function (e.g., `cubic-bezier(.4,0,.2,1)`). |
-| `offset` | `number` | `2` | Vertical gap (in pixels) between the select trigger and the dropdown list. |
+| `offset` | `number` | `1` | Vertical gap (in pixels) between the select trigger and the dropdown list. |
 | `animateOpacity` | `boolean` | `true` | Enables or disables the fade effect during opening and closing. |
 
 ---
@@ -115,6 +115,9 @@ function App() {
 | `loadButtonText` | `string`  | `'Load more'` | Text displayed on the load button.                                |
 | `childrenFirst` | `boolean`  | `false`    | Determines priority of JSX `<Option />` children over options passed via props. |
 | `groupsClosed` | `boolean` | `false` | Default open status of groups. |
+| `deleteInline` | `boolean` | `false` | Determines whether the delete button takes up space in the layout or overlays the option content. |
+| `onClose`      | `function` | `() => {}` | Callback triggered when select opened. |
+| `onOpen`      | `function` | `() => {}` | Callback triggered when select closed. |
 
 ---
 
@@ -179,9 +182,10 @@ The component uses CSS variables for deep styling. These are based on system col
 | **Select Trigger** | | |
 | `--rac-select-background`| `color-mix(in srgb, Canvas 98%, CanvasText 2%)` | Main background. |
 | `--rac-select-color` | `CanvasText` | Title text color. |
+| `--rac-select-hover| `color-mix` | Color of select hover. |
 | `--rac-select-border` | `2px solid ...` | Default border style. |
 | `--rac-select-border-error`| `2px solid ...` | Border style in error state. |
-| `--rac-select-height` | `2em` | Fixed height of the select. |
+| `--rac-select-min-height` | `2em` | Fixed minimal height of the select. |
 | `--rac-select-padding` | `0em 0.5em` | Internal horizontal padding. |
 | `--rac-disabled-opacity` | `0.75` | Opacity when `disabled={true}`. |
 | `--rac-title-anim-shift` | 4px | Vertical offset for title change animation. |
@@ -230,6 +234,7 @@ The component uses CSS variables for deep styling. These are based on system col
 | `--rac-group-arrow-height` | `1em` | Height of the group expand/collapse arrow icon. |
 | `--rac-group-arrow-width` | `1em` | Width of the group expand/collapse arrow icon. |
 | `--rac-group-arrow-padding` | `1px 0 2px` | Padding applied to the group arrow icon. |
+| `--rac-group-container-padding-left | `1em` | Left padding for container of options in group. |
 
 ---
 
@@ -276,20 +281,17 @@ The select and its options react to internal states by applying the following cl
 - `.rac-select-arrow-wrapper.--open`: Applied to the arrow icon when the dropdown is expanded.
 
 ## Change log
-### 0.5.5
+### 0.6.0
 ### New Features
--   **Dynamic Content Normalization**: Rewrote the "Virtual Options" engine to ensure selected values are correctly displayed even if they aren't present in the current paginated list.
--   **Smart Width Calculation**: Implemented an auto-sizing mechanism where the select height animatedly adapts to the minimum height required by options lenght.
--   **Enhanced UI Structure**: Wrapped option labels in internal `<span>` elements for better text truncation control and CSS styling flexibility.
+- **Swipe-to-Action**: You can now reveal the delete button by simply swiping an option left or right.
 
-### Bug Fixes
--   **Infinite Loop Protection**: Fixed a `Maximum update depth exceeded` error that occurred when the component was initialized without an `options` array.
--   **Intelligent Selection Highlighting**: Resolved an issue where the first option was always highlighted in multi-select mode; the hook now correctly identifies and focuses the first _selected_ item in the list.
--   **Z-Index Layering**: Elevated the dropdown portal's `z-index` to `2147483647`, ensuring the options list remains globally visible over any other UI layer.
--   **Selection State Stability**: Fixed a bug where incorrect dependency tracking in `useEffect` caused redundant parsing of options, which previously led to broken multi-selection states.
--   **Single-Option Swap Animation**: Corrected the transition logic when switching between single options to prevent flickering or abrupt layout shifts.
-### Type Safety
--   **Prop Type Definitions**: Finalized the TypeScript definitions for the select component, covering all optional and mandatory props for better developer experience.
+- **Long-Press Interaction**: A sustained press on any option triggers the Global Delete Mode, activating a shake animation and allowing for quick cleanup.
+
+- **Layout Stability**: We’ve introduced Spacer Logic to mitigate layout shifts. This ensures that when actions are triggered, the surrounding elements remain stable.
+
+- **Precision Sizing**: Fixed several bugs related to unstable element dimensions, ensuring consistent rendering across different screen sizes and orientations.
+
+- **New Configuration Props**: deleteInline, onOpen and onClose.
 
 ## License
 

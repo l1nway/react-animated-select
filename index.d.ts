@@ -54,6 +54,9 @@ export interface SelectProps {
     
     childrenFirst?: boolean
     groupsClosed?: boolean
+    deleteInline?: boolean
+    onClose?: () => void
+    onOpen?: () => void
 }
 
 export const Select: FC<SelectProps>

@@ -10,19 +10,19 @@
     --rac-base-yellow: #ffc107;
 
     --rac-select-background: color-mix(in srgb, Canvas 98%, CanvasText 2%);
+    --rac-select-hover: color-mix(in srgb, Canvas 95%, CanvasText 5%);
     --rac-select-color: CanvasText;
     --rac-select-border: 2px solid color-mix(in srgb, Canvas 98%, CanvasText 2%);
     --rac-select-border-error: 2px solid color-mix(in srgb, var(--rac-base-red), CanvasText 15%);
-    --rac-select-height: 2em;
     --rac-select-padding: 0em 0.5em;
+    --rac-select-min-height: 2em;
+
     --rac-disabled-opacity: 0.75;
 
     --rac-title-anim-shift: 4px;
     --rac-title-anim-entry-ease: cubic-bezier(0.34, 1.56, 0.64, 1);
     --rac-title-font-size: 1em;
 
-    --rac-dots-height: 3px;
-    --rac-dots-width: 3px;
     --rac-dots-color: currentColor;
     --rac-dots-gap: 3px;
     --rac-dots-padding-left: 0.25em;
@@ -54,6 +54,8 @@
 
     --rac-option-padding: 0.5em;
     --rac-option-min-height: 1em;
+    --rac-option-gap: 0.5em;
+    
     --rac-disabled-option-color: color-mix(in srgb, GrayText, CanvasText 20%);
     --rac-invalid-option-color: color-mix(in srgb, var(--rac-base-red), CanvasText 10%);
     --rac-true-option-color: color-mix(in srgb, var(--rac-base-green), CanvasText 10%);
@@ -67,19 +69,23 @@
     --rac-group-arrow-height: 1em;
     --rac-group-arrow-width: 1em;
     --rac-group-arrow-padding: 1px 0 2px;
+    --rac-group-container-padding-left: 1em;
+
     --rac-disabled-group-color: color-mix(in srgb, GrayText, CanvasText 20%);
 
     --rac-multiple-selected-border: 0.1em solid gray;
     --rac-multiple-selected-radius: 5px;
     --rac-checkbox-border: 1px solid gray;
     --rac-multiple-selected-padding: 0em 0.25em;
-    --rac-multiple-selected-margin: 0.25em 0.25em;
+    --rac-multiple-selected-margin: 0.25em 0.5em 0.25em 0;
     --rac-multiple-selected-gap: 0.5em 0;
+    --rac-multiple-deleting-bg: color-mix(in srgb, var(--rac-base-red) 15%, Canvas);
     --rac-checkbox-margin-right: 0.20em;
     --rac-multiple-selected-min-height: 1.5em;
     --rac-checkbox-size: var(--rac-option-min-height);
 
-    --rac-options-z-index: 1;
+    --rac-multiple-del-bg: color-mix(in srgb, var(--rac-base-red) 30%, Canvas);
+    --rac-multiple-del-hover-color: var(--rac-base-red);
 }
 
 .rac-select {
@@ -87,16 +93,23 @@
     padding: var(--rac-select-padding);
     border: var(--rac-select-border);
     color: var(--rac-select-color);
-
-    min-height: var(--rac-select-height);
+    
+    min-height: var(--rac-select-min-height);
+    /* когда станет стандартом можно будет вынести огромное колво кода */
     interpolate-size: allow-keywords;
     transition:
-        border-color var(--rac-duration-base) ease, 
+        background-color var(--rac-duration-base) ease,
+        border-color var(--rac-duration-base) ease,
         height var(--rac-duration-base) ease;
     justify-content: space-between;
     box-sizing: border-box;
     cursor: pointer;
     display: flex;
+
+    &:hover {
+        background-color: var(--rac-select-hover);
+        border-color: var(--rac-select-hover);
+    }
 }
 
 .rac-loading-style,
@@ -119,23 +132,33 @@
 }
 
 .rac-select-title-wrapper {
-    transition: height 300ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition: height var(--rac-duration-base) cubic-bezier(0.4, 0, 0.2, 1);
+    display: flex;
+    width: 100%;
 }
 
 .rac-select-title {
-    display: flex;
-    align-items: center;
+    min-height: var(--rac-select-min-height);
+    position: relative;
     flex-wrap: wrap;
-    gap: var(--rac-multiple-selected-gap);
+    display: flex;
+    width: 100%;
+}
+
+.rac-spacer {
+    min-height: var(--rac-select-min-height);
+}
+
+.rac-title-container {
+    height: 100%;
 }
 
 .rac-title-text {
-    margin: 0.5em 0em;
-    display: block;
-    animation: rac-fade-in var(--rac-duration-base) var(--rac-title-anim-entry-ease);
-    height: 100%;
-    align-content: center;
+    /* animation: rac-fade-in var(--rac-duration-base) var(--rac-title-anim-entry-ease); */
     font-size: var(--rac-title-font-size);
+    align-content: center;
+    display: block;
+    height: 100%;
 }
 
 @keyframes rac-fade-in {
@@ -149,17 +172,29 @@
     }
 }
 
+.rac-loading-container {
+    align-items: end;
+    display: grid;
+    height: 100%;
+}
+
 .rac-loading-dots {
     display: inline-flex;
+
+    --rac-dots-size: calc(var(--rac-title-font-size) / 4); 
+    --rac-dots-gap: calc(var(--rac-title-font-size) / 6);
+    --rac-dots-padding-left: calc(var(--rac-title-font-size) / 4);
+    --rac-dots-padding-bottom: 0.5em;
+
     gap: var(--rac-dots-gap);
     padding-left: var(--rac-dots-padding-left);
-    align-items: var(--rac-dots-align);
+    padding-bottom: var(--rac-dots-padding-bottom);
 }
 
 .rac-loading-dots i {
-    width: var(--rac-dots-height);
-    height: var(--rac-dots-width);
-    background: var(--rac-dots-color);
+    width: var(--rac-dots-size);
+    height: var(--rac-dots-size);
+    background: var(--rac-dots-color, currentColor);
     border-radius: 50%;
     animation: blink var(--rac-dots-animation-duration) infinite both;
 }
@@ -189,12 +224,12 @@
 }
 
 .rac-select-arrow-wrapper {
-    display: block;
+    padding: var(--rac-arrow-padding);
     height: var(--rac-arrow-height);
     width: var(--rac-arrow-width);
-    padding: var(--rac-arrow-padding);
-
     will-change: transform;
+    display: block;
+
     transition:
         transform var(--rac-duration-base) cubic-bezier(.4,0,.2,1),
         padding var(--rac-duration-fast);
@@ -215,6 +250,7 @@
     background-color: var(--rac-list-background);
     color: var(--rac-list-color);
     max-height: var(--rac-list-max-height);
+    overflow-x: hidden; 
     overflow-y: auto;
     scrollbar-color: var(--rac-scroll-color) var(--rac-scroll-track);
     scrollbar-width: thin;
@@ -222,7 +258,6 @@
     scroll-behavior: smooth;
     scroll-padding-top: var(--rac-scroll-padding-top);
     scroll-padding-bottom: var(--rac-scroll-padding-bottom);
-    z-index: 1;
     transition:
         border-color var(--rac-duration-fast),
         background-color var(--rac-duration-fast),
@@ -230,13 +265,19 @@
 }
 
 .rac-select-option {
-    transition: background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
+    transition:
+        background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
     min-height: var(--rac-option-min-height);
     padding: var(--rac-option-padding);
     justify-content: space-between;
+    gap: var(--rac-option-gap);
+    overflow-wrap: anywhere;
+    word-break: break-all;
+    scrollbar-width: thin;
     align-items: center;
-    display: flex;
+    overflow-x: auto;
     cursor: pointer;
+    display: flex;
 }
 
 .rac-select-option:not(.rac-disabled-option):not(.rac-group-option):hover {
@@ -257,7 +298,8 @@
 
 .rac-option-title {
     text-overflow: ellipsis;
-    overflow: hidden;
+    overflow-wrap: anywhere;
+    word-break: break-all;
     text-wrap: wrap;
 }
 
@@ -286,12 +328,17 @@
     cursor: pointer;
     min-height: var(--rac-group-header-min-height);
     padding: var(--rac-group-header-padding);
-    transition: background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
+    transition:
+        background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-weight: var(--rac-group-header-font-weight);
     font-size: var(--rac-group-header-font-size);
+}
+
+.rac-group-container {
+    padding-left: var(--rac-group-container-padding-left);
 }
 
 .rac-group-arrow-wrapper {
@@ -323,11 +370,12 @@
 }
 
 .rac-multiple-selected-option {
-    border: var(--rac-multiple-selected-border);
-    border-radius: var(--rac-multiple-selected-radius);
+    transition:
+        background-color var(--rac-duration-fast, --rac-duration) cubic-bezier(0.4,0,0.2,1),
+        transform var(--rac-duration) ease;
+    background-color: color-mix(in srgb, CanvasText 10%, Canvas);
     min-height: var(--rac-multiple-selected-min-height);
-    transition: background-color var(--rac-duration-fast) cubic-bezier(0.4,0,0.2,1);
-
+    position: relative;
     display: inline-flex;
     align-items: center;
     vertical-align: middle;
@@ -335,13 +383,54 @@
     padding: var(--rac-multiple-selected-padding);
     margin: var(--rac-multiple-selected-margin);
     white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+
+    &:hover {
+        @media (hover: hover) {
+            background-color: color-mix(in srgb, CanvasText 25%, Canvas);
+        }
+    }
+    
 }
 
-.rac-multiple-selected-option:hover {
-    background-color: color-mix(in srgb, CanvasText 6%, Canvas);
+.rac-multiple-del {
+    background-color: var(--rac-multiple-del-bg);
+    -webkit-tap-highlight-color: transparent;
+    align-items: center;
+    position: absolute;
+    user-select: none;
+    display: grid;
+    height: 100%;
+    right: 0;
+
+    &:hover {
+        color: var(--rac-multiple-del-hover-color);
+    }
+}
+
+.rac-multiple-option {
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+}
+
+.rac-multiple-selected-option.--deleting-shake {
+    background-color: var(--rac-multiple-deleting-bg);
+    animation: rac-shake 0.3s infinite;
+}
+
+@keyframes rac-shake {
+    0% {transform: rotate(0deg);}
+    25% {transform: rotate(-1deg);}
+    75% {transform: rotate(1deg);}
+    100% {transform: rotate(0deg);}
 }
 
 .rac-checkbox {
+    margin-right: var(--rac-checkbox-margin-right);
     min-height: var(--rac-option-min-height);
     min-width: var(--rac-option-min-height);
     border: var(--rac-checkbox-border);
@@ -349,7 +438,6 @@
     align-items: center;
     display: flex;
     height: 100%;
-    margin-right: var(--rac-checkbox-margin-right);
 }
 
 .rac-checkmark {
@@ -357,11 +445,14 @@
     opacity: 0;
     max-width: 0;
     max-height: 0;
-    transition: opacity var(--rac-duration-base), max-height var(--rac-duration-base), max-width var(--rac-duration-base);
+    transition:
+        max-height var(--rac-duration-base),
+        max-width var(--rac-duration-base),
+        opacity var(--rac-duration-base);
 }
 
 .rac-checkmark.--checked {
-    opacity: 1;
     max-height: var(--rac-option-min-height);
     max-width: var(--rac-option-min-height);
+    opacity: 1;
 }

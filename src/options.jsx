@@ -2,30 +2,15 @@ import {CSSTransition} from 'react-transition-group'
 import {useRef, useState, useEffect, useCallback, memo, useLayoutEffect} from 'react'
 import {createPortal} from 'react-dom'
 
-function Options({
-  visibility,
-  children,
-  selectRef,
-  onAnimationDone,
-  unmount = true,
-  duration,
-  easing,
-  offset,
-  animateOpacity,
-  style,
-  className
-}) {
+function Options({visibility, children, selectRef, onAnimationDone, unmount = true, duration, easing, offset, animateOpacity, style, className, setBottomDirection = () => {}}) {
   
   const nodeRef = useRef(null)
-  const [selectHeight, setSelectHeight] = useState(0)
 
   const [coords, setCoords] = useState({top: 0, left: 0, width: 0})
 
   const coordsRef = useRef(coords)
   
-  useEffect(() => {
-    coordsRef.current = coords
-  }, [coords])
+  useEffect(() => {coordsRef.current = coords}, [coords])
 
   const updateCoords = useCallback(() => {
     if (selectRef?.current) {
@@ -36,7 +21,7 @@ function Options({
       
       const spaceBelow = windowHeight - rect.bottom
       const showUpward = spaceBelow < dropdownHeight && rect.top > spaceBelow
-
+      setBottomDirection(showUpward)
       setCoords({
         top: rect.top,
         bottom: rect.bottom,
@@ -65,17 +50,12 @@ function Options({
 
   useLayoutEffect(() => {
     if (!selectRef?.current) return
-    
-    const updateHeight = () => setSelectHeight(selectRef.current.offsetHeight)
-    updateHeight()
 
     const resizeObserver = new ResizeObserver((entries) => {
       for (let entry of entries) {
-        setSelectHeight(entry.target.offsetHeight)
-
         if (visibility && nodeRef.current && selectRef.current) {
             const rect = selectRef.current.getBoundingClientRect()
-            const { isUpward } = coordsRef.current
+            const {isUpward} = coordsRef.current
 
             nodeRef.current.style.width = `${rect.width}px`
             nodeRef.current.style.left = `${rect.left}px`
@@ -104,7 +84,7 @@ function Options({
     height: visibility ? 'auto' : '0px',
     opacity: animateOpacity ? (visibility ? 1 : 0) : 1,
     pointerEvents: visibility ? 'all' : 'none',
-    visibility: selectHeight ? 'visible' : 'hidden',
+    // visibility: visibility ? 'visible' : 'hidden',
     boxSizing: 'border-box',
     transformOrigin: coords.isUpward ? 'bottom' : 'top',
     
@@ -200,9 +180,7 @@ function Options({
             '--rac-duration-slow': 'calc(var(--rac-duration) * 1.3)',
 
         }}
-        onMouseDown={(e) => {
-          e.preventDefault()
-        }}
+        onMouseDown={(e) => e.preventDefault()}
       >
         {children}
       </div>

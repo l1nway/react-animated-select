@@ -1,30 +1,29 @@
 import {CSSTransition} from 'react-transition-group'
 import {useRef} from 'react'
 
-function SlideDown({visibility, children, duration = 300}) {
+function SlideDown({visibility, children, duration = 300, className}) {
     const nodeRef = useRef(null)
 
     return(
         <CSSTransition
-            in={visibility}
-            timeout={300}
-            classNames='slideDown'
-            unmountOnExit
+            onEntering={() => nodeRef.current.style.height = nodeRef.current.scrollHeight + 'px'}
+            onExit={() => nodeRef.current.style.height = nodeRef.current.scrollHeight + 'px'}
+            onEntered={() => nodeRef.current.style.height = 'auto'}
+            onExiting={() => nodeRef.current.style.height = '0px'}
+            onEnter={() => nodeRef.current.style.height = '0px'}
+            classNames='rac-slide-down'
+            timeout={duration}
             nodeRef={nodeRef}
-            onEnter={() => (nodeRef.current.style.height = '0px')}
-            onEntering={() => (nodeRef.current.style.height = nodeRef.current.scrollHeight + 'px')}
-            onEntered={() => (nodeRef.current.style.height = 'auto')}
-            onExit={() => (nodeRef.current.style.height = nodeRef.current.scrollHeight + 'px')}
-            onExiting={() => (nodeRef.current.style.height = '0px')}
+            in={visibility}
+            unmountOnExit
         >
             <div
-                ref={nodeRef}
                 style={{
-                    overflow: 'hidden',
                     transition: `height ${duration}ms ease`,
-                    paddingLeft: '1em'
+                    overflow: 'hidden'
                 }}
-                className='slideDown-enter-done'
+                className={`${className} rac-slide-down-enter-done`}
+                ref={nodeRef}
                 tabIndex={-1}
             >
                 {children}

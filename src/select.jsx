@@ -3,20 +3,30 @@ import {XMarkIcon, ArrowUpIcon, CheckmarkIcon} from './icons'
 import {forwardRef, useImperativeHandle, useRef, useMemo, useState, useEffect, useCallback, useId, isValidElement, cloneElement} from 'react'
 import {makeId} from './makeId'
 
-import SelectJSX from './SelectJSX'
-import useSelect from './useSelect'
+import SelectJSX from './selected-items/SelectJSX'
 import useSelectLogic from './useSelectLogic'
+import useSelect from './useSelect'
 import SlideDown from './slideDown'
 import SlideLeft from './slideLeft'
 
 // universal icon display
 const renderIcon = (Icon, defaultProps) => {
     if (!Icon) return null
-    if (typeof Icon === 'string') return <img src={Icon} {...defaultProps} alt=''/>
-    if (isValidElement(Icon)) return cloneElement(Icon, defaultProps)
+
+    const mergeProps = (props = {}) => ({
+        ...defaultProps,
+        ...props,
+        style: {
+            ...defaultProps?.style,
+            ...props?.style
+        }
+    })
+
+    if (typeof Icon === 'string') return <img src={Icon} {...mergeProps()} alt=''/>
+    if (isValidElement(Icon)) return cloneElement(Icon, mergeProps(Icon.props))
     if (typeof Icon === 'function' || (typeof Icon === 'object' && Icon.$$typeof)) {
         const IconComponent = Icon
-        return <IconComponent {...defaultProps}/>
+        return <IconComponent {...mergeProps()}/>
     }
     return null
 }
@@ -25,9 +35,7 @@ const renderIcon = (Icon, defaultProps) => {
 const getOptionClassName = (element, index, highlightedIndex, selectedId, loadingTitle, loadMoreText, invalidOption, selectedIDs) => {
     const multipleSelected = selectedIDs?.some(o => o.id === element.id)
 
-    if (element.groupHeader) {
-        return 'rac-select-option rac-group-option'
-    }
+    if (element.groupHeader) return 'rac-select-option rac-group-option'
 
     return [
         'rac-select-option',
@@ -49,7 +57,7 @@ const Select = forwardRef(({
     alwaysOpen = false,
     duration = 300,
     easing = 'ease-out',
-    offset = 0,
+    offset = 1,
     animateOpacity = true,
     style = {},
     className = '',
@@ -68,6 +76,9 @@ const Select = forwardRef(({
     childrenFirst = false,
     groupsClosed = false,
     optionsClassName = '',
+    onOpen = () => {},
+    onClose = () => {},
+    deleteInline = false,
     ...props
 }, ref) => {
 
@@ -78,6 +89,7 @@ const Select = forwardRef(({
     const [loadingTitle, setLoadingTitle] = useState(loadButton ? loadButtonText : loadMoreText)
     const [animationFinished, setAnimationFinished] = useState(false)
     const selectRef = useRef(null)
+    const [deleting, setDeleting] = useState(false)
 
     const registerOption = useCallback((opt) => {
         setJsxOptions(prev => {
@@ -122,25 +134,21 @@ const Select = forwardRef(({
 
     const {multiple, normalizedOptions, selected, selectOption, clear, removeOption, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, emptyText, disabledText, loadingText, errorText, expandedGroups, selectedIDs, setSelectedIds} = logic
 
-    const behavior = useSelect({setLoadingTitle, loadButton, loadButtonText, hasMore, loadMore, disabled, multiple, open: visibility, setOpen: setVisibility, options: normalizedOptions, selectOption, selected, loadOffset, loadAhead, expandedGroups, selectedIDs})
+    const behavior = useSelect({setDeleting, setLoadingTitle, loadButton, loadButtonText, hasMore, loadMore, disabled, multiple, open: visibility, setOpen: setVisibility, options: normalizedOptions, selectOption, selected, loadOffset, loadAhead, expandedGroups, selectedIDs, onOpen, onClose, deleting})
 
-    const {handleListScroll, handleBlur, handleFocus, handleToggle, handleKeyDown, highlightedIndex, setHighlightedIndex} = behavior
+    const {handleListScroll, handleBlur, handleFocus, toggleVisibility, handleKeyDown, highlightedIndex, setHighlightedIndex} = behavior
 
     useImperativeHandle(ref, () => selectRef.current)
 
-    useEffect(() => {
-        if (!visibility) setAnimationFinished(false)
-    }, [visibility])
+    useEffect(() => {!visibility && setAnimationFinished(false)}, [visibility])
 
-    useEffect(() => {
-        if (error || disabled || loading || !hasOptions) setVisibility(false)
-    }, [error, disabled, loading, hasOptions, setVisibility])
+    useEffect(() => {(error || disabled || loading || !hasOptions) && setVisibility(false)}, [error, disabled, loading, hasOptions, setVisibility])
 
     useEffect(() => {
         if (visibility && animationFinished && highlightedIndex !== -1) {
             const option = normalizedOptions[highlightedIndex]
             if (option) {
-                const domElement = document.getElementById(`opt-${selectId}-${makeId(option.id)}`)
+                const domElement = document.getElementById(`${selectId}-${makeId(option.id)}`)
                 domElement?.scrollIntoView({block: 'nearest'})
             }
         }
@@ -188,8 +196,9 @@ const Select = forwardRef(({
             
             nodes.push(
                 <SlideDown
-                    key={`slide-${name}`}
                     visibility={expandedGroups.has(name)}
+                    className='rac-group-container'
+                    key={`slide-${name}`}
                 >
                     {currentGroupChildren}
                 </SlideDown>
@@ -199,34 +208,26 @@ const Select = forwardRef(({
 
         const createOptionNode = (element, index) => (
             <div
-                key={element.id}
-                id={`opt-${selectId}-${makeId(element.id)}`}
-                role='option'
-                aria-selected={selected?.id === element.id}
-                aria-disabled={element.disabled || element.loading}
                 className={getOptionClassName(element, index, highlightedIndex, selected?.id, loadingTitle, loadMoreText, invalidOption, selectedIDs)}
-                onClick={(e) => !element.loading && selectOption(element, e)}
                 onMouseEnter={() => (!element.disabled && !element.loading) && setHighlightedIndex(index)}
+                onClick={(e) => !element.loading && selectOption(element, e)}
+                aria-disabled={element.disabled || element.loading}
+                aria-selected={selected?.id === element.id}
+                id={`${selectId}-${makeId(element.id)}`}
+                key={element.id}
+                role='option'   
             >
-                {element.jsx
-                    ??
-                <span className='rac-option-title'>
-                    {element.name}
-                </span>}
+                {element.jsx ?? <span className='rac-option-title'>{element.name}</span>}
                 {element.loading && <span className='rac-loading-dots'><i/><i/><i/></span>}
-                {multiple && !element.disabled ? 
+                {(multiple && !element.disabled) &&
                     <div className='rac-checkbox'>
-                        {renderIcon(
-                            CheckmarkIcon, {
-                                className: `
-                                    rac-checkmark
-                                    ${selectedIDs?.some(o => o.id === element.id)
-                                        ?
-                                            '--checked'
-                                        :
-                                            ''
+                        {renderIcon(CheckmarkIcon, {className: `
+                            rac-checkmark
+                            ${selectedIDs?.some(o => o.id === element.id)
+                                ? '--checked'
+                                : ''
                         }`})}
-                    </div> : null}
+                    </div>}
                 
             </div>
         )
@@ -247,7 +248,8 @@ const Select = forwardRef(({
 
                 nodes.push(
                     <div 
-                        key={element.id} 
+                        key={element.id}
+                        id={element.id}
                         className={[
                             'rac-group-header',
                             element.disabled && 'rac-disabled-group'
@@ -257,10 +259,10 @@ const Select = forwardRef(({
                         <span className='rac-group-title-text'>{element.name}</span>
                         <SlideLeft
                             visibility={hasChildren && !element.disabled}
+                            style={{display: 'grid'}}
                             duration={duration}
-                            // style={{display: 'grid'}}
                         >
-                            <span className={`rac-group-arrow-wrapper ${open ? '--open' : ''}`}>
+                            <span className={`rac-group-arrow-wrapper ${open ? 'open' : ''}`}>
                                 {renderIcon(ArrowIcon, {className: 'rac-select-arrow-wrapper'})}
                             </span>
                         </SlideLeft>
@@ -276,14 +278,12 @@ const Select = forwardRef(({
         flushGroup(currentGroupName)
 
         return nodes
-    }, [
-        normalizedOptions, selectOption, selectId, selected, highlightedIndex, 
-        loadingTitle, loadMoreText, invalidOption, setHighlightedIndex, 
-        expandedGroups, ArrowIcon
-    ])
+    }, [normalizedOptions, selectOption, selectId, selected, highlightedIndex, loadingTitle, loadMoreText, invalidOption, setHighlightedIndex, expandedGroups, ArrowIcon])
 
     return (
         <SelectJSX
+            setDeleting={setDeleting}
+            deleting={deleting}
             selectedText={selectedText}
             selectRef={selectRef}
             selectId={selectId}
@@ -314,7 +314,7 @@ const Select = forwardRef(({
             setAnimationFinished={setAnimationFinished}
             handleBlur={handleBlur}
             handleFocus={handleFocus}
-            handleToggle={handleToggle}
+            toggleVisibility={toggleVisibility}
             handleKeyDown={handleKeyDown}
             handleListScroll={handleListScroll}
             selectOption={selectOption}
@@ -336,6 +336,7 @@ const Select = forwardRef(({
             DelIcon={DelIcon}
             hasMore={hasMore}
             loadButton={loadButton}
+            deleteInline={deleteInline}
         />
     )
 })

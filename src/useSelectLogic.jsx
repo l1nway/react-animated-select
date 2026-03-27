@@ -1,4 +1,4 @@
-import {useState, useMemo, useCallback, useId, useEffect, useRef} from 'react'
+import {useState, useMemo, useCallback, useRef} from 'react'
 
 const SYSTEM_KEYS = ['group', 'disabled', 'options', 'items', 'children']
 const LABEL_KEYS = ['name', 'label', 'id', 'value']
@@ -41,11 +41,29 @@ function useSelectLogic({
     childrenFirst,
     groupsClosed
 }) {
-    const stableId = useId()
+    
     const isControlled = value !== undefined
-    const [selectedId, setSelectedId] = useState(null)
-    const [selectedIDs, setSelectedIds] = useState([])
-    const [expandedGroups, setExpandedGroups] = useState(new Set())
+    
+    const [expandedGroups, setExpandedGroups] = useState(() => {
+        const initial = new Set()
+        if (groupsClosed) return initial
+
+        const fillGroups = (items) => {
+            if (!Array.isArray(items)) return
+            items.forEach(item => {
+                if (item && typeof item === 'object') {
+                    const isGroup = 'options' in item || ('group' in item && !LABEL_KEYS.some(k => k in item))
+                    if (isGroup && !item.disabled) {
+                        const name = getLabel(item, true) || 'Empty group'
+                        initial.add(name)
+                    }
+                    if (item.options) fillGroups(item.options)
+                }
+            })
+        }
+        fillGroups(options)
+        return initial
+    })
 
     const orderCache = useRef(null)
 
@@ -58,7 +76,7 @@ function useSelectLogic({
     }, [])
 
     const normalize = useCallback((rawItem, index, prefix = 'n', group = null, groupDisabled = false) => {
-        const id = `${stableId}-${prefix}-${index}`
+        const id = `${prefix}-${index}`
         
         if (rawItem == null || rawItem === '') {
             return {id, userId: null, name: emptyOption, raw: null, disabled: true, type: 'normal', group, groupDisabled}
@@ -99,7 +117,7 @@ function useSelectLogic({
             type: typeof rawItem === 'boolean' ? 'boolean' : 'normal',
             group
         }
-    }, [stableId, emptyOption, invalidOption, disabledOption])
+    }, [emptyOption, invalidOption, disabledOption])
 
     const normalizedOptions = useMemo(() => {
         const groupsMap = new Map()
@@ -151,12 +169,12 @@ function useSelectLogic({
                     }
                 } else if (isObj && !LABEL_KEYS.some(k => k in item) && !item.group) {
                     Object.entries(item).forEach(([k, v], j) => {
-                        const norm = normalize(v, `${currentId}-${j}`, 'normal', parentGroup, parentDisabled)
-                            flatBase.push({ ...norm, index: flatIndex++ })
+                        const norm = normalize(v, `${currentId}-${j}`, 'default', parentGroup, parentDisabled)
+                            flatBase.push({...norm, index: flatIndex++})
                     })
                 } else {
-                    const norm = normalize(item, currentId, 'normal', parentGroup, parentDisabled);
-                        flatBase.push({ ...norm, index: flatIndex++ })
+                    const norm = normalize(item, currentId, 'default', parentGroup, parentDisabled)
+                        flatBase.push({...norm, index: flatIndex++})
                 }
             })
         }
@@ -249,56 +267,39 @@ function useSelectLogic({
         }
 
         return final
-    }, [options, jsxOptions, stableId, normalize, childrenFirst, hasMore, loadButton, loadingTitle, loadMoreText, groupsClosed, expandedGroups, emptyOption])
+    }, [options, jsxOptions, normalize, childrenFirst, hasMore, loadButton, loadingTitle, loadMoreText, groupsClosed, expandedGroups, emptyOption])
 
-    useEffect(() => {
-        if (!normalizedOptions || normalizedOptions.length === 0) return
-        if (expandedGroups.size > 0) return
-        if (groupsClosed) return
-        const initial = new Set()
-        normalizedOptions.forEach(opt => {
-            if (opt.groupHeader && !opt.disabled) {
-                initial.add(opt.name)
-            }
-        })
-        if (initial.size > 0) setExpandedGroups(initial)
-    }, [normalizedOptions, groupsClosed])
-
-    const findIdByValue = useCallback((val) => {
-        if (val == null) return null
-        const match = normalizedOptions.find(o => o.original === val)
-        if (match) return match.id
-
-        if (typeof val === 'object') {
-            try {
-                const str = JSON.stringify(val)
-                return normalizedOptions.find(o => 
-                    o.original && typeof o.original === 'object' && JSON.stringify(o.original) === str
-                )?.id ?? null
-            } catch { return null }
-        }
-        return null
-    }, [normalizedOptions])
-
-    useEffect(() => {
+    const getInitialSelection = useCallback(() => {
         const effectiveValue = isControlled ? value : defaultValue
         
         if (effectiveValue == null || (Array.isArray(effectiveValue) && effectiveValue.length === 0)) {
-            setSelectedId(null)
-            setSelectedIds([])
-            return
+            return { initialId: null, initialIDs: [] }
         }
 
-        const getOrVirtualize = (val) => {
-            const id = findIdByValue(val)
-            const found = normalizedOptions.find(o => o.id === id)
-            if (found) return found
+        const usedIds = new Set()
+
+        const getOrVirtualize = (val, index) => {
+            let found = normalizedOptions.find(o => o.original === val && !usedIds.has(o.id))
+            
+            if (!found && typeof val === 'object') {
+                try {
+                    const str = JSON.stringify(val)
+                    found = normalizedOptions.find(o => 
+                        o.original && typeof o.original === 'object' && JSON.stringify(o.original) === str && !usedIds.has(o.id)
+                    )
+                } catch {}
+            }
+
+            if (found) {
+                usedIds.add(found.id)
+                return found
+            }
 
             const stableKey = typeof val === 'object' ? (val.id || val.value || JSON.stringify(val)) : String(val)
 
             if (typeof val === 'object' && val !== null) {
                 return {
-                    id: `virtual-${stableKey}`,
+                    id: `virtual-${stableKey}-${index}`,
                     name: getLabel(val) || String(val.id || 'Selected Object'),
                     raw: val.value ?? val.id ?? val,
                     original: val,
@@ -307,7 +308,7 @@ function useSelectLogic({
                 }
             }
             return {
-                id: `virtual-${stableKey}`,
+                id: `virtual-${stableKey}-${index}`,
                 name: String(val),
                 raw: val,
                 original: val,
@@ -318,16 +319,17 @@ function useSelectLogic({
 
         if (multiple) {
             const vals = Array.isArray(effectiveValue) ? effectiveValue : [effectiveValue]
-            const newSelected = vals.map(getOrVirtualize)
-
-            setSelectedIds(newSelected)
+            const newSelected = vals.map((val, index) => getOrVirtualize(val, index))
+            return { initialId: null, initialIDs: newSelected }
         } else {
             const val = Array.isArray(effectiveValue) ? effectiveValue[0] : effectiveValue
-            const opt = getOrVirtualize(val)
-            
-            setSelectedId(prevId => prevId === opt.id ? prevId : opt.id)
+            const opt = getOrVirtualize(val, 0)
+            return { initialId: opt.id, initialIDs: [] }
         }
-    }, [])
+    }, [isControlled, value, defaultValue, normalizedOptions, multiple])
+
+    const [selectedId, setSelectedId] = useState(() => getInitialSelection().initialId)
+    const [selectedIDs, setSelectedIds] = useState(() => getInitialSelection().initialIDs)
 
     const selected = useMemo(() => {
         const found = normalizedOptions.find(o => o.id === selectedId)
@@ -347,17 +349,19 @@ function useSelectLogic({
         return null
     }, [selectedId, normalizedOptions, multiple, isControlled, value, defaultValue])
 
+    // select option in dropdown menu
     const selectOption = useCallback((option, e) => {
+        // processing group header selection
         if (option.groupHeader) {
-            e?.stopPropagation()
-            e?.preventDefault()
+            cancelEvents(e)
             if (!option.disabled) toggleGroup(option.name)
             return
         }
 
+        // processing disabled option
         if (option.disabled || option.loadMore) {
-            e?.stopPropagation()
-            e?.preventDefault()
+            cancelEvents(e)
+            // proccesing load more button
             if (option.loadMore && !option.loading) {
                 setLoadingTitle(loadMoreText)
                 loadMore()
@@ -365,16 +369,16 @@ function useSelectLogic({
             return
         }
 
+        // multiple mode
         if (multiple) {
+            // processing disabled option
             if (option.disabled || option.groupHeader || option.loadMore) {
-                e?.stopPropagation()
-                e?.preventDefault()
+                cancelEvents(e)
                 return
             }
 
-            e?.stopPropagation()
-            e?.preventDefault()
-
+            cancelEvents(e)
+            // toggle multiple option selection
             const isSelected = selectedIDs?.some(item => item.id === option.id)
             const next = isSelected 
                 ? selectedIDs.filter(item => item.id !== option.id) 
@@ -384,17 +388,26 @@ function useSelectLogic({
             onChange?.(next.map(o => o.original), next.map(o => o.userId))
             return
         }
+        // toggle option selection
         setSelectedId(option.id)
         onChange?.(option.original, option.userId)
         setVisibility(false)
-    }, [onChange, setVisibility, loadMore, loadMoreText, setLoadingTitle, toggleGroup])
+    }, [onChange, setVisibility, loadMore, loadMoreText, setLoadingTitle, toggleGroup, multiple, selectedIDs])
 
+    // prevent default behavior and stop event bubbling
+    const cancelEvents = useCallback((e) => {
+        e?.stopPropagation()
+        e?.preventDefault()
+    }, [])
+
+    // clears a selectedId(s)
     const clear = useCallback(() => {
+        onChange?.(null, null)
         setSelectedId(null)
         setSelectedIds([])
-        onChange?.(null, null)
     }, [onChange])
 
+    // remove selected option (multiple mode)
     const removeOption = useCallback((id) => {
         const next = selectedIDs.filter(item => item.id !== id)
         setSelectedIds(next)
@@ -402,8 +415,7 @@ function useSelectLogic({
     }, [selectedIDs, onChange])
 
     return {
-        normalizedOptions, selected, selectOption, clear, removeOption,
-        hasOptions: normalizedOptions.length > 0,
+        normalizedOptions, selected, selectOption, clear, removeOption, hasOptions: normalizedOptions.length > 0,
         active: !error && !loading && !disabled && normalizedOptions.length > 0,
         selectedValue: value ?? defaultValue, 
         placeholder, emptyText, disabledText, loadingText, errorText, 
