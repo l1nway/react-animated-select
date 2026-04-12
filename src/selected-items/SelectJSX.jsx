@@ -272,15 +272,13 @@ const SelectJSX = memo(({deleteInline, selectRef, setVisibility, selectId, remov
                     `}
                     style={{
                         alignItems: (selectedIDs?.length && !selectedText) ? 'flex-start' : 'center',
-                        height: selectHeight ? `${selectHeight}px` : 'auto',
-                        overflow: (leaving || entering) ? 'hidden' : '',
+                        height: selectHeight ? `${selectHeight}px` : 'auto'
                     }}
                 >
                     <div
                         style={{
                             alignItems: (selectedIDs?.length && !selectedText) ? 'flex-start' : 'center',
-                            height: loading ? '100%' : 'auto',
-                            flexWrap: (leaving || entering) ? 'nowrap' : '',
+                            height: loading ? '100%' : 'auto'
                         }}
                         className='rac-select-title'
                         ref={optionRef}
