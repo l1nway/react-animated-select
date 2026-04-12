@@ -223,22 +223,25 @@
         border-color var(--rac-duration-fast);
 }
 
-.rac-select-arrow-wrapper {
-    padding: var(--rac-arrow-padding);
-    height: var(--rac-arrow-height);
-    width: var(--rac-arrow-width);
+.rac-select-arrow {
+    transition:
+        transform var(--rac-duration-base) cubic-bezier(.4,0,.2,1);
+    transform-origin: 50% 50%;
+    transform: rotate(0deg);
     will-change: transform;
     display: block;
-
-    transition:
-        transform var(--rac-duration-base) cubic-bezier(.4,0,.2,1),
-        padding var(--rac-duration-fast);
-    transform-origin: 50% 50%;
-    transform: translateZ(0);
 }
 
-.rac-select-arrow-wrapper.--open {
+.rac-select-arrow.--up {
     transform: rotate(180deg);
+}
+
+.rac-select-arrow.--open {
+    transform: rotate(180deg);
+}
+
+.rac-select-arrow.--up.--open {
+    transform: rotate(0deg);
 }
 
 .rac-select-arrow, 
@@ -341,11 +344,8 @@
     padding-left: var(--rac-group-container-padding-left);
 }
 
-.rac-group-arrow-wrapper {
+.rac-group-arrow {
     display: block;
-    height: var(--rac-group-arrow-height);
-    width: var(--rac-group-arrow-width);
-    padding: var(--rac-group-arrow-padding);
 
     will-change: transform;
     transition:
@@ -355,7 +355,7 @@
     transform: translateZ(0);
 }
 
-.rac-group-arrow-wrapper.--open {
+.rac-group-arrow.--open {
     transform: rotate(180deg);
 }
 
@@ -429,30 +429,39 @@
     100% {transform: rotate(0deg);}
 }
 
-.rac-checkbox {
+.rac-checkbox-default {
     margin-right: var(--rac-checkbox-margin-right);
     min-height: var(--rac-option-min-height);
     min-width: var(--rac-option-min-height);
     border: var(--rac-checkbox-border);
     justify-content: center;
     align-items: center;
+    position: relative;
     display: flex;
     height: 100%;
 }
 
+.rac-checkbox {
+    margin-right: var(--rac-checkbox-margin-right);
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    display: flex;
+}
+
 .rac-checkmark {
-    color: var(--rac-base-green);
-    opacity: 0;
-    max-width: 0;
-    max-height: 0;
     transition:
         max-height var(--rac-duration-base),
         max-width var(--rac-duration-base),
         opacity var(--rac-duration-base);
+    position: absolute;
+    max-height: 0;
+    /* max-width: 0; */
+    opacity: 0;
 }
 
 .rac-checkmark.--checked {
     max-height: var(--rac-option-min-height);
-    max-width: var(--rac-option-min-height);
+    /* max-width: var(--rac-option-min-height); */
     opacity: 1;
 }

@@ -1,7 +1,7 @@
 import {Fragment, memo, useCallback, useLayoutEffect, useRef} from 'react'
 import SlideLeft from '../slideLeft'
 
-const SelectedItem = memo(({element, index, leaving, setLeaving, setSpacer, selectRef, spacer, delSpacer, setVisibility, setActiveHoverId, activeHoverId, swipedId, setSwipedId, deleteInline, remove, renderIcon, DelIcon, normalizedOptions, swiped, onSwipe, deleting, setDeleting, onRender, duration}) => {
+const SelectedItem = memo(({element, index, setEntering, leaving, setLeaving, setSpacer, selectRef, spacer, delSpacer, setVisibility, setActiveHoverId, activeHoverId, swipedId, deleteInline, remove, renderIcon, DelIcon, normalizedOptions, swiped, onSwipe, deleting, setDeleting, onRender, duration, showDelete}) => {
 
     const longPressTimer = useRef(null)
     const longPress = useRef(false)
@@ -35,6 +35,7 @@ const SelectedItem = memo(({element, index, leaving, setLeaving, setSpacer, sele
             swiping.current = true
             
             if (diff > 30 && !swiped) {
+                setActiveHoverId(null)
                 onSwipe(element.id)
             } 
             else if (diff < -30 && swiped) {
@@ -104,11 +105,13 @@ const SelectedItem = memo(({element, index, leaving, setLeaving, setSpacer, sele
         }
     }, [onRender, label])
 
+    const delVisibility = showDelete ? true : activeHoverId === element.id || swipedId === element.id || deleting
+
     return (
         <Fragment>
             <div
                 className={`rac-multiple-selected-option ${deleting ? '--deleting-shake' : ''}`}
-                onMouseEnter={() => setActiveHoverId(element.id)}
+                onMouseEnter={() => {setActiveHoverId(element.id); onSwipe(null)}}
                 onMouseLeave={() => setActiveHoverId(null)}
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
@@ -122,8 +125,9 @@ const SelectedItem = memo(({element, index, leaving, setLeaving, setSpacer, sele
                         backgroundColor: (deleting || deleteInline) ? 'transparent' : '--rac-multiple-del-bg',
                         position: (deleting || deleteInline) ? 'relative' : 'absolute',
                     }}
-                    visibility={activeHoverId === element.id || swipedId === element.id || deleting}
                     className='rac-multiple-del'
+                    visibility={delVisibility}
+                    setEntering={setEntering}
                     setLeaving={setLeaving}
                     setSpacer={setSpacer}
                     duration={duration}

@@ -4,11 +4,11 @@ import {makeId} from './makeId'
 
 export const GroupContext = createContext(null)
 
-export default function OptGroup({children, name, label, value, id, emptyGroupText = 'Empty group'}) {
+export default function OptGroup({children, name, label, value, id, disabled, emptyGroupText = 'Empty group', className = '', style = {}}) {
     const ctx = useContext(SelectContext)
 
     const groupName = useMemo(() => {
-        const val = name ?? label ?? value ?? id
+        const val = name ?? label ?? id ?? value
         return (val !== undefined && val !== null && val !== '') ? String(val) : emptyGroupText
     }, [name, label, value, id, emptyGroupText])
 
@@ -18,10 +18,12 @@ export default function OptGroup({children, name, label, value, id, emptyGroupTe
         if (!ctx) return
 
         const groupMarker = {
-            id: groupId,
-            group: groupName,
+            disabled: !!disabled,
             isGroupMarker: true,
-            disabled: true
+            group: groupName,
+            id: groupId,
+            className,
+            style
         }
 
         ctx.registerOption(groupMarker)

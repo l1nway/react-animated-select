@@ -2,7 +2,7 @@ import SelectedItem from './SelectedItem'
 import {memo, Fragment} from 'react'
 import Animated from '../animated'
 
-const RenderedItem = memo(({element, index, leaving, setLeaving, selectRef, setVisibility, setActiveHoverId, delSpacer, swiped, swipedId, setSwipedId, onSwipe, activeHoverId, deleteInline, spacer, duration, normalizedOptions, setDeleting, renderIcon, deleting, DelIcon, remove, registerItemWidth, setSpacer, ...props}) => {
+const RenderedItem = memo(({element, index, setEntering, leaving, setLeaving, selectRef, setVisibility, setActiveHoverId, delSpacer, swiped, swipedId, onSwipe, activeHoverId, deleteInline, spacer, duration, normalizedOptions, setDeleting, renderIcon, deleting, DelIcon, remove, registerItemWidth, setSpacer, showDelete, ...props}) => {
 
     return (
         <Fragment>
@@ -13,8 +13,8 @@ const RenderedItem = memo(({element, index, leaving, setLeaving, selectRef, setV
                 setSpacer={setSpacer}
                 onExit={props.onExit}
                 duration={duration}
-                in={props.in}
                 id={element.id}
+                in={props.in}
                 widthMode
             >
                 <SelectedItem
@@ -26,9 +26,10 @@ const RenderedItem = memo(({element, index, leaving, setLeaving, selectRef, setV
                     deleteInline={deleteInline}
                     key={element.id ?? index}
                     setDeleting={setDeleting}
-                    setSwipedId={setSwipedId}
+                    setEntering={setEntering}
                     setLeaving={setLeaving}
                     renderIcon={renderIcon}
+                    showDelete={showDelete}
                     setSpacer={setSpacer}
                     selectRef={selectRef}
                     delSpacer={delSpacer}

@@ -24,7 +24,7 @@ export interface SelectProps {
     loading?: boolean
     error?: boolean
 
-    placeholder?: string
+    placeholder?: ElementType | string | ReactNode
     emptyText?: string
     disabledText?: string
     loadingText?: string
@@ -39,10 +39,11 @@ export interface SelectProps {
     optionsClassName?: string
     style?: CSSProperties
     
-    ArrowIcon?: ElementType | string | ReactNode
-    ClearIcon?: ElementType | string | ReactNode
-    DelIcon?: ElementType | string | ReactNode
-    CheckIcon?: ElementType | string | ReactNode
+    OpenIcon?: ElementType | string | ReactNode | boolean
+    ClearIcon?: ElementType | string | ReactNode | boolean
+    DelIcon?: ElementType | string | ReactNode | boolean
+    Checkmark?: ElementType | string | ReactNode | boolean
+    Checkbox?: ElementType | string | ReactNode | boolean
 
     hasMore?: boolean
     loadMore?: () => void
@@ -55,6 +56,7 @@ export interface SelectProps {
     childrenFirst?: boolean
     groupsClosed?: boolean
     deleteInline?: boolean
+    showDelete?: boolean
     onClose?: () => void
     onOpen?: () => void
 }
@@ -64,6 +66,8 @@ export const Select: FC<SelectProps>
 export interface OptionProps {
     value?: any
     id?: any
+    label?: any
+    name?: any
     children?: ReactNode
     disabled?: boolean
     className?: string
@@ -74,8 +78,11 @@ export const Option: FC<OptionProps>
 export interface OptGroupProps {
     value?: any
     id?: any
+    children?: ReactNode
+    disabled?: boolean
     name?: any
     label?: any
+    className?: string
 }
 
 export const OptGroup: FC<OptGroupProps>

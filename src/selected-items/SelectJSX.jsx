@@ -21,7 +21,7 @@ const getRowWidths = (elements) => {
     }, {})
 }
 
-const SelectJSX = memo(({deleteInline, selectRef, setVisibility, selectId, removeOption, renderOptions, selected, selectedIDs, setSelectedIds, normalizedOptions, title, visibility, active, hasOptions, hasActualValue, optionsClassName, selectedText, disabled, loading, error, registerOption, unregisterOption, handleBlur, handleFocus, toggleVisibility, handleKeyDown, handleListScroll, setAnimationFinished, clear, children, placeholder, className, style, duration, easing, offset, animateOpacity, unmount, ArrowIcon, ClearIcon, DelIcon, renderIcon, hasMore, loadButton, deleting, setDeleting}) => {
+const SelectJSX = memo(({deleteInline, selectRef, setVisibility, selectId, removeOption, renderOptions, selected, selectedIDs, setSelectedIds, normalizedOptions, title, visibility, active, hasOptions, hasActualValue, optionsClassName, selectedText, disabled, loading, error, registerOption, unregisterOption, handleBlur, handleFocus, toggleVisibility, handleKeyDown, handleListScroll, setAnimationFinished, clear, children, placeholder, className, style, duration, easing, offset, animateOpacity, unmount, OpenIcon, ClearIcon, DelIcon, renderIcon, hasMore, loadButton, deleting, setDeleting, showDelete}) => {
 
     const [bottomDirection, setBottomDirection] = useState(false)
     const [selectHeight, setSelectHeight] = useState(null)
@@ -30,6 +30,7 @@ const SelectJSX = memo(({deleteInline, selectRef, setVisibility, selectId, remov
     const [swipedId, setSwipedId] = useState(null)
     const [activeHoverId, setActiveHoverId] = useState(null)
     const [leaving, setLeaving] = useState(false)
+    const [entering, setEntering] = useState(false)
 
     const firstMount = useRef(true)
     const optionRef = useRef(null)
@@ -193,6 +194,9 @@ const SelectJSX = memo(({deleteInline, selectRef, setVisibility, selectId, remov
         }
     }, [selectedIDs, spacerWidths, deleting])
 
+    const deleteIcon = ClearIcon && hasActualValue && hasOptions && !disabled && !loading && !error && !deleting
+    const openIcon = OpenIcon && active && !deleting
+
     const renderSelectIDs = selectedIDs?.map((element, index) => {
         const delSpacer = index === selectedIDs.length - 1
         return (
@@ -206,9 +210,10 @@ const SelectJSX = memo(({deleteInline, selectRef, setVisibility, selectId, remov
                 deleteInline={deleteInline}
                 key={element.id ?? index}
                 setDeleting={setDeleting}
-                setSwipedId={setSwipedId}
+                setEntering={setEntering}
                 setLeaving={setLeaving}
                 renderIcon={renderIcon}
+                showDelete={showDelete}
                 selectRef={selectRef}
                 setSpacer={setSpacer}
                 onSwipe={setSwipedId}
@@ -267,13 +272,15 @@ const SelectJSX = memo(({deleteInline, selectRef, setVisibility, selectId, remov
                     `}
                     style={{
                         alignItems: (selectedIDs?.length && !selectedText) ? 'flex-start' : 'center',
-                        height: selectHeight ? `${selectHeight}px` : 'auto'
+                        height: selectHeight ? `${selectHeight}px` : 'auto',
+                        overflow: (leaving || entering) ? 'hidden' : '',
                     }}
                 >
                     <div
                         style={{
                             alignItems: (selectedIDs?.length && !selectedText) ? 'flex-start' : 'center',
-                            height: loading ? '100%' : 'auto'
+                            height: loading ? '100%' : 'auto',
+                            flexWrap: (leaving || entering) ? 'nowrap' : '',
                         }}
                         className='rac-select-title'
                         ref={optionRef}
@@ -287,6 +294,7 @@ const SelectJSX = memo(({deleteInline, selectRef, setVisibility, selectId, remov
                                 renderSelectIDs
                             :
                                 <Animated
+                                    // key={hasActualValue ? title : 'placeholder'}
                                     className='rac-title-container'
                                     duration={duration}
                                     key={title}
@@ -310,39 +318,45 @@ const SelectJSX = memo(({deleteInline, selectRef, setVisibility, selectId, remov
                     </div>
                 </div>
 
-                <div className='rac-select-buttons'>
-                    <SlideLeft
-                        visibility={hasActualValue && hasOptions && !disabled && !loading && !error && !deleting}
-                        style={{display: 'grid'}}
-                        duration={duration}
-                    >
-                        {renderIcon(ClearIcon, { 
-                            className: 'rac-select-cancel', 
-                            onMouseDown: e => {
-                                e.preventDefault()
-                                e.stopPropagation()
-                            }, 
-                            onClick: clear 
-                        })}
-                    </SlideLeft>
-                    <SlideLeft
-                        visibility={active && !deleting}
-                        style={{display: 'grid'}}
-                        duration={duration}
-                    >
-                        <span className={`rac-select-arrow-wrapper ${visibility ? '--open' : ''}`}>
-                            {renderIcon(ArrowIcon, {className: 'rac-select-arrow-wrapper'})}
-                        </span>
-                    </SlideLeft>
-                </div>
+                <SlideLeft
+                    visibility={deleteIcon || openIcon}
+                    className='rac-select-buttons'
+                >
+                    <TransitionGroup component={null}>
+                        {deleteIcon &&
+                            <SlideLeft
+                                style={{display: 'grid'}}
+                                duration={duration}
+                                key='clear-icon'
+                            >
+                                {renderIcon(ClearIcon, { 
+                                    className: 'rac-select-cancel', 
+                                    onMouseDown: e => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                    }, 
+                                    onClick: clear 
+                                })}
+                            </SlideLeft>
+                        } {openIcon &&
+                            <SlideLeft
+                                style={{display: 'grid'}}
+                                duration={duration}
+                                key='open-button'
+                            >
+                                {renderIcon(OpenIcon, {className: `rac-select-arrow ${visibility ? '--open' : ''} ${!bottomDirection ? '--up' : ''}`})}
+                            </SlideLeft>
+                        }
+                    </TransitionGroup>
+                </SlideLeft>
 
                 <Options
                     style={{'--rac-duration': `${duration}ms`, ...style}}
+                    visibility={visibility && normalizedOptions.length}
                     onAnimationDone={() => setAnimationFinished(true)}
                     setBottomDirection={setBottomDirection}
                     animateOpacity={animateOpacity}
                     className={optionsClassName}
-                    visibility={visibility}
                     selectRef={selectRef}
                     duration={duration}
                     unmount={unmount}
@@ -357,15 +371,22 @@ const SelectJSX = memo(({deleteInline, selectRef, setVisibility, selectId, remov
                         tabIndex='-1'
                     >
                         {renderOptions}
-                        {!loadButton && hasMore && (
+                        {(!loadButton && hasMore) &&
                             <div
                                 className='rac-select-option rac-disabled-option rac-loading-option'
+                                style={{justifyContent: 'initial', alignItems: 'end', gap: 0}}
                                 onClick={e => e.stopPropagation()}
                             >
                                 <span className='rac-loading-option-title'>Loading</span>
-                                <span className='rac-loading-dots'><i/><i/><i/></span>
+                                <div className='rac-loading-container'>
+                                    <span
+                                        style={{paddingBottom: '0.1em'}}
+                                        className='rac-loading-dots'
+                                    >
+                                        <i/><i/><i/></span>
+                                </div>
                             </div>
-                        )}
+                        }
                     </div>
                 </Options>
             </div>

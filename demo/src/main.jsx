@@ -1,9 +1,17 @@
-import {StrictMode} from 'react'
+import {LazyMotion, domAnimation} from 'framer-motion'
 import {createRoot} from 'react-dom/client'
-import App from './App.tsx'
+import {store} from './components/store'
+import {Provider} from 'react-redux'
+import {StrictMode} from 'react'
+import App from './app'
+import './rac.css'
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
-    <App />
-  </StrictMode>,
+    <StrictMode>
+        <Provider store={store}>
+            <LazyMotion features={domAnimation}>
+                <App/>
+            </LazyMotion>
+        </Provider>
+    </StrictMode>
 )

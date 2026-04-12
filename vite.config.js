@@ -8,6 +8,7 @@ export default defineConfig({
         libInjectCss()
     ],
     build: {
+        cssCodeSplit: true,
         lib: {
             entry: 'src/index.js',
             name: 'ReactAnimatedSelect',

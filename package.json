@@ -1,9 +1,18 @@
 {
   "name": "react-animated-select",
-  "version": "0.6.0",
+  "version": "0.6.5",
   "type": "module",
-  "author": "l1nway (https://github.com/l1nway/)",
+  "author": {
+    "name": "l1nway",
+    "email": "l1nway@icloud.com",
+    "url": "https://github.com/l1nway/"
+    },
   "description": "Animated, accessible, and flexible select component for React",
+  "files": [
+    "dist",
+    "index.d.ts",
+    "README.md"
+  ],
   "keywords": [
     "react",
     "select",
@@ -34,9 +43,7 @@
   },
   "peerDependencies": {
     "react": ">=16.8.0",
-    "react-dom": ">=16.8.0"
-  },
-  "dependencies": {
+    "react-dom": ">=16.8.0",
     "react-transition-group": "^4.4.5"
   },
   "devDependencies": {

@@ -17,7 +17,6 @@ function useSelectLogic({
     options = EMPTY_ARRAY,
     jsxOptions = EMPTY_ARRAY,
     value,
-    defaultValue,
     onChange,
     disabled = false,
     loading = false,
@@ -38,8 +37,8 @@ function useSelectLogic({
     loadingTitle,
     loadMoreText,
     loadMore,
-    childrenFirst,
-    groupsClosed
+    childrenFirst = false,
+    groupsClosed = false,
 }) {
     
     const isControlled = value !== undefined
@@ -78,8 +77,17 @@ function useSelectLogic({
     const normalize = useCallback((rawItem, index, prefix = 'n', group = null, groupDisabled = false) => {
         const id = `${prefix}-${index}`
         
-        if (rawItem == null || rawItem === '') {
-            return {id, userId: null, name: emptyOption, raw: null, disabled: true, type: 'normal', group, groupDisabled}
+        if (rawItem == null || rawItem === '' || rawItem === undefined) {
+            return {
+                name: emptyOption,
+                disabled: true,
+                type: 'normal',
+                groupDisabled,
+                userId: null,
+                raw: rawItem,
+                group,
+                id, 
+            }
         }
 
         if (typeof rawItem === 'function') {
@@ -151,9 +159,8 @@ function useSelectLogic({
             if (!Array.isArray(items)) items = [items]
             
             items.forEach((item, i) => {
-                if (!item) return
                 const currentId = `${depth}-${i}`
-                const isObj = typeof item === 'object' && !Array.isArray(item)
+                const isObj = item !== null && item !== undefined && typeof item === 'object' && !Array.isArray(item)
                 
                 const isGroup = isObj && ('options' in item || ('group' in item && !LABEL_KEYS.some(k => k in item)))
 
@@ -165,7 +172,7 @@ function useSelectLogic({
                     if (item.options) {
                         collect(item.options, groupName, parentDisabled || !!item.disabled, currentId)
                     } else {
-                        flatBase.push({id: `empty-${groupName}-${currentId}`, name: groupName, group: groupName, isPlaceholder: true, type: 'group-marker',index: flatIndex++})
+                        flatBase.push({id: `empty-${groupName}-${currentId}`, name: groupName, group: groupName, isPlaceholder: true, type: 'group-marker', index: flatIndex++})
                     }
                 } else if (isObj && !LABEL_KEYS.some(k => k in item) && !item.group) {
                     Object.entries(item).forEach(([k, v], j) => {
@@ -188,9 +195,9 @@ function useSelectLogic({
         if (!orderCache.current) {
             orderCache.current = new Map(combined.map((item, i) => [item.id, i]))
         } else {
-            let hasNewItems = false;
+            let hasNewItems = false
             combined.forEach(item => {
-                if (!orderCache.current.has(item.id)) hasNewItems = true;
+                if (!orderCache.current.has(item.id)) hasNewItems = true
             })
 
             if (hasNewItems) {
@@ -219,9 +226,14 @@ function useSelectLogic({
                     seenGroups.add(opt.group)
                     structure.push({type: 'group', name: opt.group})
                 }
-                if (!opt.isPlaceholder && !opt.isGroupMarker) {
-                    const groupStore = groupsMap.get(opt.group) || {items: []}
-                    if (!groupsMap.has(opt.group)) groupsMap.set(opt.group, groupStore)
+                const groupStore = groupsMap.get(opt.group) || {items: []}
+                if (!groupsMap.has(opt.group)) groupsMap.set(opt.group, groupStore)
+
+                if (opt.isGroupMarker) {
+                    groupStore.className = opt.className
+                    groupStore.style = opt.style
+                    if (opt.disabled) groupStore.disabled = true
+                } else if (!opt.isPlaceholder) {
                     groupStore.items.push(opt)
                 }
             }
@@ -237,13 +249,15 @@ function useSelectLogic({
                 const expanded = expandedGroups.has(groupName)
                 
                 final.push({
+                    className: meta?.className || '',
                     id: `group-header-${groupName}`,
-                    name: groupName,
                     disabled: !!meta?.disabled,
+                    style: meta?.style || {},
                     groupHeader: true,
-                    expanded,
+                    name: groupName,
                     type: 'group',
-                    hidden: false
+                    hidden: false,
+                    expanded
                 })
 
                 meta?.items.forEach(item => {
@@ -270,10 +284,9 @@ function useSelectLogic({
     }, [options, jsxOptions, normalize, childrenFirst, hasMore, loadButton, loadingTitle, loadMoreText, groupsClosed, expandedGroups, emptyOption])
 
     const getInitialSelection = useCallback(() => {
-        const effectiveValue = isControlled ? value : defaultValue
         
-        if (effectiveValue == null || (Array.isArray(effectiveValue) && effectiveValue.length === 0)) {
-            return { initialId: null, initialIDs: [] }
+        if (value == null || (Array.isArray(value) && value.length === 0)) {
+            return {initialId: null, initialIDs: []}
         }
 
         const usedIds = new Set()
@@ -318,15 +331,15 @@ function useSelectLogic({
         }
 
         if (multiple) {
-            const vals = Array.isArray(effectiveValue) ? effectiveValue : [effectiveValue]
+            const vals = Array.isArray(value) ? value : [value]
             const newSelected = vals.map((val, index) => getOrVirtualize(val, index))
-            return { initialId: null, initialIDs: newSelected }
+            return {initialId: null, initialIDs: newSelected}
         } else {
-            const val = Array.isArray(effectiveValue) ? effectiveValue[0] : effectiveValue
+            const val = Array.isArray(value) ? value[0] : value
             const opt = getOrVirtualize(val, 0)
-            return { initialId: opt.id, initialIDs: [] }
+            return {initialId: opt.id, initialIDs: []}
         }
-    }, [isControlled, value, defaultValue, normalizedOptions, multiple])
+    }, [isControlled, value, normalizedOptions, multiple])
 
     const [selectedId, setSelectedId] = useState(() => getInitialSelection().initialId)
     const [selectedIDs, setSelectedIds] = useState(() => getInitialSelection().initialIDs)
@@ -336,8 +349,7 @@ function useSelectLogic({
         if (found) return found
         
         if (!multiple && selectedId?.startsWith('virtual-')) {
-            const effectiveValue = isControlled ? value : defaultValue
-            const val = Array.isArray(effectiveValue) ? effectiveValue[0] : effectiveValue
+            const val = Array.isArray(value) ? value[0] : value
             if (val) {
                 return {
                     id: selectedId,
@@ -347,7 +359,7 @@ function useSelectLogic({
             }
         }
         return null
-    }, [selectedId, normalizedOptions, multiple, isControlled, value, defaultValue])
+    }, [selectedId, normalizedOptions, multiple, isControlled, value])
 
     // select option in dropdown menu
     const selectOption = useCallback((option, e) => {
@@ -417,7 +429,7 @@ function useSelectLogic({
     return {
         normalizedOptions, selected, selectOption, clear, removeOption, hasOptions: normalizedOptions.length > 0,
         active: !error && !loading && !disabled && normalizedOptions.length > 0,
-        selectedValue: value ?? defaultValue, 
+        selectedValue: value, 
         placeholder, emptyText, disabledText, loadingText, errorText, 
         disabledOption, emptyOption, invalidOption, disabled, loading, error,
         expandedGroups, toggleGroup, selectedIDs, multiple, setSelectedIds

@@ -3,12 +3,12 @@ import {SelectContext} from './selectContext'
 import {GroupContext} from './optgroup'
 import getText from './getText'
 
-export default function Option({value, id, className, children, disabled, group: manualGroup}) {
+export default function Option({name, label, id, value, className, style, children, disabled, group: manualGroup}) {
     const ctx = useContext(SelectContext)
     const contextGroup = useContext(GroupContext)
     
-    const registerOption = ctx?.registerOption;
-    const unregisterOption = ctx?.unregisterOption;
+    const registerOption = ctx?.registerOption
+    const unregisterOption = ctx?.unregisterOption
 
     const uniqueId = useId()
     const stableId = useMemo(() => {
@@ -22,12 +22,14 @@ export default function Option({value, id, className, children, disabled, group:
         const hasJsx = children !== undefined && children !== null
         let finalLabel = ''
 
-        if (textFallback) {
+        if (label !== undefined && label !== null && label !== '') {
+            finalLabel = String(label)
+        } else if (name !== undefined && name !== null && name !== '') {
+            finalLabel = String(name)
+        } else if (textFallback) {
             finalLabel = textFallback
         } else if (id !== undefined && id !== null && id !== '') {
             finalLabel = String(id)
-        } else if (value !== undefined && value !== null && value !== '') {
-            finalLabel = String(value)
         }
 
         const option = {
@@ -37,6 +39,7 @@ export default function Option({value, id, className, children, disabled, group:
             jsx: children,
             hasJsx,
             className,
+            style,
             disabled: !!disabled,
             group: manualGroup || contextGroup || null 
         }
@@ -44,7 +47,7 @@ export default function Option({value, id, className, children, disabled, group:
         registerOption(option)
         return () => unregisterOption(stableId)
         
-    }, [stableId, value, children, className, disabled, manualGroup, contextGroup, registerOption, unregisterOption])
+    }, [stableId, name, label, value, children, className, style, disabled, manualGroup, contextGroup, registerOption, unregisterOption])
 
     return null
 }

@@ -1,13 +1,12 @@
-import './select.css'
 import {XMarkIcon, ArrowUpIcon, CheckmarkIcon} from './icons'
 import {forwardRef, useImperativeHandle, useRef, useMemo, useState, useEffect, useCallback, useId, isValidElement, cloneElement} from 'react'
-import {makeId} from './makeId'
-
 import SelectJSX from './selected-items/SelectJSX'
 import useSelectLogic from './useSelectLogic'
 import useSelect from './useSelect'
 import SlideDown from './slideDown'
 import SlideLeft from './slideLeft'
+import {makeId} from './makeId'
+import './select.css'
 
 // universal icon display
 const renderIcon = (Icon, defaultProps) => {
@@ -53,32 +52,32 @@ const Select = forwardRef(({
     unmount,
     children,
     visibility: externalVisibility,
+    setVisibility: setExternalVisibility = () => {},
     ownBehavior = false,
-    alwaysOpen = false,
     duration = 300,
-    easing = 'ease-out',
+    easing = 'ease-in',
     offset = 1,
     animateOpacity = true,
     style = {},
     className = '',
-    ArrowIcon = ArrowUpIcon,
+    OpenIcon = ArrowUpIcon,
     ClearIcon = XMarkIcon,
     DelIcon = XMarkIcon,
-    CheckIcon = CheckmarkIcon,
+    Checkmark = CheckmarkIcon,
+    Checkbox = undefined,
     hasMore = false,
-    loadMore = () => {console.warn('loadMore not implemented')},
+    loadMore = () => console.warn('loadMore not implemented'),
     loadButton = false,
     loadButtonText = 'Load more',
     loadMoreText = 'Loading',
     selectedText = undefined,
     loadOffset = 100,
     loadAhead = 3,
-    childrenFirst = false,
-    groupsClosed = false,
     optionsClassName = '',
     onOpen = () => {},
     onClose = () => {},
     deleteInline = false,
+    showDelete = false,
     ...props
 }, ref) => {
 
@@ -120,16 +119,22 @@ const Select = forwardRef(({
     }, [])
 
     // select visibility control
-    const visibility = alwaysOpen ? true : (ownBehavior ? !!externalVisibility : internalVisibility)
+    const isControlled = externalVisibility !== undefined
+
+    const visibility = useMemo(() => {
+        if (ownBehavior) return !!externalVisibility
+        return isControlled ? !!externalVisibility : internalVisibility
+    }, [ownBehavior, isControlled, externalVisibility, internalVisibility])
     
     const setVisibility = useCallback((newState) => {
-        if (alwaysOpen || ownBehavior) return
-        setInternalVisibility(newState)
-    }, [alwaysOpen, ownBehavior])
+        if (ownBehavior) return
+        !isControlled && setInternalVisibility(newState)
+        setExternalVisibility?.(newState)
+    }, [ownBehavior, isControlled, setExternalVisibility])
 
     const logic = useSelectLogic({
         ...props, visibility, setVisibility, jsxOptions, hasMore, 
-        loadButton, loadingTitle, loadMore, loadMoreText, setLoadingTitle, childrenFirst, groupsClosed
+        loadButton, loadingTitle, loadMore, loadMoreText, setLoadingTitle
     })
 
     const {multiple, normalizedOptions, selected, selectOption, clear, removeOption, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, emptyText, disabledText, loadingText, errorText, expandedGroups, selectedIDs, setSelectedIds} = logic
@@ -140,9 +145,22 @@ const Select = forwardRef(({
 
     useImperativeHandle(ref, () => selectRef.current)
 
-    useEffect(() => {!visibility && setAnimationFinished(false)}, [visibility])
+    useEffect(() => {
+        if (!visibility) {
+            setAnimationFinished(false)
+            return
+        }
+        
+        if (visibility && selectRef.current) {
+            if (document.activeElement !== selectRef.current) {
+                selectRef.current.focus()
+            }
+        }
+    }, [visibility])
 
     useEffect(() => {(error || disabled || loading || !hasOptions) && setVisibility(false)}, [error, disabled, loading, hasOptions, setVisibility])
+
+    useEffect(() => {isControlled && setInternalVisibility(!!externalVisibility)}, [externalVisibility, isControlled])
 
     useEffect(() => {
         if (visibility && animationFinished && highlightedIndex !== -1) {
@@ -209,6 +227,7 @@ const Select = forwardRef(({
         const createOptionNode = (element, index) => (
             <div
                 className={getOptionClassName(element, index, highlightedIndex, selected?.id, loadingTitle, loadMoreText, invalidOption, selectedIDs)}
+                style={{...element.style, ...(element.loading ? {justifyContent: 'initial', alignItems: 'end', gap: 0} : {})}}
                 onMouseEnter={() => (!element.disabled && !element.loading) && setHighlightedIndex(index)}
                 onClick={(e) => !element.loading && selectOption(element, e)}
                 aria-disabled={element.disabled || element.loading}
@@ -217,16 +236,29 @@ const Select = forwardRef(({
                 key={element.id}
                 role='option'   
             >
-                {element.jsx ?? <span className='rac-option-title'>{element.name}</span>}
-                {element.loading && <span className='rac-loading-dots'><i/><i/><i/></span>}
+                {element.jsx
+                    ? <div className='rac-jsx-option'>{element.jsx}</div>
+                    : <span className='rac-option-title'>{element.name}</span>
+                }
+                {element.loading &&
+                    <span
+                        style={{paddingBottom: '0.1em'}}
+                        className='rac-loading-dots'
+                    >
+                        <i/><i/><i/>
+                    </span>
+                }
                 {(multiple && !element.disabled) &&
-                    <div className='rac-checkbox'>
-                        {renderIcon(CheckmarkIcon, {className: `
-                            rac-checkmark
-                            ${selectedIDs?.some(o => o.id === element.id)
-                                ? '--checked'
-                                : ''
+                    <div className={`rac-checkbox${Checkbox ? '' : '-default'}`}>
+                        {renderIcon(Checkmark, {
+                            style: {position: !Checkbox ? 'relative' : ''},
+                            className: `
+                                rac-checkmark
+                                ${selectedIDs?.some(o => o.id === element.id)
+                                    ? '--checked'
+                                    : ''
                         }`})}
+                        {renderIcon(Checkbox, {className: 'rac-check-box'})}
                     </div>}
                 
             </div>
@@ -247,14 +279,16 @@ const Select = forwardRef(({
                 const hasChildren = groupCounts[element.name] > 0
 
                 nodes.push(
-                    <div 
-                        key={element.id}
-                        id={element.id}
+                    <div
                         className={[
                             'rac-group-header',
-                            element.disabled && 'rac-disabled-group'
+                            element.disabled && 'rac-disabled-group',
+                            element.className
                         ].filter(Boolean).join(' ')}
                         onClick={(e) => selectOption(element, e)}
+                        style={element.style}
+                        key={element.id}
+                        id={element.id}
                     >
                         <span className='rac-group-title-text'>{element.name}</span>
                         <SlideLeft
@@ -262,9 +296,7 @@ const Select = forwardRef(({
                             style={{display: 'grid'}}
                             duration={duration}
                         >
-                            <span className={`rac-group-arrow-wrapper ${open ? 'open' : ''}`}>
-                                {renderIcon(ArrowIcon, {className: 'rac-select-arrow-wrapper'})}
-                            </span>
+                            {renderIcon(OpenIcon, {className: `rac-group-arrow ${open ? '--open' : ''}`})}
                         </SlideLeft>
                     </div>
                 )
@@ -278,7 +310,7 @@ const Select = forwardRef(({
         flushGroup(currentGroupName)
 
         return nodes
-    }, [normalizedOptions, selectOption, selectId, selected, highlightedIndex, loadingTitle, loadMoreText, invalidOption, setHighlightedIndex, expandedGroups, ArrowIcon])
+    }, [normalizedOptions, selectOption, selectId, selected, highlightedIndex, loadingTitle, loadMoreText, invalidOption, setHighlightedIndex, expandedGroups, OpenIcon])
 
     return (
         <SelectJSX
@@ -331,12 +363,13 @@ const Select = forwardRef(({
             offset={offset}
             animateOpacity={animateOpacity}
             unmount={unmount}
-            ArrowIcon={ArrowIcon}
+            OpenIcon={OpenIcon}
             ClearIcon={ClearIcon}
             DelIcon={DelIcon}
             hasMore={hasMore}
             loadButton={loadButton}
             deleteInline={deleteInline}
+            showDelete={showDelete}
         />
     )
 })

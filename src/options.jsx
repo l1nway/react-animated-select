@@ -1,5 +1,5 @@
 import {CSSTransition} from 'react-transition-group'
-import {useRef, useState, useEffect, useCallback, memo, useLayoutEffect} from 'react'
+import {useRef, useState, useCallback, memo, useLayoutEffect} from 'react'
 import {createPortal} from 'react-dom'
 
 function Options({visibility, children, selectRef, onAnimationDone, unmount = true, duration, easing, offset, animateOpacity, style, className, setBottomDirection = () => {}}) {
@@ -10,7 +10,7 @@ function Options({visibility, children, selectRef, onAnimationDone, unmount = tr
 
   const coordsRef = useRef(coords)
   
-  useEffect(() => {coordsRef.current = coords}, [coords])
+  useLayoutEffect(() => {coordsRef.current = coords}, [coords])
 
   const updateCoords = useCallback(() => {
     if (selectRef?.current) {
@@ -32,7 +32,7 @@ function Options({visibility, children, selectRef, onAnimationDone, unmount = tr
     }
   }, [selectRef])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (visibility) {
       updateCoords()
       
