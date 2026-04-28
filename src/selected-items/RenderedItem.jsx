@@ -2,53 +2,34 @@ import SelectedItem from './SelectedItem'
 import {memo, Fragment} from 'react'
 import Animated from '../animated'
 
-const RenderedItem = memo(({element, index, setEntering, leaving, setLeaving, selectRef, setVisibility, setActiveHoverId, delSpacer, swiped, swipedId, onSwipe, activeHoverId, deleteInline, spacer, duration, normalizedOptions, setDeleting, renderIcon, deleting, DelIcon, remove, registerItemWidth, setSpacer, showDelete, ...props}) => {
-
+const RenderedItem = memo(({element, index, spacer, duration, setState, ...rest}) => {
     return (
         <Fragment>
             <Animated
+                setEntering={(bool) => setState({entering: bool})}
+                setLeaving={(bool) => setState({leaving: bool})}
+                setSpacer={(val) => setState({spacer: val})}
                 className='rac-multiple-option'
-                onEnter={props.onEnter}
-                setLeaving={setLeaving}
-                setSpacer={setSpacer}
-                onExit={props.onExit}
+                onEnter={rest.onEnter}
+                onExit={rest.onExit}
                 duration={duration}
                 id={element.id}
-                in={props.in}
+                in={rest.in}
                 widthMode
             >
                 <SelectedItem
-                    onRender={(width) => registerItemWidth(element.id, width)}
-                    normalizedOptions={normalizedOptions}
-                    setActiveHoverId={setActiveHoverId}
-                    activeHoverId={activeHoverId}
-                    setVisibility={setVisibility}
-                    deleteInline={deleteInline}
-                    key={element.id ?? index}
-                    setDeleting={setDeleting}
-                    setEntering={setEntering}
-                    setLeaving={setLeaving}
-                    renderIcon={renderIcon}
-                    showDelete={showDelete}
-                    setSpacer={setSpacer}
-                    selectRef={selectRef}
-                    delSpacer={delSpacer}
+                    onRender={(width) => rest.registerItemWidth(element.id, width)}
+                    setState={setState}
                     duration={duration}
-                    deleting={deleting}
-                    swipedId={swipedId}
-                    onSwipe={onSwipe}
                     element={element}
-                    DelIcon={DelIcon}
-                    leaving={leaving}
-                    swiped={swiped}
-                    remove={remove}
                     spacer={spacer}
                     index={index}
+                    {...rest}
                 />
             </Animated>
             {(spacer.state && spacer.id === element.id) &&
                 <div
-                    style={{width: spacer.width-2}}
+                    style={{width: spacer.width}}
                     className='rac-spacer'
                 />
             }

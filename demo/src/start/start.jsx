@@ -58,9 +58,7 @@ function Start() {
                     key={item.id}
                     id={item.id}
                 >
-                    <div
-                        className='rac-code-title-container2'
-                    >
+                    <div className='rac-code-title-container2'>
                         <div className='rac-code-title-container'>
                             <div className='rac-code-icon'>
                                 {item.icon}

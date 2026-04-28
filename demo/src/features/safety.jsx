@@ -1,65 +1,14 @@
 import {vscDarkPlus} from 'react-syntax-highlighter/dist/esm/styles/prism'
 import {ShieldCogCorner, Plus, Trash, X, ChevronDown} from 'lucide-react'
 import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter'
+import {m, AnimatePresence} from 'framer-motion'
+import {clearShake} from '../start/components'
 import {Select} from 'react-animated-select'
-import {useCallback, useState} from 'react'
-
-const parse = (option) => {
-    if (typeof option === 'string') return `'${option}'`
-  
-    if (option === undefined) return 'undefined'
-    if (option === null) return 'null'
-    
-    if (typeof option === 'function') return 'function () {[native code]}'
-    
-    if (typeof option === 'object') return JSON.stringify(option)
-
-    return String(option)
-}
+import {useSafety, parse} from './useSafety'
 
 function Safety() {
-
-    const [value, setValue] = useState()
-    const [options, setOptions] = useState(['Option 1', true, false, undefined, null, console.log, {name: 'Option 7', disabled: true}, {name: 'Option 8'}, {random: 'Option 9'}, {name: 'Option 10', id: 2}, {id: 'Option 11'}])
-
-    const [option, setOption] = useState('')
-
-    const addOption = useCallback(() => {
-        if (!option.trim()) return
-
-        let parsedValue
-        try {
-            if (option.startsWith('{') || option.startsWith('[')) {
-                parsedValue = new Function(`return ${option}`)()
-            } 
-            
-            else if (option.includes('=>') || option.includes('function')) {
-                parsedValue = new Function(`return ${option}`)()
-            }
-            
-            else if (!isNaN(option) && option.trim() !== '') {
-                parsedValue = Number(option)
-            }
-            
-            else if (option === 'true') parsedValue = true
-            else if (option === 'false') parsedValue = false
-            else if (option === 'undefined') parsedValue = undefined
-            else if (option === 'null') parsedValue = null
-
-            else {parsedValue = option}
-
-            setOptions(prev => [...prev, parsedValue])
-            setOption('')
-        } catch (e) {
-            setOptions(prev => [...prev, option])
-            setOption('')
-        }
-    }, [option])
-
-    const removeOption = useCallback((removing) => {
-        setOptions(prev => prev.filter((_, index) => index !== removing))
-    }, [])
-
+    const {state, dispatch, containerAnim, itemAnim, addOption, removeOption, itemsRef, contentRef, inputRef} = useSafety()
+    const {options, option, height, value} = state
     return (
         <section
             className='rac-multiple'
@@ -76,32 +25,54 @@ function Safety() {
             <p className='rac-safety-desc'>
                 This developer-first component is engineered for seamless integration and maximum runtime resilience, ensuring the application remains stable even when encountering malformed data. It features a robust error-handling layer that prevents crashes by gracefully processing invalid inputs; whether passed as numbers, strings, booleans, or objects missing standard name/label or id/value keys, the Select will attempt to parse and render them. Even in extreme cases where unsupported types like functions are provided as options, the component catches the exception and displays a safe "Invalid Option" fallback rather than breaking the render cycle.
             </p>
-            {options.length > 0 &&
-                <div className='rac-safety'>
-                    <div className='rac-safety-options'>
-                        {options.map((option, index) =>
-                            <div
-                                className='rac-safety-container'
-                                key={parse(option)}
-                            >
-                                <SyntaxHighlighter
-                                    customStyle={{backgroundColor: 'transparent'}}
-                                    className='rac-safety-code'
-                                    style={vscDarkPlus}
-                                    language='jsx'
-                                >
-                                    {parse(option)}
-                                </SyntaxHighlighter>
-                                <Trash
-                                    onClick={() => removeOption(index)}
-                                    className='rac-safety-delete'
-                                />
-                            </div>
-                        )}
-                    </div>
-                    <X onClick={() => setOptions([])} className='rac-safety-x'/>
-            </div>}
-            <div className='rac-safety-interactive'>
+            <AnimatePresence initial={false}>
+                {options.length > 0 &&
+                    <m.div
+                        className='rac-safety'
+                        {...containerAnim}
+                        layout
+                    >
+                        <div
+                            className='rac-safety-options'
+                            ref={contentRef}
+                        >
+                            <AnimatePresence initial={false}>
+                                {options.map((option, index) =>
+                                    <m.div
+                                        ref={el => itemsRef.current[parse(option)] = el}
+                                        className='rac-safety-container'
+                                        {...itemAnim(parse(option))}
+                                        key={parse(option)}
+                                        layout
+                                    >
+                                        <SyntaxHighlighter
+                                            customStyle={{backgroundColor: 'transparent'}}
+                                            className='rac-safety-code'
+                                            style={vscDarkPlus}
+                                            language='jsx'
+                                        >
+                                            {parse(option)}
+                                        </SyntaxHighlighter>
+                                        <Trash
+                                            onClick={() => removeOption(index)}
+                                            className='rac-safety-delete'
+                                        />
+                                    </m.div>
+                                )}
+                            </AnimatePresence>
+                        </div>
+                        <X
+                            onClick={() => dispatch({options: []})}
+                            className='rac-safety-x'
+                            style={{height}}
+                        />
+                    </m.div>
+                }
+            </AnimatePresence>
+            <form
+                className='rac-safety-interactive'
+                onSubmit={addOption}
+            >
                 <h4 className='rac-safety-title'>
                     Try by you own!
                 </h4>
@@ -110,8 +81,12 @@ function Safety() {
                     data-value={option}
                 >
                     <input
-                        onChange={e => setOption(e.target.value)}
+                        onChange={e => {
+                            [Object.values(itemsRef.current), inputRef.current].flat().forEach(clearShake)
+                            dispatch({option: e.target.value})
+                        }}
                         className='rac-safety-input'
+                        ref={inputRef}
                         value={option}
                         type='text'
                     />
@@ -120,12 +95,12 @@ function Safety() {
                         onClick={addOption}
                     />
                 </div>
-            </div>
+            </form>
             <Select
                 optionsClassName='rac-basic-options'
+                onChange={v => dispatch({value: v})}
                 className='rac-basic-select'
                 OpenIcon={<ChevronDown/>}
-                onChange={setValue}
                 options={options}
                 value={value}
             />

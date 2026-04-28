@@ -34,8 +34,22 @@ const Menu = () => {
         {menu.map((item) => (
             <div tabIndex={0} className='rac-button-container' key={item.id}>
                 {!item.button
-                    ? <a tabIndex={'-1'} href={item.href} className='rac-header-link'>{item.icon}</a>
-                    : <button tabIndex={'-1'} className='rac-header-link' onClick={item.onClick}>{item.icon}</button>
+                    ? <a
+                        className='rac-header-link'
+                        href={item.href}
+                        rel='noreferrer'
+                        target='_blank'
+                        tabIndex={-1}
+                    >
+                        {item.icon}
+                    </a>
+                    : <button
+                        className='rac-header-link'
+                        onClick={item.onClick}
+                        tabIndex={-1}
+                    >
+                        {item.icon}
+                    </button>
                 }
                 {/* <span className='rac-button-text'>
                     {item.text}

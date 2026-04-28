@@ -33,7 +33,7 @@ function useSelectLogic({
     setVisibility,
     hasMore,
     loadButton,
-    setLoadingTitle,
+    setState,
     loadingTitle,
     loadMoreText,
     loadMore,
@@ -284,7 +284,6 @@ function useSelectLogic({
     }, [options, jsxOptions, normalize, childrenFirst, hasMore, loadButton, loadingTitle, loadMoreText, groupsClosed, expandedGroups, emptyOption])
 
     const getInitialSelection = useCallback(() => {
-        
         if (value == null || (Array.isArray(value) && value.length === 0)) {
             return {initialId: null, initialIDs: []}
         }
@@ -341,25 +340,25 @@ function useSelectLogic({
         }
     }, [isControlled, value, normalizedOptions, multiple])
 
-    const [selectedId, setSelectedId] = useState(() => getInitialSelection().initialId)
-    const [selectedIDs, setSelectedIds] = useState(() => getInitialSelection().initialIDs)
+    const [selectedID, setselectedID] = useState(() => getInitialSelection().initialId)
+    const [selectedIDs, setselectedIDs] = useState(() => getInitialSelection().initialIDs)
 
     const selected = useMemo(() => {
-        const found = normalizedOptions.find(o => o.id === selectedId)
+        const found = normalizedOptions.find(o => o.id === selectedID)
         if (found) return found
         
-        if (!multiple && selectedId?.startsWith('virtual-')) {
+        if (!multiple && selectedID?.startsWith('virtual-')) {
             const val = Array.isArray(value) ? value[0] : value
             if (val) {
                 return {
-                    id: selectedId,
+                    id: selectedID,
                     name: typeof val === 'object' ? getLabel(val) : String(val),
                     original: val
                 }
             }
         }
         return null
-    }, [selectedId, normalizedOptions, multiple, isControlled, value])
+    }, [selectedID, normalizedOptions, multiple, isControlled, value])
 
     // select option in dropdown menu
     const selectOption = useCallback((option, e) => {
@@ -375,7 +374,7 @@ function useSelectLogic({
             cancelEvents(e)
             // proccesing load more button
             if (option.loadMore && !option.loading) {
-                setLoadingTitle(loadMoreText)
+                setState({loadingTitle: loadMoreText})
                 loadMore()
             }
             return
@@ -396,15 +395,15 @@ function useSelectLogic({
                 ? selectedIDs.filter(item => item.id !== option.id) 
                 : [...selectedIDs, option]
 
-            setSelectedIds(next)
+            setselectedIDs(next)
             onChange?.(next.map(o => o.original), next.map(o => o.userId))
             return
         }
         // toggle option selection
-        setSelectedId(option.id)
         onChange?.(option.original, option.userId)
+        setselectedID(option.id)
         setVisibility(false)
-    }, [onChange, setVisibility, loadMore, loadMoreText, setLoadingTitle, toggleGroup, multiple, selectedIDs])
+    }, [onChange, setVisibility, loadMore, loadMoreText, toggleGroup, multiple, selectedIDs])
 
     // prevent default behavior and stop event bubbling
     const cancelEvents = useCallback((e) => {
@@ -412,17 +411,17 @@ function useSelectLogic({
         e?.preventDefault()
     }, [])
 
-    // clears a selectedId(s)
+    // clears a selectedID(s)
     const clear = useCallback(() => {
         onChange?.(null, null)
-        setSelectedId(null)
-        setSelectedIds([])
+        setselectedID(null)
+        setselectedIDs([])
     }, [onChange])
 
     // remove selected option (multiple mode)
     const removeOption = useCallback((id) => {
         const next = selectedIDs.filter(item => item.id !== id)
-        setSelectedIds(next)
+        setselectedIDs(next)
         onChange?.(next.map(o => o.original), next.map(o => o.userId))
     }, [selectedIDs, onChange])
 
@@ -432,7 +431,7 @@ function useSelectLogic({
         selectedValue: value, 
         placeholder, emptyText, disabledText, loadingText, errorText, 
         disabledOption, emptyOption, invalidOption, disabled, loading, error,
-        expandedGroups, toggleGroup, selectedIDs, multiple, setSelectedIds
+        expandedGroups, toggleGroup, selectedIDs, multiple, setselectedIDs
     }
 }
 

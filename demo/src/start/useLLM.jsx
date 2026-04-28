@@ -58,20 +58,18 @@ function useLLM() {
     }), [height])
 
     const askLLM = useCallback(async (e, audioBlob = null) => {
+        clearShake(refs.textarea.current)
         e?.preventDefault()
         
         if (!value.trim() && !audioBlob) return
         try {
-            dispatch({loading: true, height: refs.height.current ? refs.height.current.scrollHeight : 0, answer: ''})
+            dispatch({loading: true, height: refs?.height?.current?.scrollHeight || 0, answer: ''})
 
             const formData = new FormData()
-            if (audioBlob) {
-                formData.append('audio', audioBlob, 'record.webm')
-            } else {
-                formData.append('prompt', value.trim())
-            }
-            // https://react-animated-select-backend.online/ask
-            const res = await axios.post('http://localhost:3000/ask', formData)
+            if (audioBlob) formData.append('audio', audioBlob, 'record.webm')
+            else formData.append('prompt', value.trim())
+            
+            const res = await axios.post('https://react-animated-select-backend.online/ask', formData)
             dispatch({value: '', answer: res.data.answer})
 
             requestAnimationFrame(() => {
@@ -105,9 +103,7 @@ function useLLM() {
                         ? chars[Math.floor(Math.random() * chars.length)] 
                         : '')
                 
-                if (refs.answer.current) {
-                    refs.answer.current.innerText = scrambled
-                }
+                if (refs.answer.current) refs.answer.current.innerText = scrambled
             },
             onComplete: () => dispatch({height: 'auto'})
         })
@@ -121,6 +117,7 @@ function useLLM() {
 
     const startRecording = useCallback(async () => {
         try {
+            clearShake(refs.textarea.current)
             const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
             ? 'audio/webm;codecs=opus'
             : 'audio/webm'
@@ -130,15 +127,11 @@ function useLLM() {
             refs.mediaRecorder.current = new MediaRecorder(stream, {mimeType})
             refs.audioChunks.current = []
 
-            refs.mediaRecorder.current.ondataavailable = (e) => {
-                if (e.data.size > 0) refs.audioChunks.current.push(e.data)
-            }
+            refs.mediaRecorder.current.ondataavailable = (e) => (e.data.size > 0) && refs.audioChunks.current.push(e.data)
 
             refs.mediaRecorder.current.onstop = async () => {
                 const audioBlob = new Blob(refs.audioChunks.current, {type: mimeType})
-
                 await askLLM(null, audioBlob)
-                
                 stream.getTracks().forEach(track => track.stop())
             }
 
@@ -161,4 +154,4 @@ function useLLM() {
     return ({state, refs, animText, askLLM, onChange, startRecording, stopRecording})
 }
 
-export default useLLM
+export default useLLM 

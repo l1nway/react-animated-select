@@ -1,200 +1,167 @@
+import {useRef, useCallback, memo, useLayoutEffect} from 'react'
 import {CSSTransition} from 'react-transition-group'
-import {useRef, useState, useCallback, memo, useLayoutEffect} from 'react'
 import {createPortal} from 'react-dom'
 
-function Options({visibility, children, selectRef, onAnimationDone, unmount = true, duration, easing, offset, animateOpacity, style, className, setBottomDirection = () => {}}) {
+function Options({visibility, bottomDirection, children, selectRef, onAnimationDone, unmount = true, duration, easing, offset, animateOpacity, style, className, setBottomDirection = () => {}}) {
   
-  const nodeRef = useRef(null)
+    const nodeRef = useRef(null)
 
-  const [coords, setCoords] = useState({top: 0, left: 0, width: 0})
+    const syncPosition = useCallback(() => {
+        if (!selectRef?.current || !nodeRef.current) return
 
-  const coordsRef = useRef(coords)
-  
-  useLayoutEffect(() => {coordsRef.current = coords}, [coords])
+        const rect = selectRef.current.getBoundingClientRect()
+        const el = nodeRef.current
 
-  const updateCoords = useCallback(() => {
-    if (selectRef?.current) {
-      const rect = selectRef.current.getBoundingClientRect()
-      const windowHeight = window.innerHeight
+        const dropdownHeight = el.scrollHeight || 250
+        const spaceBelow = window.innerHeight - rect.bottom
+        const shouldShowUpward = spaceBelow < dropdownHeight && rect.top > spaceBelow
 
-      const dropdownHeight = nodeRef.current?.scrollHeight || 250
-      
-      const spaceBelow = windowHeight - rect.bottom
-      const showUpward = spaceBelow < dropdownHeight && rect.top > spaceBelow
-      setBottomDirection(showUpward)
-      setCoords({
-        top: rect.top,
-        bottom: rect.bottom,
-        left: rect.left,
-        width: rect.width,
-        isUpward: showUpward
-      })
-    }
-  }, [selectRef])
+        if (shouldShowUpward !== bottomDirection) setBottomDirection(shouldShowUpward)
 
-  useLayoutEffect(() => {
-    if (visibility) {
-      updateCoords()
-      
-      window.addEventListener('scroll', updateCoords, true)
-      window.addEventListener('resize', updateCoords)
-      
-      return () => {
-        window.removeEventListener('scroll', updateCoords, true)
-        window.removeEventListener('resize', updateCoords)
-      }
-    }
-  }, [visibility, updateCoords])
+        el.style.width = `${rect.width}px`
+        el.style.left = `${rect.left}px`
 
-  const transitionString = `height var(--rac-duration) ${easing}${animateOpacity ? `, opacity var(--rac-duration) ${easing}` : ''}`;
-
-  useLayoutEffect(() => {
-    if (!selectRef?.current) return
-
-    const resizeObserver = new ResizeObserver((entries) => {
-      for (let entry of entries) {
-        if (visibility && nodeRef.current && selectRef.current) {
-            const rect = selectRef.current.getBoundingClientRect()
-            const {isUpward} = coordsRef.current
-
-            nodeRef.current.style.width = `${rect.width}px`
-            nodeRef.current.style.left = `${rect.left}px`
-
-            if (isUpward) {
-                nodeRef.current.style.bottom = `${window.innerHeight - rect.top + offset}px`
-            } else {
-                nodeRef.current.style.top = `${rect.bottom + offset}px`
-            }
+        if (shouldShowUpward) {
+            el.style.top = 'auto'
+            el.style.bottom = `${window.innerHeight - rect.top + offset}px`
+            el.style.transformOrigin = 'bottom'
+        } else {
+            el.style.bottom = 'auto'
+            el.style.top = `${rect.bottom + offset}px`
+            el.style.transformOrigin = 'top'
         }
-      }
-    })
+    }, [selectRef, bottomDirection, offset, setBottomDirection])
 
-    resizeObserver.observe(selectRef.current)
-    return () => resizeObserver.disconnect()
-  }, [selectRef, visibility, offset])
+    useLayoutEffect(() => {
+        if (visibility) {
+        syncPosition()
+        
+        window.addEventListener('scroll', syncPosition, {capture: true, passive: true})
+        window.addEventListener('resize', syncPosition)
 
-  const baseStyles = {
-    position: 'fixed',
-    '--rac-duration': `${duration}ms`,
-    '--rac-easing': easing,
-    left: `${coords.left}px`,
-    width: `${coords.width}px`,
-    overflow: 'hidden',
-    zIndex: '2147483647',
-    height: visibility ? 'auto' : '0px',
-    opacity: animateOpacity ? (visibility ? 1 : 0) : 1,
-    pointerEvents: visibility ? 'all' : 'none',
-    // visibility: visibility ? 'visible' : 'hidden',
-    boxSizing: 'border-box',
-    transformOrigin: coords.isUpward ? 'bottom' : 'top',
-    
-    ...(coords.isUpward ? {
-      bottom: `${window.innerHeight - coords.top + offset}px`,
-      top: 'auto'
-    } : {
-      top: `${coords.bottom + offset}px`,
-      bottom: 'auto'
-    }),
-    ...Object.fromEntries(
-      Object.entries(style || {}).map(([key, value]) => [
-        key.startsWith('--') ? key : `--rac-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`,
-        value
-      ])
-    )
-  }
+        const ro = new ResizeObserver(syncPosition)
+        if (selectRef.current) ro.observe(selectRef.current)
+        
+        return () => {
+            window.removeEventListener('scroll', syncPosition, {capture: true, passive: true})
+            window.removeEventListener('resize', syncPosition)
+            ro.disconnect()
+        }
+        }
+    }, [visibility, syncPosition, selectRef])
 
-  const handleEnter = useCallback(() => {
-    const el = nodeRef.current
-    if (!el) return
-    
-    el.style.height = '0px'
-    if (animateOpacity) el.style.opacity = '0'
-    el.style.transition = ''
-  }, [animateOpacity])
+    const transitionString = `height var(--rac-duration) ${easing}${animateOpacity ? `, opacity var(--rac-duration) ${easing}` : ''}`;
 
-  const handleEntering = useCallback(() => {
-    const el = nodeRef.current
-    if (!el) return
-    
-    el.style.transition = transitionString
-    el.style.height = `${el.scrollHeight}px`
-    if (animateOpacity) el.style.opacity = '1'
-  }, [transitionString, animateOpacity])
+    const baseStyles = {
+        opacity: animateOpacity ? (visibility ? 1 : 0) : 1,
+        transformOrigin: bottomDirection ? 'bottom' : 'top',
+        pointerEvents: visibility ? 'all' : 'none',
+        height: visibility ? 'auto' : '0px',
+        '--rac-duration': `${duration}ms`,
+        boxSizing: 'border-box',
+        '--rac-easing': easing,
+        zIndex: '2147483647',
+        overflow: 'hidden',
+        position: 'fixed',
+        
+        ...Object.fromEntries(
+        Object.entries(style || {}).map(([key, value]) => [
+            key.startsWith('--') ? key : `--rac-${key.replace(/([A-Z])/g, '-$1').toLowerCase()}`,
+            value
+        ]))
+    }
 
-  const handleEntered = useCallback(() => {
-    const el = nodeRef.current
-    if (!el) return
-    
-    el.style.height = 'auto'
-    el.style.transition = ''
-    if (onAnimationDone) onAnimationDone()
-  }, [onAnimationDone])
+    const onEnter = useCallback(() => {
+        const el = nodeRef.current
+        if (!el) return
+        
+        el.style.height = '0px'
+        if (animateOpacity) el.style.opacity = '0'
+        el.style.transition = ''
+    }, [animateOpacity])
 
-  const handleExit = useCallback(() => {
-    const el = nodeRef.current
-    if (!el) return
-    
-    el.style.height = `${el.scrollHeight}px`
-    if (animateOpacity) el.style.opacity = '1'
-    
-    el.offsetHeight
-    el.style.transition = transitionString
-  }, [transitionString, animateOpacity])
+    const onEntering = useCallback(() => {
+        const el = nodeRef.current
+        if (!el) return
+        
+        el.style.transition = transitionString
+        el.style.height = `${el.scrollHeight}px`
+        if (animateOpacity) el.style.opacity = '1'
+    }, [transitionString, animateOpacity])
 
-  const handleExiting = useCallback(() => {
-    const el = nodeRef.current
-    if (!el) return
-    
-    el.style.height = '0px'
-    if (animateOpacity) el.style.opacity = '0'
-  }, [animateOpacity])
+    const onEntered = useCallback(() => {
+        const el = nodeRef.current
+        if (!el) return
+        
+        el.style.height = 'auto'
+        el.style.transition = ''
+        onAnimationDone && onAnimationDone()
+    }, [onAnimationDone])
 
-  const handleExited = useCallback(() => {
-    const el = nodeRef.current
-    if (!el) return
-    el.style.transition = ''
-  }, [])
+    const onExit = useCallback(() => {
+        const el = nodeRef.current
+        if (!el) return
+        
+        el.style.height = `${el.scrollHeight}px`
+        if (animateOpacity) el.style.opacity = '1'
+        
+        el.offsetHeight
+        el.style.transition = transitionString
+    }, [transitionString, animateOpacity])
 
-  return createPortal(
-    <CSSTransition
-      in={visibility}
-      timeout={duration}
-      classNames='rac-options'
-      unmountOnExit={unmount}
-      nodeRef={nodeRef}
-      onEnter={handleEnter}
-      onEntering={handleEntering}
-      onEntered={handleEntered}
-      onExit={handleExit}
-      onExiting={handleExiting}
-      onExited={handleExited}
-    >
-      <div
-        ref={nodeRef}
-        className={`rac-options ${className || ''}`}
-        style={{
-            ...baseStyles,
-            '--rac-duration': `${duration}ms`,
-            '--rac-duration-fast': 'calc(var(--rac-duration) * 0.5)',
-            '--rac-duration-base': 'var(--rac-duration)',
-            '--rac-duration-slow': 'calc(var(--rac-duration) * 1.3)',
+    const onExiting = useCallback(() => {
+        const el = nodeRef.current
+        if (!el) return
+        
+        el.style.height = '0px'
+        if (animateOpacity) el.style.opacity = '0'
+    }, [animateOpacity])
 
-        }}
-        onMouseDown={(e) => e.preventDefault()}
-      >
-        {children}
-      </div>
-    </CSSTransition>, document.body
-  )
-}
+    const onExited = useCallback(() => {
+        const el = nodeRef.current
+        if (!el) return
+        el.style.transition = ''
+    }, [])
+
+    return createPortal(
+        <CSSTransition
+            classNames='rac-options'
+            unmountOnExit={unmount}
+            onEntering={onEntering}
+            onExiting={onExiting}
+            onEntered={onEntered}
+            onExited={onExited}
+            timeout={duration}
+            nodeRef={nodeRef}
+            onEnter={onEnter}
+            in={visibility}
+            onExit={onExit}
+        >
+        <div
+            style={{
+                ...baseStyles,
+                '--rac-duration-fast': 'calc(var(--rac-duration) * 0.5)',
+                '--rac-duration-slow': 'calc(var(--rac-duration) * 1.3)',
+                '--rac-duration-base': 'var(--rac-duration)',
+                '--rac-duration': `${duration}ms`,
+
+            }}
+            className={`rac-options ${className || ''}`}
+            onMouseDown={(e) => e.preventDefault()}
+            ref={nodeRef}
+        >
+            {children}
+        </div>
+        </CSSTransition>, document.body
+)}
 
 export default memo(Options, (prev, next) => {
-  return prev.visibility === next.visibility &&
-         prev.duration === next.duration &&
-         prev.easing === next.easing &&
-         prev.offset === next.offset &&
-         prev.animateOpacity === next.animateOpacity &&
-         prev.selectRef === next.selectRef &&
-         prev.children === next.children &&
-         JSON.stringify(prev.style) === JSON.stringify(next.style)
+    return prev.visibility === next.visibility &&
+            prev.duration === next.duration &&
+            prev.easing === next.easing &&
+            prev.offset === next.offset &&
+            prev.animateOpacity === next.animateOpacity &&
+            prev.selectRef === next.selectRef &&
+            prev.children === next.children &&
+            JSON.stringify(prev.style) === JSON.stringify(next.style)
 })

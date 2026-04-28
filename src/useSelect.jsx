@@ -1,186 +1,98 @@
-import {useState, useRef, useCallback, useEffect, useMemo} from 'react'
+import {useMemo, useReducer, useEffect, useCallback, useId, useRef, useImperativeHandle} from 'react'
+import {selectReducer, initialState} from './selectUtils'
+import useSelectBehavior from './useSelectBehavior'
+import useSelectLogic from './useSelectLogic'
+import {makeId} from './makeId'
 
-function useSelect({disabled, open, setOpen, options = [], selectOption, setDeleting, selected, selectedIDs, multiple, hasMore, loadMore, loadButton, loadButtonText, setLoadingTitle, loadOffset, loadAhead, expandedGroups, onOpen, onClose, deleting}) {
-    const justFocused = useRef(false)
-    const lastWindowFocusTime = useRef(0)
-    const loadingTriggered = useRef(false)
-    const [highlightedIndex, setHighlightedIndex] = useState(-1)
+function useSelect({setExternalVisibility, externalVisibility, loadButtonText, loadMoreText, ownBehavior, loadButton, loadOffset, loadAhead,loadMore, hasMore, onOpen, onClose, props, ref}) {
 
-    // loading state synchronization
+    const reactId = useId()
+    const selectId = useMemo(() => reactId.replace(/:/g, ''), [reactId])
+    
+    // hook so that user can get selectRef from the outside
+    const selectRef = useRef(null)
+    useImperativeHandle(ref, () => selectRef.current)
+
+    const [state, dispatch] = useReducer(selectReducer, {loadButton, loadButtonText, loadMoreText}, initialState)
+    const {internalVisibility, animationFinished, jsxOptions, deleting, loadingTitle} = state
+
+    const setState = useCallback((payload) => dispatch({type: 'SET', payload}), [])
+
+    // select visibility control
+    const isControlled = externalVisibility !== undefined
+
+    const visibility = useMemo(() => {
+        if (ownBehavior) return !!externalVisibility
+        return isControlled ? !!externalVisibility : internalVisibility
+    }, [ownBehavior, isControlled, externalVisibility, internalVisibility])
+    
+    const setVisibility = useCallback((newState) => {
+        if (ownBehavior) return
+        !isControlled && setState({internalVisibility: newState})
+        setExternalVisibility?.(newState)
+    }, [ownBehavior, isControlled, setExternalVisibility])
+
+    const registerOption = useCallback((opt) => {
+        setState(prev => {
+            const index = prev.jsxOptions.findIndex(o => o.id === opt.id)
+            if (index !== -1) {
+                const existing = prev[index]
+                if (
+                    existing.label === opt.label &&
+                    existing.value === opt.value &&
+                    existing.disabled === opt.disabled &&
+                    existing.group === opt.group
+                ) {
+                    return prev
+                }
+                const next = [...prev]
+                next[index] = opt
+                return {jsxOptions: next}
+            }
+            return {jsxOptions: [...prev.jsxOptions, opt]}
+        })
+    }, [setState])
+
+    const unregisterOption = useCallback((id) => setState(prev => ({jsxOptions: prev.jsxOptions.filter(o => o.id !== id)})), [])
+
+    const logic = useSelectLogic({
+        ...props, visibility, setVisibility, jsxOptions, hasMore, 
+        loadButton, loadingTitle, loadMore, loadMoreText, setState
+    })
+
+    const {multiple, normalizedOptions, selected, selectOption, hasOptions, selectedValue, disabled, loading, error, expandedGroups, selectedIDs} = logic
+    
+    const behavior = useSelectBehavior({setState, loadButton, loadButtonText, hasMore, loadMore, disabled, multiple, open: visibility, setOpen: setVisibility, options: normalizedOptions, selectOption, selected, loadOffset, loadAhead, expandedGroups, selectedIDs, onOpen, onClose, deleting})
+
+    const {highlightedIndex} = behavior
+
     useEffect(() => {
-        // flag is reset if value of the loadButton or hasMore props has changed
-        loadingTriggered.current = false
+        visibility && selectRef.current && (document.activeElement !== selectRef.current) && selectRef.current.focus()
+        !visibility && setState({animationFinished: false})
+    }, [visibility])
 
-        loadButton && setLoadingTitle(loadButtonText)
-    }, [options.length, hasMore, loadButton, loadButtonText, setLoadingTitle])
+    useEffect(() => {(error || disabled || loading || !hasOptions) && setVisibility(false)}, [error, disabled, loading, hasOptions, setVisibility])
 
-    // safely call loadMore prop
-    const safeLoadMore = useCallback(() => {
-        if (!hasMore || loadingTriggered.current) return
-        loadingTriggered.current = true
-        loadMore()
-    }, [hasMore, loadMore])
+    useEffect(() => {isControlled && setState({internalVisibility: !!externalVisibility})}, [externalVisibility, isControlled])  
 
-    // calling a function when scrolling almost to the end;
-    // loadOffset is a prop indicating how many pixels before end loadMore will be called
-    const handleListScroll = useCallback((e) => {
-        if (loadButton || !hasMore || loadingTriggered.current) return
-
-        const {scrollTop, scrollHeight, clientHeight} = e.currentTarget
-        (scrollHeight - scrollTop <= clientHeight + loadOffset) && safeLoadMore()
-    }, [loadButton, hasMore, loadOffset, safeLoadMore])
-
-    // call a function when scrolling through options using keys;
-    // loadAhead prop how many options before the end it will be called
-    useEffect(() => {(!loadButton && open && hasMore && highlightedIndex >= options.length - loadAhead) && safeLoadMore()}, [highlightedIndex, open, hasMore, options.length, loadAhead, loadButton, safeLoadMore])
-
-    // force refocus blocking if the user exits the browser or the page
     useEffect(() => {
-        const handleWindowFocus = () => {lastWindowFocusTime.current = Date.now()}
-        window.addEventListener('focus', handleWindowFocus)
-        return () => window.removeEventListener('focus', handleWindowFocus)
-    }, [])
-
-    // set highlighting to the first available option by default unless otherwise selected
-    useEffect(() => {
-        if (!open) {
-            setHighlightedIndex(-1)
-            return
-        }
-
-        // blocking the reset of an index if it is already within the array (exmpl after loading)
-        const currentOption = options[highlightedIndex]
-        const valid = currentOption && !currentOption.hidden && !currentOption.groupHeader
-
-        if (highlightedIndex >= 0 && highlightedIndex < options.length && valid) return
-
-        let index = -1
-        if (selected && !multiple) {
-            const firstSelected = multiple ? selected[0] : selected
-            if (firstSelected) {
-                index = options.findIndex(o => o.id === firstSelected.id && !o.disabled && !o.hidden && !o.groupHeader)
+        if (visibility && animationFinished && highlightedIndex !== -1) {
+            const option = normalizedOptions[highlightedIndex]
+            if (option) {
+                const domElement = document.getElementById(`${selectId}-${makeId(option.id)}`)
+                domElement?.scrollIntoView({block: 'nearest'})
             }
         }
+    }, [highlightedIndex, visibility, animationFinished, normalizedOptions, selectId])
 
-        if (multiple && selectedIDs.length) {
-            const ids = new Set(selectedIDs.map(o => o.id))
-            index = options.findIndex(
-                o =>
-                ids.has(o.id) &&
-                !o.disabled &&
-                !o.hidden &&
-                !o.groupHeader
-            )
-        }
-        
-        if (index === -1) {
-            index = options.findIndex(o => !o.disabled && !o.hidden && !o.groupHeader)
-        }
-        setHighlightedIndex(index)
-    }, [open, options, selected])
+    const hasActualValue = useMemo(() => (
+        selectedValue !== undefined && 
+        selectedValue !== null && 
+        !(Array.isArray(selectedValue) && selectedValue.length === 0) &&
+        !(typeof selectedValue === 'object' && Object.keys(selectedValue).length === 0)
+    ), [selectedValue])
 
-    // find the next available option to switch to using the keyboard
-    const getNextIndex = useCallback((current, direction) => {
-        const isNavigable = (opt) => 
-            opt &&
-            !opt?.groupHeader &&
-            (!opt?.group || expandedGroups?.has(opt?.group)) &&
-            !opt?.disabled &&
-            !opt?.loading
-        const len = options.length
-        if (len === 0) return -1
-
-        let next = current
-        // я не шарю нихуя в математике
-        for (let i = 0; i < len; i++) {
-            next = (next + direction + len) % len
-
-            // if autoloading is active but loadButton is inactive, then infinite scrolling is blocked
-            if (!loadButton && hasMore) {
-                if (direction > 0 && next === 0) return current
-                if (direction < 0 && next === len - 1) return current
-            }
-
-            if (isNavigable(options[next])) return next
-        }
-        return current
-    }, [options, hasMore, loadButton, expandedGroups])
-
-    // closing the selector if focus is lost
-    const handleBlur = useCallback((e) => {
-        const clickedInsidePortal = e.relatedTarget?.closest('.rac-options')
-        
-        if (!e.currentTarget.contains(e.relatedTarget) && !clickedInsidePortal) {setOpen(false); setDeleting(false)}
-    }, [setOpen])
-
-    // opening the selector when receiving focus
-    const handleFocus = useCallback(() => {
-        if (disabled || deleting || document.hidden || (Date.now() - lastWindowFocusTime.current < 100)) return
-        
-        if (!open) {
-            setOpen(true)
-            justFocused.current = true
-            setTimeout(() => justFocused.current = false, 200)
-        }
-    }, [disabled, open, setOpen, deleting])
-
-    // переписать на useEffectEvent когда он станет стандартом
-    const prevOpen = useRef(open)
-    const onOpenRef = useRef(onOpen)
-    const onCloseRef = useRef(onClose)
-
-    useEffect(() => {
-        onOpenRef.current = onOpen
-        onCloseRef.current = onClose
-    }, [onOpen, onClose])
-
-    useEffect(() => {
-        if (prevOpen.current === open) return
-        
-        open ? onOpenRef.current?.() : onCloseRef.current?.()
-        
-        prevOpen.current = open
-    }, [open])
-
-    // processing toggle click on select
-    const toggleVisibility = useCallback((e) => {
-        if (disabled || deleting || e?.target?.closest('.rac-select-cancel') || justFocused.current) return
-        setOpen(!open)
-    }, [disabled, open, setOpen, onOpen, onClose, deleting])
-
-    // hotkey processing
-    const handleKeyDown = useCallback((e) => {
-        if (disabled) return
-
-        switch (e.key) {
-            case 'Enter':
-            case ' ':
-                e.preventDefault()
-                if (open) {
-                    if (highlightedIndex !== -1 && options[highlightedIndex]) {
-                        selectOption(options[highlightedIndex], e)
-                    }
-                } else setOpen(true)
-                break
-            case 'Escape':
-                e.preventDefault()
-                setOpen(false)
-                break
-            case 'ArrowDown':
-                e.preventDefault()
-                open ? setHighlightedIndex(prev => getNextIndex(prev, 1)) : setOpen(true)
-                break
-            case 'ArrowUp':
-                e.preventDefault()
-                open ? setHighlightedIndex(prev => getNextIndex(prev, -1)) : setOpen(true)
-                break
-            case 'Tab':
-                if (open) setOpen(false)
-                break
-        }
-    }, [disabled, open, setOpen, highlightedIndex, options, selectOption, getNextIndex])
-
-    return useMemo(() => ({handleBlur, handleFocus, toggleVisibility, handleKeyDown, highlightedIndex, setHighlightedIndex, handleListScroll}), [handleBlur, handleFocus, toggleVisibility, handleKeyDown, highlightedIndex, handleListScroll])
+    return ({selectId, selectRef, visibility, setVisibility, animationFinished, setAnimationFinished: (bool) => setState({animationFinished: bool}), deleting, loadingTitle, jsxOptions, registerOption, unregisterOption, logic, behavior, hasActualValue})
 }
 
 export default useSelect

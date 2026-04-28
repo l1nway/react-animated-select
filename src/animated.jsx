@@ -1,7 +1,7 @@
 import {CSSTransition} from 'react-transition-group'
 import {useCallback, useRef} from 'react'
 
-const Animated = ({children, setLeaving, duration, setSpacer, id = null, widthMode = false, ...props}) => {
+const Animated = ({children, setLeaving, duration, setSpacer, setEntering, id = null, widthMode = false, ...props}) => {
 
     const nodeRef = useRef(null)
 
@@ -58,6 +58,7 @@ const Animated = ({children, setLeaving, duration, setSpacer, id = null, widthMo
                 el.style.height = widthMode ? '' : '100%'
                 el.style.opacity = '1'
                 el.style.transform = ''
+                setEntering?.(false)
                 setSpacer?.(false)
             }}
             onExit={() => {

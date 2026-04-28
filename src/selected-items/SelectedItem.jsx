@@ -1,23 +1,28 @@
-import {Fragment, memo, useCallback, useLayoutEffect, useRef} from 'react'
+import {Fragment, memo, useCallback, useLayoutEffect, useRef, useEffect} from 'react'
+import {renderIcon} from '../selectUtils'
 import SlideLeft from '../slideLeft'
 
-const SelectedItem = memo(({element, index, setEntering, leaving, setLeaving, setSpacer, selectRef, spacer, delSpacer, setVisibility, setActiveHoverId, activeHoverId, swipedId, deleteInline, remove, renderIcon, DelIcon, normalizedOptions, swiped, onSwipe, deleting, setDeleting, onRender, duration, showDelete}) => {
+const SelectedItem = memo(({element, setState, spacer, delWidth, selectRef, setVisibility, activeHoverId, hoverRowTop, swipedId, deleteInline, remove, DelIcon, normalizedOptions, swiped, deleting, entering, setDeleting, onRender, duration, rowEnd, showDelete}) => {
 
-    const longPressTimer = useRef(null)
-    const longPress = useRef(false)
-    const swiping = useRef(false)
-    const touchStart = useRef(0)
+    const refs = useRef({
+        longPressTimer: null,
+        hoverTimer: null,
+        longPress: false,
+        swiping: false,
+        touchStart: 0
+    })
+
     const optionRef = useRef(null)
 
     const onTouchStart = useCallback((e) => {
-        touchStart.current = e.touches[0].clientX
-        longPress.current = false
+        refs.current.touchStart = e.touches[0].clientX
+        refs.current.longPress = false
         
-        longPressTimer.current && clearTimeout(longPressTimer.current)
+        refs.current.longPressTimer && clearTimeout(refs.current.longPressTimer)
         
-        longPressTimer.current = setTimeout(() => {
+        refs.current.longPressTimer = setTimeout(() => {
             setDeleting(true)
-            longPress.current = true
+            refs.current.longPress = true
             selectRef.current?.focus()
             setVisibility(false)
             if (window.navigator.vibrate) window.navigator.vibrate(50)
@@ -27,35 +32,52 @@ const SelectedItem = memo(({element, index, setEntering, leaving, setLeaving, se
     }, [])
 
     const onTouchMove = useCallback((e) => {
-        if (longPressTimer.current) clearTimeout(longPressTimer.current)
+        if (refs.current.longPressTimer) clearTimeout(refs.current.longPressTimer)
         const currentX = e.touches[0].clientX
-        const diff = touchStart.current - currentX
+        const diff = refs.current.touchStart - currentX
         
         if (Math.abs(diff) > 10) {
-            swiping.current = true
+            refs.current.swiping = true
             
-            if (diff > 30 && !swiped) {
-                setActiveHoverId(null)
-                onSwipe(element.id)
-            } 
-            else if (diff < -30 && swiped) {
-                onSwipe(null)
-            }
+            if (diff > 30 && !swiped) setState({activeHoverId: null, swipedId: element.id})
+            else if (diff < -30 && swiped) setState({swipedId: null})
         }
-    }, [element.id, swiped, onSwipe])
+    }, [element.id, swiped])
 
     const onTouchEnd = useCallback((e) => {
-        longPressTimer.current && clearTimeout(longPressTimer.current)
-        longPress.current && e.preventDefault()
+        refs.current.longPressTimer && clearTimeout(refs.current.longPressTimer)
+        refs.current.longPress && e.preventDefault()
+    }, [])
+
+    const onHover = useCallback(() => {
+        if (spacer?.state) return
+        if (refs.current.hoverTimer) clearTimeout(refs.current.hoverTimer)
+
+        refs.current.hoverTimer = setTimeout(() => {
+            setState({
+                hoverRowTop: optionRef.current?.getBoundingClientRect().top,
+                activeHoverId: element.id,
+                swipedId: null
+            })
+        }, 100)
+    }, [element.id, spacer?.state])
+
+    const onLeave = useCallback(() => {
+        if (refs.current.hoverTimer) clearTimeout(refs.current.hoverTimer)
+        refs.current.hoverTimer = setTimeout(() => setState({activeHoverId: null, hoverRowTop: null}), 100)
+    }, [])
+
+    useEffect(() => {if (!spacer?.state && optionRef.current) optionRef.current.matches(':hover') && onHover()}, [spacer?.state, onHover])
+
+    useEffect(() => () => {
+        refs.current.hoverTimer && clearTimeout(refs.current.hoverTimer)
+        refs.current.longPressTimer && clearTimeout(refs.current.longPressTimer)
     }, [])
 
     let label = null
 
-    if (element?.jsx) {
-        label = element.jsx
-    } else if (element?.name) {
-        label = element.name
-    } 
+    if (element?.jsx) {label = element.jsx}
+    else if (element?.name) {label = element.name} 
     else if (element?.raw !== undefined) {
         const recovered = normalizedOptions.find(o =>
             o.raw === element.raw ||
@@ -78,45 +100,42 @@ const SelectedItem = memo(({element, index, setEntering, leaving, setLeaving, se
         e.preventDefault()
     }, [])
 
-    const handleDelete = useCallback((e) => {
-        preventFocus(e)
+    const removeAction = useCallback((e) => {
+        setState({swipedId: null})
         remove(element.id)
-        onSwipe(null)
-        return
-    }, [element.id, remove, onSwipe])
-
-    const handleClick = useCallback((e) => {
         preventFocus(e)
-        if (longPress.current) {
-            longPress.current = false
-            return
-        }
+    }, [element.id, remove])
 
-        if (deleting) {
-            handleDelete(e)
-            return
-        }
-    }, [deleting, handleDelete])
+    // handling clicks in delete mode
+    const click = useCallback((e) => {
+        preventFocus(e)
+        if (refs.current.longPress) refs.current.longPress = false
+        else if (deleting) removeAction(e)
+    }, [deleting, removeAction])
 
     useLayoutEffect(() => {
         if (optionRef.current && onRender) {
-            const width = optionRef.current.offsetWidth
-            onRender(width)
+            const {width} = optionRef.current.getBoundingClientRect()
+            onRender(width) 
         }
     }, [onRender, label])
 
     const delVisibility = showDelete ? true : activeHoverId === element.id || swipedId === element.id || deleting
 
+    const matchRowHover = hoverRowTop === optionRef.current?.getBoundingClientRect().top
+
+    const hideSpacer = (activeHoverId || swipedId) && matchRowHover
+
     return (
         <Fragment>
             <div
                 className={`rac-multiple-selected-option ${deleting ? '--deleting-shake' : ''}`}
-                onMouseEnter={() => {setActiveHoverId(element.id); onSwipe(null)}}
-                onMouseLeave={() => setActiveHoverId(null)}
                 onTouchStart={onTouchStart}
                 onTouchMove={onTouchMove}
                 onTouchEnd={onTouchEnd}
-                onClick={handleClick}
+                onMouseEnter={onHover}
+                onMouseLeave={onLeave}
+                onClick={click}
                 ref={optionRef}
             >
                 {label}
@@ -125,28 +144,29 @@ const SelectedItem = memo(({element, index, setEntering, leaving, setLeaving, se
                         backgroundColor: (deleting || deleteInline) ? 'transparent' : '--rac-multiple-del-bg',
                         position: (deleting || deleteInline) ? 'relative' : 'absolute',
                     }}
+                    setEntering={(bool) => setState({entering: bool})}
+                    setLeaving={(bool) => setState({leaving: bool})}
+                    setSpacer={(val) => setState({spacer: val})}
                     className='rac-multiple-del'
                     visibility={delVisibility}
-                    setEntering={setEntering}
-                    setLeaving={setLeaving}
-                    setSpacer={setSpacer}
                     duration={duration}
                 >
-                    {renderIcon(DelIcon, {onClick: handleDelete, onMouseDown: preventFocus})}
+                    {renderIcon(DelIcon, {onClick: removeAction, onMouseDown: preventFocus})}
                 </SlideLeft>
             </div>
-            <SlideLeft
-                visibility={!leaving && !spacer?.state && !activeHoverId && !swipedId && !deleting && deleteInline && delSpacer}
-                className='rac-multiple-option'
-                style={{visibility: 'hidden'}}
-            >
-                <div
-                    style={{padding: 0, marginRight: 0, marginLeft: 0}}
-                    className='rac-multiple-selected-option'
-                >
-                    {renderIcon(DelIcon)}
-                </div>
-            </SlideLeft>
+            {(!showDelete && !deleting && deleteInline && rowEnd && entering !== element.id) &&
+                <div style={{
+                    minWidth: hideSpacer ? '0px' : `${delWidth}px`,
+                    transition: `min-width ${duration}ms ease`,
+                    '--del-width': `${delWidth}px`,
+                    // backgroundColor: 'black',
+                    flexBasis: '0px',
+                    height: '1px',
+                    flexShrink: 1
+                }}
+                    className='rac-del-spacer'
+                />
+            }
         </Fragment>
     )
 })

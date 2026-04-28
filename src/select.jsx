@@ -1,183 +1,53 @@
 import {XMarkIcon, ArrowUpIcon, CheckmarkIcon} from './icons'
-import {forwardRef, useImperativeHandle, useRef, useMemo, useState, useEffect, useCallback, useId, isValidElement, cloneElement} from 'react'
+import {renderIcon, getOptionClassName} from './selectUtils'
 import SelectJSX from './selected-items/SelectJSX'
-import useSelectLogic from './useSelectLogic'
+import {forwardRef, useMemo} from 'react'
 import useSelect from './useSelect'
 import SlideDown from './slideDown'
 import SlideLeft from './slideLeft'
 import {makeId} from './makeId'
 import './select.css'
 
-// universal icon display
-const renderIcon = (Icon, defaultProps) => {
-    if (!Icon) return null
-
-    const mergeProps = (props = {}) => ({
-        ...defaultProps,
-        ...props,
-        style: {
-            ...defaultProps?.style,
-            ...props?.style
-        }
-    })
-
-    if (typeof Icon === 'string') return <img src={Icon} {...mergeProps()} alt=''/>
-    if (isValidElement(Icon)) return cloneElement(Icon, mergeProps(Icon.props))
-    if (typeof Icon === 'function' || (typeof Icon === 'object' && Icon.$$typeof)) {
-        const IconComponent = Icon
-        return <IconComponent {...mergeProps()}/>
-    }
-    return null
-}
-
-// adding classes to style options according to their state
-const getOptionClassName = (element, index, highlightedIndex, selectedId, loadingTitle, loadMoreText, invalidOption, selectedIDs) => {
-    const multipleSelected = selectedIDs?.some(o => o.id === element.id)
-
-    if (element.groupHeader) return 'rac-select-option rac-group-option'
-
-    return [
-        'rac-select-option',
-        element.className,
-        (multipleSelected || selectedId === element.id) && 'rac-selected',
-        index === highlightedIndex && 'rac-highlighted',
-        (element.disabled || element.loading) && 'rac-disabled-option',
-        (element.invalid || element.name === invalidOption) && 'rac-invalid-option',
-        (element.loadMore && loadingTitle === loadMoreText) && 'rac-loading-option',
-        typeof element.raw === 'boolean' && (element.raw ? 'rac-true-option' : 'rac-false-option')
-    ].filter(Boolean).join(' ')
-}
-
 const Select = forwardRef(({
-    unmount,
-    children,
-    visibility: externalVisibility,
-    setVisibility: setExternalVisibility = () => {},
-    ownBehavior = false,
-    duration = 300,
-    easing = 'ease-in',
-    offset = 1,
-    animateOpacity = true,
-    style = {},
-    className = '',
-    OpenIcon = ArrowUpIcon,
-    ClearIcon = XMarkIcon,
-    DelIcon = XMarkIcon,
-    Checkmark = CheckmarkIcon,
-    Checkbox = undefined,
-    hasMore = false,
     loadMore = () => console.warn('loadMore not implemented'),
-    loadButton = false,
+    setVisibility: setExternalVisibility = () => {},
+    visibility: externalVisibility,
     loadButtonText = 'Load more',
+    Checkmark = CheckmarkIcon,
     loadMoreText = 'Loading',
     selectedText = undefined,
-    loadOffset = 100,
-    loadAhead = 3,
+    OpenIcon = ArrowUpIcon,
+    animateOpacity = true,
+    ClearIcon = XMarkIcon,
     optionsClassName = '',
-    onOpen = () => {},
-    onClose = () => {},
+    Checkbox = undefined,
     deleteInline = false,
+    ownBehavior = false,
+    DelIcon = XMarkIcon,
+    onClose = () => {},
     showDelete = false,
-    ...props
+    easing = 'ease-in',
+    loadButton = false,
+    onOpen = () => {},
+    loadOffset = 100,
+    hasMore = false,
+    className = '',
+    duration = 300,
+    loadAhead = 3,
+    offset = 1,
+    style = {},
+    children,
+    unmount,
+    ...restProps
 }, ref) => {
 
-    const reactId = useId()
-    const selectId = useMemo(() => reactId.replace(/:/g, ''), [reactId])
-    const [jsxOptions, setJsxOptions] = useState([])
-    const [internalVisibility, setInternalVisibility] = useState(false)
-    const [loadingTitle, setLoadingTitle] = useState(loadButton ? loadButtonText : loadMoreText)
-    const [animationFinished, setAnimationFinished] = useState(false)
-    const selectRef = useRef(null)
-    const [deleting, setDeleting] = useState(false)
+    const selectState = useSelect({externalVisibility, setExternalVisibility, ownBehavior, loadButton, loadButtonText, loadMoreText, loadMore, loadOffset, loadAhead, hasMore, onOpen, onClose, ref, props: restProps})
 
-    const registerOption = useCallback((opt) => {
-        setJsxOptions(prev => {
-            const index = prev.findIndex(o => o.id === opt.id)
-            if (index !== -1) {
-                const existing = prev[index]
-                if (
-                    existing.label === opt.label &&
-                    existing.value === opt.value &&
-                    existing.disabled === opt.disabled &&
-                    existing.group === opt.group
-                ) {
-                    return prev
-                }
-                const next = [...prev]
-                next[index] = opt
-                return next
-            }
-            return [...prev, opt]
-        })
-    }, [])
+    const {logic, behavior, selectId, hasActualValue, loadingTitle} = selectState
 
-    const unregisterOption = useCallback((id) => {
-        setJsxOptions(prev => {
-            const filtered = prev.filter(o => o.id !== id)
-            return filtered.length === prev.length ? prev : filtered
-        })
-    }, [])
+    const {normalizedOptions, selected, multiple, selectedIDs, invalidOption, selectOption, hasOptions, error, loading, disabled, selectedValue, expandedGroups, placeholder, emptyText, errorText, loadingText, disabledText} = logic
 
-    // select visibility control
-    const isControlled = externalVisibility !== undefined
-
-    const visibility = useMemo(() => {
-        if (ownBehavior) return !!externalVisibility
-        return isControlled ? !!externalVisibility : internalVisibility
-    }, [ownBehavior, isControlled, externalVisibility, internalVisibility])
-    
-    const setVisibility = useCallback((newState) => {
-        if (ownBehavior) return
-        !isControlled && setInternalVisibility(newState)
-        setExternalVisibility?.(newState)
-    }, [ownBehavior, isControlled, setExternalVisibility])
-
-    const logic = useSelectLogic({
-        ...props, visibility, setVisibility, jsxOptions, hasMore, 
-        loadButton, loadingTitle, loadMore, loadMoreText, setLoadingTitle
-    })
-
-    const {multiple, normalizedOptions, selected, selectOption, clear, removeOption, hasOptions, active, selectedValue, disabled, loading, error, placeholder, invalidOption, emptyText, disabledText, loadingText, errorText, expandedGroups, selectedIDs, setSelectedIds} = logic
-
-    const behavior = useSelect({setDeleting, setLoadingTitle, loadButton, loadButtonText, hasMore, loadMore, disabled, multiple, open: visibility, setOpen: setVisibility, options: normalizedOptions, selectOption, selected, loadOffset, loadAhead, expandedGroups, selectedIDs, onOpen, onClose, deleting})
-
-    const {handleListScroll, handleBlur, handleFocus, toggleVisibility, handleKeyDown, highlightedIndex, setHighlightedIndex} = behavior
-
-    useImperativeHandle(ref, () => selectRef.current)
-
-    useEffect(() => {
-        if (!visibility) {
-            setAnimationFinished(false)
-            return
-        }
-        
-        if (visibility && selectRef.current) {
-            if (document.activeElement !== selectRef.current) {
-                selectRef.current.focus()
-            }
-        }
-    }, [visibility])
-
-    useEffect(() => {(error || disabled || loading || !hasOptions) && setVisibility(false)}, [error, disabled, loading, hasOptions, setVisibility])
-
-    useEffect(() => {isControlled && setInternalVisibility(!!externalVisibility)}, [externalVisibility, isControlled])
-
-    useEffect(() => {
-        if (visibility && animationFinished && highlightedIndex !== -1) {
-            const option = normalizedOptions[highlightedIndex]
-            if (option) {
-                const domElement = document.getElementById(`${selectId}-${makeId(option.id)}`)
-                domElement?.scrollIntoView({block: 'nearest'})
-            }
-        }
-    }, [highlightedIndex, visibility, animationFinished, normalizedOptions, selectId])
-
-    const hasActualValue = useMemo(() => (
-        selectedValue !== undefined && 
-        selectedValue !== null && 
-        !(Array.isArray(selectedValue) && selectedValue.length === 0) &&
-        !(typeof selectedValue === 'object' && Object.keys(selectedValue).length === 0)
-    ), [selectedValue])
+    const {highlightedIndex, setHighlightedIndex} = behavior
 
     const title = useMemo(() => {
         if (error) return errorText
@@ -203,9 +73,7 @@ const Select = forwardRef(({
         let currentGroupName = null
 
         const groupCounts = normalizedOptions.reduce((acc, opt) => {
-            if (opt.group) {
-                acc[opt.group] = (acc[opt.group] || 0) + 1
-            }
+            if (opt.group) acc[opt.group] = (acc[opt.group] || 0) + 1
             return acc
         }, {})
 
@@ -217,6 +85,7 @@ const Select = forwardRef(({
                     visibility={expandedGroups.has(name)}
                     className='rac-group-container'
                     key={`slide-${name}`}
+                    duration={duration}
                 >
                     {currentGroupChildren}
                 </SlideDown>
@@ -299,12 +168,9 @@ const Select = forwardRef(({
                             {renderIcon(OpenIcon, {className: `rac-group-arrow ${open ? '--open' : ''}`})}
                         </SlideLeft>
                     </div>
-                )
-            } else if (belongsToGroup) {
-                currentGroupChildren.push(createOptionNode(element, index))
-            } else {
-                nodes.push(createOptionNode(element, index))
-            }
+            )}
+            else if (belongsToGroup) currentGroupChildren.push(createOptionNode(element, index))
+            else nodes.push(createOptionNode(element, index))
         })
 
         flushGroup(currentGroupName)
@@ -314,62 +180,27 @@ const Select = forwardRef(({
 
     return (
         <SelectJSX
-            setDeleting={setDeleting}
-            deleting={deleting}
-            selectedText={selectedText}
-            selectRef={selectRef}
-            selectId={selectId}
-            selectedIDs={selectedIDs}
-            setSelectedIds={setSelectedIds}
-            multiple={multiple}
-            removeOption={removeOption}
             optionsClassName={optionsClassName}
-            
-            renderIcon={renderIcon}
-            normalizedOptions={normalizedOptions}
-            renderOptions={renderOptions}
-            selected={selected}
-            title={title}
-            visibility={visibility}
-            active={active}
-            hasOptions={hasOptions}
-            hasActualValue={hasActualValue}
-            highlightedIndex={highlightedIndex}
-            animationFinished={animationFinished}
-            
-            disabled={disabled}
-            loading={loading}
-            error={error}
-            
-            setVisibility={setVisibility}
-            setHighlightedIndex={setHighlightedIndex}
-            setAnimationFinished={setAnimationFinished}
-            handleBlur={handleBlur}
-            handleFocus={handleFocus}
-            toggleVisibility={toggleVisibility}
-            handleKeyDown={handleKeyDown}
-            handleListScroll={handleListScroll}
-            selectOption={selectOption}
-            clear={clear}
-            registerOption={registerOption}
-            unregisterOption={unregisterOption}
-            
-            children={children}
-            placeholder={placeholder}
-            className={className}
-            style={style}
-            duration={duration}
-            easing={easing}
-            offset={offset}
             animateOpacity={animateOpacity}
-            unmount={unmount}
-            OpenIcon={OpenIcon}
-            ClearIcon={ClearIcon}
-            DelIcon={DelIcon}
-            hasMore={hasMore}
-            loadButton={loadButton}
+            renderOptions={renderOptions}
             deleteInline={deleteInline}
             showDelete={showDelete}
+            className={className}
+            ClearIcon={ClearIcon}
+            Checkmark={Checkmark}
+            OpenIcon={OpenIcon}
+            Checkbox={Checkbox}
+            duration={duration}
+            children={children}
+            DelIcon={DelIcon}
+            unmount={unmount}
+            {...selectState}
+            easing={easing}
+            offset={offset}
+            title={title}
+            style={style}
+            {...behavior}
+            {...logic}
         />
     )
 })

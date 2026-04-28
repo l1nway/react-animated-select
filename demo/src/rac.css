@@ -1769,6 +1769,7 @@ input[type=number] {
 }
 
 .rac-safety-options {
+  padding: 0.5em 0.5em 0 0.5em;
   flex-wrap: wrap;
   display: flex;
 }
@@ -1779,6 +1780,7 @@ input[type=number] {
   margin-bottom: 0.5em;
   align-items: center;
   margin-right: 0.5em;
+  overflow: hidden;
   display: flex;
 
   &:hover {
@@ -1862,9 +1864,11 @@ input[type=number] {
   transition: color 0.3s ease;
   color: var(--rac-color-4);
   margin-right: 0.25rem;
+  max-height: 1.25rem;
+  min-height: 1.25rem;
+  min-width: 1.25rem;
+  max-width: 1.25rem;
   cursor: pointer;
-  height: 1.25em;
-  width: 1.25em;
 
   &:hover {
     color: var(--rac-color-2);
@@ -1874,18 +1878,16 @@ input[type=number] {
 .rac-safety {
   justify-content: space-between;
   border: 1px solid #1f293780;
-  padding: 0.5em 0.5em 0 0.5em;
   grid-auto-flow: column;
-  align-items: center;
-  overflow-y: auto;
+  align-items: start;
+  overflow: hidden;
   display: flex;
 }
 
 .rac-safety-x {
   transition: color 0.3s ease;
   color: var(--rac-color-4);
-  margin-top: -0.5em;
-  min-height: 2em;
+  margin-right: 0.25em;
   cursor: pointer;
   min-width: 2em;
 

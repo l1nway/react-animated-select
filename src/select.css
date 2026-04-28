@@ -16,6 +16,7 @@
     --rac-select-border-error: 2px solid color-mix(in srgb, var(--rac-base-red), CanvasText 15%);
     --rac-select-padding: 0em 0.5em;
     --rac-select-min-height: 2em;
+    --rac-arrow-height: 1em;
 
     --rac-disabled-opacity: 0.75;
 
@@ -32,13 +33,8 @@
     --rac-dots-animation-delay-2: 0.2s;
     --rac-dots-animation-delay-3: 0.4s;
 
-    --rac-arrow-height: 1em;
-    --rac-arrow-width: 1em;
-    --rac-arrow-padding: 1px 0 2px;
-
-    --rac-cancel-height: 0.9em;
-    --rac-cancel-width: 0.9em;
-
+    --rac-cancel-height: 1em;
+    
     --rac-scroll-color: color-mix(in srgb, CanvasText 10%, Canvas);
     --rac-scroll-track: color-mix(in srgb, CanvasText 5%, Canvas);
     --rac-scroll-padding-top: 0.5em;
@@ -66,8 +62,7 @@
     --rac-group-header-font-weight: bold;
     --rac-group-header-min-height: 1em;
     --rac-group-header-padding: 0.5em;
-    --rac-group-arrow-height: 1em;
-    --rac-group-arrow-width: 1em;
+    --rac-group-open-height: 1.5em;
     --rac-group-arrow-padding: 1px 0 2px;
     --rac-group-container-padding-left: 1em;
 
@@ -216,7 +211,6 @@
 
 .rac-select-cancel {
     height: var(--rac-cancel-height);
-    width: var(--rac-cancel-width);
 
     transition:
         opacity var(--rac-duration-fast),
@@ -226,6 +220,7 @@
 .rac-select-arrow {
     transition:
         transform var(--rac-duration-base) cubic-bezier(.4,0,.2,1);
+    height: var(--rac-arrow-height);
     transform-origin: 50% 50%;
     transform: rotate(0deg);
     will-change: transform;
@@ -464,4 +459,17 @@
     max-height: var(--rac-option-min-height);
     /* max-width: var(--rac-option-min-height); */
     opacity: 1;
+}
+
+.rac-check-box {
+    height: var(--rac-group-open-height);
+}
+
+@keyframes expandWidth {
+  from {min-width: 0;}
+  to {min-width: var(--del-width);}
+}
+
+.rac-del-spacer {
+  animation: expandWidth 300ms ease forwards;
 }

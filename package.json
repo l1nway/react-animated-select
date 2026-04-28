@@ -1,6 +1,6 @@
 {
   "name": "react-animated-select",
-  "version": "0.6.5",
+  "version": "0.7.0",
   "type": "module",
   "author": {
     "name": "l1nway",
@@ -25,7 +25,7 @@
     "url": "git+https://github.com/l1nway/react-animated-select.git"
   },
   "license": "MIT",
-  "homepage": "https://l1nway.github.io/react-animated-select/",
+  "homepage": "https://l1nway.github.io/react-animated-select-docs/",
   "scripts": {
     "build": "vite build",
     "dev": "vite build --watch"
