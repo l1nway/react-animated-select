@@ -1,7 +1,12 @@
 node_modules/
 dist/
-.DS_Store
+demo/
+*.tgz
 *.log
 .env
-.github
-demo/
+.env.*
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.claude/settings.local.json

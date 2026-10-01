@@ -1,50 +1,66 @@
 {
   "name": "react-animated-select",
-  "version": "0.7.0",
+  "version": "0.7.5",
   "type": "module",
   "author": {
     "name": "l1nway",
     "email": "l1nway@icloud.com",
     "url": "https://github.com/l1nway/"
-    },
-  "description": "Animated, accessible, and flexible select component for React",
+  },
+  "description": "Animated, accessible and deeply customizable select for React: single and multiple choice, groups, chips, async loading, keyboard, touch and SSR, with zero dependencies",
   "files": [
     "dist",
-    "index.d.ts",
-    "README.md"
+    "index.d.ts"
   ],
   "keywords": [
     "react",
     "select",
+    "multiselect",
+    "combobox",
+    "dropdown",
+    "chips",
     "animated",
     "accessible",
+    "ssr",
     "ui-components"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/l1nway/react-animated-select.git"
   },
+  "bugs": {
+    "url": "https://github.com/l1nway/react-animated-select/issues"
+  },
   "license": "MIT",
   "homepage": "https://l1nway.github.io/react-animated-select-docs/",
   "scripts": {
     "build": "vite build",
-    "dev": "vite build --watch"
+    "dev": "vite build --watch",
+    "prepublishOnly": "npm run build"
   },
-  "main": "./dist/index.umd.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.es.js",
   "types": "./index.d.ts",
   "exports": {
     ".": {
-      "types": "./index.d.ts",
-      "import": "./dist/index.es.js",
-      "require": "./dist/index.umd.js"
+      "import": {
+        "types": "./index.d.ts",
+        "default": "./dist/index.es.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
     },
-    "./style.css": "./dist/react-animated-select.css"
+    "./style.css": "./dist/index.css",
+    "./package.json": "./package.json"
   },
+  "sideEffects": [
+    "**/*.css"
+  ],
   "peerDependencies": {
-    "react": ">=16.8.0",
-    "react-dom": ">=16.8.0",
-    "react-transition-group": "^4.4.5"
+    "react": ">=19.2.0",
+    "react-dom": ">=19.2.0"
   },
   "devDependencies": {
     "@types/react": "^19.2.9",

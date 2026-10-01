@@ -1,0 +1,206 @@
+/* [DOC: styles-layer] */
+@layer rac.base, rac.theme;
+
+/* [DOC: dropdown-position] */
+@property --rac-list-max-height {
+    syntax: '<length>';
+    inherits: true;
+    initial-value: 250px;
+}
+
+@layer rac.base {
+
+:root {--rac-row: 2em;}
+
+/* [DOC: styles-layer] */
+.rac-select,
+.rac-options {
+    --rac-duration-fast: calc(var(--rac-duration) * 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rac-select,
+    .rac-options {
+        --rac-duration: 1ms !important;
+    }
+
+    .rac-dots i {animation: none;}
+}
+
+/* trigger */
+
+/* [DOC: state-semantics] */
+.rac-select {
+    position: relative;
+    display: flex;
+    align-items: center;
+    box-sizing: border-box;
+    /* [DOC: trigger-width] */
+    min-width: 0;
+    max-width: 100%;
+    cursor: pointer;
+
+    &[aria-busy='true'] {cursor: progress;}
+    &[aria-disabled='true'] {cursor: not-allowed;}
+    &[aria-disabled='true'][aria-busy='true'] {cursor: wait;}
+}
+
+.rac-value {
+    flex: 1;
+    min-width: 0;
+    min-height: var(--rac-row);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+/* [DOC: trigger-width] */
+.rac-title {max-width: calc(100% - 0.25px); white-space: nowrap;}
+.rac-title, .rac-chip-text {min-width: 0; overflow-x: clip; text-overflow: ellipsis;}
+
+.rac-dots {
+    display: inline-flex;
+    gap: 0.17em;
+    margin-inline-start: 0.25em;
+
+    & i {
+        width: 0.25em;
+        height: 0.25em;
+        border-radius: 50%;
+        background: currentColor;
+        animation: rac-blink 1.4s infinite both;
+    }
+
+    & i:nth-child(2) {animation-delay: 0.2s;}
+    & i:nth-child(3) {animation-delay: 0.4s;}
+}
+
+.rac-clear, .rac-arrow {display: grid; place-items: center; align-self: center;}
+
+.rac-clear,
+.rac-chip-del {
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.rac-arrow, .rac-group-arrow {transition: rotate var(--rac-duration) var(--rac-ease);}
+
+/* [DOC: state-attributes] */
+.rac-select[data-placement='bottom']:not([aria-expanded='true']) .rac-arrow,
+.rac-select[data-placement='top'][aria-expanded='true'] .rac-arrow {rotate: 180deg;}
+
+.rac-icon {height: 1em;}
+
+/* [DOC: form-field] */
+.rac-input {position: absolute; inset: 0; box-sizing: border-box; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; pointer-events: none;}
+
+/* chips */
+
+/* [DOC: trigger-width] */
+.rac-chip-slot {display: flex; align-items: center; max-width: 100%;}
+
+/* [DOC: touch-delete] */
+.rac-chip {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    box-sizing: border-box;
+    /* [DOC: trigger-width] */
+    max-width: inherit;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-y;
+}
+
+.rac-chip-del {
+    position: absolute;
+    flex-shrink: 0;
+    inset-inline-end: 0;
+    height: 100%;
+    display: grid;
+    align-items: center;
+
+    &:disabled {cursor: inherit;}
+}
+
+.rac-select:is([data-deleting], [data-inline-delete]) .rac-chip-del {position: relative;}
+
+/* [DOC: chip-hold] */
+.rac-spacer {flex-basis: 100%; height: 0; margin-inline-end: 1px;}
+
+/* panel */
+
+.rac-options {box-sizing: border-box; z-index: 2147483647;}
+
+.rac-list {
+    max-height: var(--rac-list-max-height);
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    scroll-behavior: smooth;
+}
+
+.rac-option {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    overflow-wrap: anywhere;
+    cursor: pointer;
+
+    &[aria-disabled='true'] {cursor: not-allowed;}
+    &[data-error] {cursor: default;}
+
+    &[data-loading] {
+        justify-content: start;
+        align-items: baseline;
+        cursor: wait;
+    }
+}
+
+.rac-check {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    &[data-default] {
+        width: 1em;
+        height: 1em;
+        border: 1px solid;
+    }
+}
+
+.rac-checkmark {
+    position: absolute;
+    width: auto;
+    height: 1em;
+    opacity: 0;
+    scale: 0;
+    transition:
+        opacity var(--rac-duration) var(--rac-ease),
+        scale var(--rac-duration) var(--rac-ease);
+
+    .rac-option[aria-selected='true'] & {opacity: 1; scale: 1;}
+}
+
+.rac-group {display: flex; justify-content: space-between; align-items: center; cursor: pointer;}
+.rac-group[data-disabled] {cursor: not-allowed;}
+
+.rac-group-arrow {display: grid;}
+.rac-group[data-open] > .rac-group-arrow {rotate: 180deg;}
+
+@keyframes rac-blink {
+    0% {opacity: 0.2;}
+    20% {opacity: 1;}
+    100% {opacity: 0.2;}
+}
+
+}

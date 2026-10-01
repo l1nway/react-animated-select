@@ -1,0 +1,158 @@
+/* [DOC: styles-layer] */
+@layer rac.base, rac.theme;
+
+@layer rac.theme {
+
+:root {
+    --rac-bg: color-mix(in srgb, Canvas 98%, CanvasText 2%);
+    --rac-fg: CanvasText;
+    --rac-danger: #e7000b;
+    --rac-success: #4caf50;
+}
+
+/* [DOC: styles-layer] */
+.rac-select,
+.rac-options {
+    --rac-tint-1: color-mix(in srgb, var(--rac-fg) 5%, var(--rac-bg));
+    --rac-tint-2: color-mix(in srgb, var(--rac-fg) 10%, var(--rac-bg));
+    --rac-tint-3: color-mix(in srgb, var(--rac-fg) 20%, var(--rac-bg));
+    --rac-muted: color-mix(in srgb, var(--rac-fg) 55%, var(--rac-bg));
+}
+
+/* trigger */
+
+.rac-select {
+    padding: 0 0.5em;
+    border: 2px solid var(--rac-bg);
+    background-color: var(--rac-bg);
+    color: var(--rac-fg);
+    transition:
+        background-color var(--rac-duration) var(--rac-ease),
+        border-color var(--rac-duration) var(--rac-ease),
+        opacity var(--rac-duration) var(--rac-ease);
+
+    &:not([aria-disabled='true']):hover {background-color: var(--rac-tint-1);}
+    &:not([aria-disabled='true'], [data-error]):hover {border-color: var(--rac-tint-1);}
+    &[aria-disabled='true'] {opacity: 0.75;}
+    &[data-error] {border-color: var(--rac-danger);}
+
+    /* busy stripe */
+    &[aria-busy='true']::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        background: linear-gradient(90deg, transparent, var(--rac-muted), transparent) 0 100% / 40% 2px no-repeat;
+        animation: rac-busy 1.5s ease-in-out infinite;
+        pointer-events: none;
+
+        @media (prefers-reduced-motion: reduce) {
+            animation: none;
+            background-size: 100% 2px;
+        }
+    }
+}
+
+:is(.rac-title, .rac-option)[data-bool='true'] {
+    color: var(--rac-success);
+}
+
+:is(.rac-title, .rac-option)[data-bool='false'] {
+    color: var(--rac-danger);
+}
+
+/* chips */
+
+.rac-chip {
+    min-height: calc(var(--rac-row) - 0.5em);
+    margin-block: 0.25em;
+    margin-inline-end: 0.5em;
+    padding-inline: 0.25em;
+    line-height: normal;
+    background-color: var(--rac-tint-2);
+    transition: background-color var(--rac-duration-fast) var(--rac-ease);
+
+    @media (hover: hover) {
+        &:hover {background-color: var(--rac-tint-3);}
+    }
+}
+
+.rac-select[data-deleting] .rac-chip {
+    background-color: color-mix(in srgb, var(--rac-danger) 15%, var(--rac-bg));
+    animation: rac-shake 0.3s infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
+}
+
+.rac-chip-del {
+    background-color: color-mix(in srgb, var(--rac-danger) 30%, var(--rac-bg));
+    transition:
+        color var(--rac-duration) var(--rac-ease),
+        background-color var(--rac-duration) var(--rac-ease);
+
+    &:hover {color: var(--rac-danger);}
+}
+
+.rac-select:is([data-deleting], [data-inline-delete]) .rac-chip-del {
+    background-color: transparent;
+}
+
+/* panel */
+
+.rac-list {
+    background-color: var(--rac-bg);
+    color: var(--rac-fg);
+    scrollbar-color: var(--rac-tint-2) var(--rac-tint-1);
+    scrollbar-width: thin;
+    scroll-padding-block: 0.5em;
+}
+
+.rac-option {
+    gap: 0.5em;
+    padding: 0.5em;
+    transition: background-color var(--rac-duration-fast) var(--rac-ease);
+
+    &[data-highlighted] {background-color: var(--rac-tint-2);}
+    &[aria-selected='true'] {background-color: var(--rac-tint-3);}
+    &[aria-selected='true'][data-highlighted] {background-color: color-mix(in srgb, var(--rac-fg) 30%, var(--rac-bg));}
+    &[aria-disabled='true'] {color: var(--rac-muted);}
+    &[data-invalid] {color: var(--rac-danger);}
+    &[data-loading] {gap: 0; color: var(--rac-muted);}
+    &[data-error] {color: var(--rac-danger);}
+}
+
+.rac-check {
+    margin-inline-end: 0.2em;
+
+    &[data-default] {border-color: var(--rac-muted);}
+}
+
+.rac-group {
+    padding: 0.5em;
+    font-size: 1.25em;
+    font-weight: bold;
+    transition: background-color var(--rac-duration-fast) var(--rac-ease);
+
+    &[data-highlighted] {background-color: var(--rac-tint-2);}
+    &[data-disabled] {color: var(--rac-muted);}
+}
+
+.rac-group-items {
+    padding-inline-start: 1em;
+}
+
+@keyframes rac-busy {
+    from {background-position-x: -100%;}
+    to {background-position-x: 200%;}
+}
+
+@keyframes rac-shake {
+    0% {transform: rotate(0deg);}
+    25% {transform: rotate(-1deg);}
+    75% {transform: rotate(1deg);}
+    100% {transform: rotate(0deg);}
+}
+
+}

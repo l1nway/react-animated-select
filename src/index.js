@@ -1,5 +1,5 @@
-export {default as Select} from './select'
-export {default as Option} from './option'
-export {default as OptGroup} from './optgroup'
+export {Select, Option, OptGroup} from './select'
+export {defineOption} from './model'
 
-import './select.css'
+import './base.css'
+import './theme.css'
