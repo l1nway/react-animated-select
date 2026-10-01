@@ -1,7 +1,4 @@
 import {PawPrint} from 'lucide-react'
-import {options} from '../components/options'
-import {Select} from 'react-animated-select'
-import {useReducer} from 'react'
 
 function Author() {
 

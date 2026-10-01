@@ -1,34 +1,24 @@
-import {CSSTransition} from 'react-transition-group'
-import {useRef} from 'react'
+import {AnimatePresence, m} from 'framer-motion'
+
+const EASE = {'ease': [0.25, 0.1, 0.25, 1], 'ease-in': 'easeIn', 'ease-out': 'easeOut', 'ease-in-out': 'easeInOut'}
 
 function SlideDown({visibility, children, duration = 300, className, easing = 'ease'}) {
-    const nodeRef = useRef(null)
-
-    return(
-        <CSSTransition
-            onEntering={() => nodeRef.current.style.height = nodeRef.current.scrollHeight + 'px'}
-            onExit={() => nodeRef.current.style.height = nodeRef.current.scrollHeight + 'px'}
-            onEntered={() => nodeRef.current.style.height = 'auto'}
-            onExiting={() => nodeRef.current.style.height = '0px'}
-            onEnter={() => nodeRef.current.style.height = '0px'}
-            classNames='rac-slide-down'
-            timeout={duration}
-            nodeRef={nodeRef}
-            in={visibility}
-            unmountOnExit
-        >
-            <div
-                style={{
-                    transition: `height ${duration}ms ${easing}`,
-                    overflow: 'hidden'
-                }}
-                className={`${className} rac-slide-down-enter-done`}
-                ref={nodeRef}
-                tabIndex={-1}
-            >
-                {children}
-            </div>
-        </CSSTransition>
+    return (
+        <AnimatePresence initial={false}>
+            {visibility &&
+                <m.div
+                    transition={{duration: duration / 1000, ease: EASE[easing] ?? easing}}
+                    initial={{height: 0}}
+                    animate={{height: 'auto'}}
+                    exit={{height: 0}}
+                    style={{overflow: 'hidden'}}
+                    className={className}
+                    tabIndex={-1}
+                >
+                    {children}
+                </m.div>
+            }
+        </AnimatePresence>
     )
 }
 

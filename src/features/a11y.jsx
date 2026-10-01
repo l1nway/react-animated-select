@@ -17,7 +17,7 @@ const hotkeys = [{
     desc: 'Close dropdown and move focus to next element'
 }]
 
-const mapHotkeys = hotkeys.map((hotkey, index) =>
+const mapHotkeys = hotkeys.map(hotkey =>
     <div
         className='rac-hotkey-container'
         key={hotkey.desc}
@@ -52,7 +52,7 @@ function A11y() {
             className='rac-a11y'
             id='a11y'
         >
-            {features.map((item, index) =>
+            {features.map(item =>
                 <div
                     className='rac-a11y-container'
                     key={item.title}

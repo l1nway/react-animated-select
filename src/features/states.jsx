@@ -1,5 +1,5 @@
 import {useState, useCallback, useReducer, memo} from 'react'
-import {Info, Scan, Check, ChevronDown} from 'lucide-react'
+import {Info, Scan, Check, ChevronUp} from 'lucide-react'
 import {options} from '../components/options'
 import {Select} from 'react-animated-select'
 
@@ -10,17 +10,17 @@ const initialState = {
     hasOptions: true,
 
     placeholder: 'Choose option',
-    emptyText: 'No options',
-    loadingText: 'Loading',
-    errorText: 'Failed to load',
-    disabledText: 'Disabled',
+    'texts.empty': 'No options',
+    'texts.loading': 'Loading',
+    'texts.error': 'Failed to load',
+    'texts.disabled': 'Disabled',
 
     inputValue: '',
     disabledOption: false,
     groupValue: '',
 }
 
-const textSettings = ['emptyText', 'disabledText', 'loadingText', 'errorText', 'placeholder']
+const textSettings = ['texts.empty', 'texts.disabled', 'texts.loading', 'texts.error', 'placeholder']
 
 const RenderTextSettings = memo(({label, value, onChange}) => (
     <label className='rac-prop-label'>
@@ -89,17 +89,14 @@ function States() {
                     Component States
                 </h3>
             </div>
-            <p className='rac-states-desc'>Explore the interactive states of the Select component. Toggle between Disabled, Loading, and Error modes to see dynamic style injections (rac-*-style) in action. Use the text props below to fully customize the messaging for every component state, from custom placeholders to specific error alerts.</p>
+            <p className='rac-states-desc'>Toggle the states of the Select. disabled works like a native disabled select: the value stays visible and nothing opens. loading and error only report: while there are options, the Select keeps working. Each state has its own attribute on the root to style (aria-disabled, aria-busy, data-error, data-empty) and its own text in the texts prop below.</p>
             <Select
                 options={state.hasOptions ? options : undefined}
                 optionsClassName='rac-basic-options'
-                disabledText={state.disabledText}
-                loadingText={state.loadingText}
+                texts={{empty: state['texts.empty'], disabled: state['texts.disabled'], loading: state['texts.loading'], error: state['texts.error']}}
                 placeholder={state.placeholder}
                 className='rac-basic-select'
-                errorText={state.errorText}
-                emptyText={state.emptyText}
-                OpenIcon={<ChevronDown/>}
+                icons={{arrow: ChevronUp}}
                 disabled={state.disabled}
                 loading={state.loading}
                 onChange={setValue}

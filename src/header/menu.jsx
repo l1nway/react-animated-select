@@ -1,28 +1,19 @@
 import {GitHub, NPM} from '../components/icons'
+import {setStore} from '../components/store'
 import {Play} from 'lucide-react'
-import {gsap} from 'gsap'
 
-const scroll = () => {
-    const target = document.querySelector('#playground')
-    if (target) {
-        gsap.to(window, {
-            scrollTo: {y: target, offsetY: 20},
-            ease: 'power2.inOut',
-            duration: 0.8,
-        })
-    }
-}
+const scroll = () => setStore({scrollTo: 'playground'})
 
 const menu = [{
     href: 'https://npmjs.com/package/react-animated-select',
-    icon: <NPM className='rac-header-icon'/>,
+    icon: <NPM className='rac-header-icon' aria-hidden='true'/>,
     text: 'NPM'
 }, {
     href: 'https://github.com/l1nway/react-animated-select',
-    icon: <GitHub className='rac-header-icon'/>,
+    icon: <GitHub className='rac-header-icon' aria-hidden='true'/>,
     text: 'GitHub'
 }, {
-    icon: <Play className='rac-header-icon'/>,
+    icon: <Play className='rac-header-icon' aria-hidden='true'/>,
     onClick: scroll,
     text: 'Sandbox',
     button: true
@@ -31,29 +22,26 @@ const menu = [{
 const Menu = () => {
   return (
     <div className='rac-header-buttons'>
-        {menu.map((item) => (
-            <div tabIndex={0} className='rac-button-container' key={item.id}>
+        {menu.map((item, i) => (
+            <div className='rac-button-container rac-enter' style={{'--i': i}} key={item.text}>
                 {!item.button
                     ? <a
                         className='rac-header-link'
+                        aria-label={item.text}
                         href={item.href}
                         rel='noreferrer'
                         target='_blank'
-                        tabIndex={-1}
                     >
                         {item.icon}
                     </a>
                     : <button
                         className='rac-header-link'
+                        aria-label={item.text}
                         onClick={item.onClick}
-                        tabIndex={-1}
                     >
                         {item.icon}
                     </button>
                 }
-                {/* <span className='rac-button-text'>
-                    {item.text}
-                </span> */}
             </div>
         ))}
     </div>

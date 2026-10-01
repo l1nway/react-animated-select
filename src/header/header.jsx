@@ -1,143 +1,81 @@
-import {useEffect, useRef, useLayoutEffect, useState, Fragment} from 'react'
-import {ScrambleTextPlugin} from 'gsap/ScrambleTextPlugin'
+import {getStore} from '../components/store'
+import {useLayoutEffect, useRef} from 'react'
 import Menu from './menu'
-import {gsap} from 'gsap'
+import './header.css'
 
-gsap.registerPlugin(ScrambleTextPlugin)
+const TITLE = 'react-animated-select'
+const WORDS = TITLE.split(/(?<=-)/).map((word, w, all) => [...word].map((char, i) => ({char, color: (all.slice(0, w).join('').length + i) % 5})))
+const DESC = 'A lightweight, high-performance, and fully customizable Select component for React. Featuring smooth CSS animations, accessible keyboard navigation, and flexible option rendering.'
+const CHARS = '!@#$%^&*()_+-=[]{}|;:,.<>?/'
 
-function useRefs() {
-    const refs = useRef({})
-    const register = (name) => (el) => {
-        if (el) refs.current[name] = el
-    }
-    return [refs.current, register]
-}
+const random = () => CHARS[Math.random() * CHARS.length | 0]
 
-const texts = {
-    desc: 'A lightweight, high-performance, and fully customizable Select component for React. Featuring smooth CSS animations, accessible keyboard navigation, and flexible option rendering.',
-    title: 'react-animated-select'
-}
+const draw = (spans, progress, force) => spans.forEach((el, i) => {
+    const next = i < progress * TITLE.length ? TITLE[i] : force || Math.random() < 0.15 ? random() : el.textContent
+    if (el.textContent !== next) el.textContent = next
+})
 
 function Header() {
-    const [animating, setAnimating] = useState(true)
-
-    const [refs, reg] = useRefs()
+    const title = useRef(null)
+    const desc = useRef(null)
 
     useLayoutEffect(() => {
-        if (!refs.textsSize || !refs.ghostTitle || !refs.ghostDesc) return
-        
-        const syncSizes = () => {
-            requestAnimationFrame(() => {
-                refs.ghostTitle.style.display = 'block'
-                refs.ghostDesc.style.display = 'block'
+        if (getStore().restoring || matchMedia('(prefers-reduced-motion: reduce)').matches) return
+        const spans = [...title.current.querySelectorAll('.rac-lib-title')]
+        const text = desc.current
+        const state = {progress: 0}
+        const libs = Promise.all([import('gsap'), import('gsap/ScrambleTextPlugin')])
+        // fixed glyph slots
+        const widths = spans.map(el => el.getBoundingClientRect().width)
+        spans.forEach((el, i) => {el.style.width = `${widths[i]}px`})
+        draw(spans, 0, true)
+        text.textContent = ''
 
-                const titleHeight = refs.ghostTitle.offsetHeight
-                const descHeight = refs.ghostDesc.offsetHeight
-                const maxWidth = Math.max(refs.ghostTitle.offsetWidth, refs.ghostDesc.offsetWidth)
-
-                refs.textsSize.style.width = `${maxWidth}px`
-                refs.desc.style.height = `${descHeight}px`
-                refs.title.style.height = `${titleHeight}px`
-
-                refs.ghostTitle.style.display = 'none'
-                refs.ghostDesc.style.display = 'none'
-            })
+        const finish = () => {
+            draw(spans, 1)
+            spans.forEach(el => {el.style.width = ''})
         }
+        let tl, timer, live = true
+        const start = () => libs.then(([{gsap}, {ScrambleTextPlugin}]) => {
+            if (!live) return
+            gsap.registerPlugin(ScrambleTextPlugin)
+            tl = gsap.timeline({onComplete: finish})
+                .to(state, {progress: 1, duration: 1.5, ease: 'power2.inOut', onUpdate: () => draw(spans, state.progress)}, 0)
+                .to(text, {duration: 2.5, ease: 'power2.inOut', scrambleText: {text: DESC, chars: CHARS, oldClass: 'rac-lib-temp', newClass: 'rac-lib-desc'}}, 1.25)
+        }).catch(() => {finish(); text.textContent = DESC})
+        // after first frame
+        const frame = requestAnimationFrame(() => {timer = setTimeout(start)})
 
-        const ro = new ResizeObserver(() => syncSizes())
-            ro.observe(refs.ghostTitle)
-            ro.observe(refs.ghostDesc)
-            syncSizes()
-
-            refs.textsSize._ro = ro
-            return () => ro.disconnect()
-    }, [])
-
-    useEffect(() => {
-        const tl = gsap.timeline({
-            onComplete: () => {
-                if (refs.textsSize && refs.textsSize._ro) {
-                    refs.textsSize._ro.disconnect()
-                }
-
-                gsap.set([refs.textsSize, refs.title, refs.desc], {
-                    clearProps: 'width,height'
-                })
-
-                setAnimating(false)
-            }
-        })
-
-      const animations = [
-          {
-            className: 'rac-lib-title',
-            text: texts.title,
-            ref: refs.title,
-            duration: 3,
-            split: true,
-            speed: 0.1,
-          }, {
-            className: 'rac-lib-desc',
-            text: texts.desc,
-            ref: refs.desc,
-            split: false,
-            duration: 5,
-            speed: 1
-          }
-      ]
-
-      animations.forEach(({ref, text, duration, speed, split, className}) => {
-          if (!ref) return
-
-          tl.to(ref, {
-              duration,
-              scrambleText: {
-                  chars: '!@#$%^&*()_+-=[]{}|;:,.<>?/',
-                  oldClass: 'rac-lib-temp',
-                  newClass: className,
-                  speed,
-                  text
-              },
-              ease: 'power2.inOut',
-              onUpdate: function() {
-                const currentText = ref.innerText
-                if (split) {
-                  ref.innerHTML = currentText
-                    .split('')
-                    .map(char => {
-                      if (char === ' ') return '&nbsp;'
-                      return `<span class='${className}'>${char}</span>`
-                    })
-                    .join('')
-                } else {
-                  ref.innerHTML = `<span class='${className}'>${currentText}</span>`
-                }
-              }
-            }, '-=0.5')
-      })
-
-      return () => tl.kill()
+        return () => {
+            live = false
+            cancelAnimationFrame(frame)
+            clearTimeout(timer)
+            tl?.kill()
+            finish()
+            text.textContent = DESC
+        }
     }, [])
 
     return (
-      <header className='rac-header'>
-        <div className='rac-main-text' ref={reg('textsSize')}>
-            {animating &&
-                <Fragment>
-                    <h1 className='rac-lib-title' ref={reg('ghostTitle')}>{texts.title}</h1>
-                    <p className='rac-lib-desc' ref={reg('ghostDesc')}>{texts.desc}</p>
-                </Fragment>
-            }
-            <h1
-                className='rac-title-container'
-                ref={reg('title')}
-            >
-                {texts.title}
-            </h1>
-            <p ref={reg('desc')}/>
-        </div>
-        <Menu/>
-      </header>
+        <header className='rac-header rac-enter'>
+            <div className='rac-main-text'>
+                <h1 className='rac-scramble rac-lib-heading'>
+                    <span className='rac-scramble-ghost'>{TITLE}</span>
+                    <span className='rac-scramble-text' ref={title} aria-hidden='true'>
+                        {WORDS.map((word, w) => (
+                            <span className='rac-scramble-word' key={w}>
+                                {word.map(({char, color}, i) => <span className='rac-lib-title' data-color={color} key={i}>{char}</span>)}
+                            </span>
+                        ))}
+                    </span>
+                </h1>
+                <p className='rac-scramble'>
+                    <span className='rac-scramble-ghost'>{DESC}</span>
+                    <span className='rac-scramble-text rac-lib-desc' ref={desc} aria-hidden='true'>{DESC}</span>
+                </p>
+            </div>
+            <Menu/>
+        </header>
     )
 }
 

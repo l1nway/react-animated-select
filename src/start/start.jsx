@@ -1,26 +1,26 @@
-import {content, CopyButton, CodeBlock, options} from './components'
-import {Zap, Star, Shield, ChevronDown, X, Play} from 'lucide-react'
-import {Fragment, useCallback, useState} from 'react'
-import {Select, Option} from 'react-animated-select'
-import {setScrollTarget} from '../components/store'
-import {useDispatch} from 'react-redux'
-import Question from './question'
+import {CopyButton, CodeBlock} from '../components/code'
+import {useCallback, useEffect, useRef, useState} from 'react'
+import {Part} from '../components/deferred'
+import {setStore} from '../components/store'
+import {snippet} from '../components/tokens'
+import {Play} from 'lucide-react'
+import Usage from './usage'
+
+const INSTALL = snippet.bash`npm install react-animated-select`
+
+const tryDemo = () => setStore({scrollTo: 'playground'})
 
 function Start() {
-    const dispatch = useDispatch()
-
     const [copied, setCopied] = useState(false)
-    const [value, setValue] = useState()
+    const timer = useRef()
 
-    const scroll = useCallback(() => dispatch(setScrollTarget('playground')))
+    useEffect(() => () => clearTimeout(timer.current), [])
 
     const copy = useCallback((code, keyId) => {
         navigator.clipboard.writeText(code)
         setCopied(keyId)
-
-        const timer = setTimeout(() => setCopied(false), 2000)
-
-        return () => clearTimeout(timer)
+        clearTimeout(timer.current)
+        timer.current = setTimeout(() => setCopied(false), 2000)
     }, [])
 
     return (
@@ -35,70 +35,18 @@ function Start() {
                 <label className='rac-start-label'>
                     <button
                         className='rac-start-button'
-                        onClick={scroll}
+                        onClick={tryDemo}
                     >
                         <Play/> <span>Try demo</span>
                     </button>
                 </label>
                 <label className='rac-code-container' tabIndex={0}>
-                    <CodeBlock
-                        code='npm install react-animated-select'
-                        title='Installation'
-                        copied={copied}
-                        language='bash'
-                        keyId='install'
-                        copy={copy}
-                    />
-                    <CopyButton copy={copy} code='npm install react-animated-select' keyId='install' copied={copied}/>
+                    <CodeBlock code={INSTALL}/>
+                    <CopyButton copy={copy} code={INSTALL.text} keyId='install' copied={copied}/>
                 </label>
             </section>
-            {Object.values(content).map((item) => (
-                <section
-                    className='rac-start-basic'
-                    key={item.id}
-                    id={item.id}
-                >
-                    <div className='rac-code-title-container2'>
-                        <div className='rac-code-title-container'>
-                            <div className='rac-code-icon'>
-                                {item.icon}
-                            </div>
-                            <h3 className='rac-code-title'>
-                                {item.title}
-                            </h3>
-                        </div>
-                    </div>
-                    <p className='rac-code-desc'>
-                        {item.desc}
-                    </p>
-                    <div className='rac-code-container' tabIndex={0}>
-                        <div className='rac-basic-select-container'>
-                            <Select
-                                options={(item.id === 'basic') ? options : undefined}
-                                optionsClassName='rac-basic-options'
-                                className='rac-basic-select'
-                                OpenIcon={<ChevronDown/>}
-                                onChange={setValue}
-                                ClearIcon={<X/>}
-                                value={value}
-                            >
-                                {(item.id === 'advanced') &&
-                                    <Fragment>
-                                        <Option value='basic'><Zap/>Basic</Option>
-                                        <Option value='pro'><Star/>Pro</Option>
-                                        <Option value='enterprise' disabled><Shield/>Enterprise</Option>
-                                    </Fragment>
-                                }
-                            </Select>
-                        </div>
-                        <div className='rac-code-wrapper'>
-                            <CodeBlock code={item.code}/>
-                            <CopyButton copy={copy} code={item.code} keyId={item.id} copied={copied}/>
-                        </div>
-                    </div>
-                </section>
-            ))}
-            <Question/>
+            <Usage copy={copy} copied={copied}/>
+            <Part id='question'/>
         </article>
   )
 }

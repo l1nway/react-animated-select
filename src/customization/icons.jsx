@@ -1,11 +1,11 @@
-import {Atom, ImageUp, ImageOff, ChevronDown} from 'lucide-react'
+import {Atom, ImageUp, ImageOff} from 'lucide-react'
 import {AnimatePresence, m} from 'framer-motion'
 import {options} from '../components/options'
 import {Select} from 'react-animated-select'
 import useIcons from './useIcons'
 
 function Icons() {
-    const {state, value, setValue, containerRefs, animation, dispatch} = useIcons()
+    const {state, value, setValue, icons, containerRefs, animation, dispatch} = useIcons()
 
     return (
         <section
@@ -21,7 +21,7 @@ function Icons() {
                     Icons
                 </h3>
             </div>
-            <p className='rac-icons-desc'>While the component ships with a default set of optimized SVGs, it offers full support for custom overrides. You can upload your own assets or programmatically define icons using custom <span style={{color: 'rgb(86, 156, 214)'}}>{`<img>`}</span> tags, inline SVGs, or dedicated React components to perfectly align with your design system. You can also simply disable any of the icons by specifying the value <span style={{color: 'rgb(244, 71, 71)'}}>false</span> in the prop.</p>
+            <p className='rac-icons-desc'>The component ships with its own SVG icons, and every one of them is a key of the <span style={{color: 'rgb(156, 220, 254)'}}>icons</span> prop. A key takes a React component, an element such as an <span style={{color: 'rgb(86, 156, 214)'}}>{`<img>`}</span> or inline SVG, or an image URL; upload or drop a file on a card below to try it. Pass only the keys you change, and set a key to <span style={{color: 'rgb(244, 71, 71)'}}>false</span> to turn that control off.</p>
             <div className='rac-icons-props'>
                 {state.items.map((item, index) =>
                     <div
@@ -100,36 +100,13 @@ function Icons() {
                                     type='file'
                                 />}
                         </label>
-                        <span className='rac-icon-desc'>
-                            {item.desc}</span>
+                        <span className='rac-icon-desc'>{item.desc}</span>
                     </div>
                 )}
             </div>
             <Select
-                CheckmarkIcon={
-                    state.items.find(i => i.name === 'Checkmark')?.file
-                    ? <img alt='Checkmark icon' src={state.items.find(i => i.name === 'Checkmark').file}/>
-                    : undefined
-                }
-                OpenIcon={
-                    state.items.find(i => i.name === 'OpenIcon')?.file
-                    ? <img alt='Arrow icon' src={state.items.find(i => i.name === 'OpenIcon').file}/>
-                    : <ChevronDown/>
-                }
-                ClearIcon={
-                    state.items.find(i => i.name === 'ClearIcon')?.file
-                    ? <img alt='Close icon' src={state.items.find(i => i.name === 'ClearIcon').file}/>
-                    : undefined
-                }
-                Checkbox={state.items.find(i => i.name === 'Checkbox')?.file
-                    ? <img alt='Checkbox icon' src={state.items.find(i => i.name === 'Checkbox').file}/>
-                    : undefined
-                }
-                DelIcon={state.items.find(i => i.name === 'DelIcon')?.file
-                    ? <img alt='Delete icon' src={state.items.find(i => i.name === 'DelIcon').file}/>
-                    : undefined
-                }
-                style={{'--rac-select-min-height': '2.5em'}}
+                icons={icons}
+                style={{'--rac-row': '2.5em'}}
                 optionsClassName='rac-basic-options'
                 className='rac-basic-select'
                 onChange={setValue}

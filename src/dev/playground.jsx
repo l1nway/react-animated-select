@@ -1,32 +1,24 @@
-import {Zap, Star, Shield, WandSparkles, Keyboard, Loader, ChevronDown} from 'lucide-react'
-import {LiveProvider, LiveEditor, LiveError, LivePreview} from 'react-live'
-import {Select, Option, OptGroup} from 'react-animated-select'
-import {themes} from 'prism-react-renderer'
+import {lazy, Suspense, useEffect, useRef, useState} from 'react'
 import {Play} from 'lucide-react'
-import {useState} from 'react'
 
-const initialCode = `function App() {
-    const [value, setValue] = useState()
+const Live = lazy(() => import('./live'))
 
-    return (
-        <Select
-            optionsClassName='rac-playground-options'
-            className='rac-playground-preview'
-            OpenIcon={<ChevronDown/>}
-            onChange={setValue}
-            value={value}
-        >
-            <Option value='1'><Zap/> Basic Plan</Option>
-            <Option value='2'><Star/> Pro License</Option>
-            <Option value='3' disabled><Shield/> Enterprise</Option>
-        </Select>
-    )
-}
-
-render(<App/>)`
+const holder = <div className='rac-live-container rac-live-holder'/>
 
 const Playground = () => {
-    const scope = {useState, Select, Option, Zap, Star, Shield, WandSparkles, Keyboard, Loader, ChevronDown, OptGroup}
+    const section = useRef(null)
+    const [near, setNear] = useState(false)
+
+    // near viewport load
+    useEffect(() => {
+        const io = new IntersectionObserver(([entry]) => {
+            if (!entry.isIntersecting) return
+            setNear(true)
+            io.disconnect()
+        }, {rootMargin: '1000px 0px'})
+        io.observe(section.current)
+        return () => io.disconnect()
+    }, [])
 
   return (
     <section
@@ -35,6 +27,7 @@ const Playground = () => {
         }}
         className='rac-playground'
         id='playground'
+        ref={section}
     >
 
         <div className='rac-code-title-container'>
@@ -45,30 +38,13 @@ const Playground = () => {
                 Interactive Playground
             </h3>
         </div>
-        
+
         <p className='rac-code-desc'>
-          Experiment with props, icons, and logic in real-time. 
+          Experiment with props, icons, and logic in real-time.
           Modify the code below and watch the component update instantly.
         </p>
 
-        <LiveProvider
-            theme={themes.vsDark}
-            code={initialCode}
-            noInline={true}
-            scope={scope}
-        >
-            <div className='rac-live-container'>
-                <div className='rac-live-preview-box'>
-                    <LivePreview className='rac-preview-select'/>
-                </div>
-
-                <div className='rac-live-editor-box'>
-                    <div className='rac-editor-header'>Editable Source</div>
-                    <LiveEditor className='rac-live-editor'/>
-                    <LiveError className='rac-live-error'/>
-                </div>
-            </div>
-        </LiveProvider>
+        {near ? <Suspense fallback={holder}><Live/></Suspense> : holder}
     </section>
   )
 }

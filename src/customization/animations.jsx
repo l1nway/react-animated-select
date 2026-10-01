@@ -1,4 +1,4 @@
-import {ListVideo, Scan, Check, ChevronDown} from 'lucide-react'
+import {ListVideo, Scan, Check, ChevronUp} from 'lucide-react'
 import {options} from '../components/options'
 import {Select} from 'react-animated-select'
 import Slider from '../components/slider'
@@ -81,9 +81,9 @@ function Animations() {
                     Animations
                 </h3>
             </div>
-            <p className='rac-animations-desc'>Explore the interactive states of the Select component. Toggle between Disabled, Loading, and Error modes to see dynamic style injections (rac-*-style) in action. Use the text props below to fully customize the messaging for every component state, from custom placeholders to specific error alerts.</p>
+            <p className='rac-animations-desc'>Open and close, group collapse, chips and title cross-fades run on the Web Animations API, with no animation library. duration and easing drive every animation and CSS transition of the Select, animateOpacity fades the panel while it opens and closes, and offset sets the gap between the trigger and the panel. Animations reverse mid-way without a jump and respect prefers-reduced-motion.</p>
             <div className='rac-animations'>
-                {props.map((item, index) =>
+                {props.map(item =>
                     <label key={item.name} className='rac-animations-container'>
                         <span className='rac-animations-title'>{item.name}</span>
                         {item.type === 'range' && <Slider
@@ -102,9 +102,8 @@ function Animations() {
                             onChange={(e) => dispatch({type: item.action, payload: e})}
                             className='rac-basic-select rac-animations-select'
                             optionsClassName='rac-basic-options'
-                            OpenIcon={<ChevronDown/>}
+                            icons={{arrow: ChevronUp, clear: false}}
                             options={item.options}
-                            ClearIcon={false}
                             value={item.value}
                         />}
                         {item.type === 'checkbox' &&
@@ -127,7 +126,7 @@ function Animations() {
             <Select
                 optionsClassName='rac-basic-options'
                 className='rac-basic-select'
-                OpenIcon={<ChevronDown/>}
+                icons={{arrow: ChevronUp}}
                 options={options}
                 {...state}
             />

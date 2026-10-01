@@ -1,31 +1,32 @@
-import {useEffect, useReducer, useState, useRef, useLayoutEffect} from 'react'
+import {useEffect, useReducer, useState, useRef, useLayoutEffect, useMemo} from 'react'
 import {XMarkIcon, ArrowUpIcon, CheckmarkIcon} from '../components/icons'
+import {ChevronUp} from 'lucide-react'
 
 const initialState = {
     items: [{
         icon: <ArrowUpIcon/>,
-        name: 'OpenIcon',
-        desc: 'A directional chevron icon that indicates a collapsible menu. It points downwards when the menu is closed and flips upwards when the menu is expanded.',
+        name: 'arrow',
+        desc: 'The chevron of the trigger and of the group headers. Draw it pointing up: the Select rotates it with CSS, so it points down while the menu is closed and flips up when the menu opens. false hides the arrows.',
         file: null
     }, {
-        name: 'ClearIcon',
+        name: 'clear',
         icon: <XMarkIcon/>,
-        desc: `An X shaped icon used to clear or reset the current selection. It provides a quick way for users to remove their input or close a temporary overlay, ensuring a clean state.`,
+        desc: `The clear button that resets the whole selection. false removes the button and the Delete key shortcut.`,
         file: null
     }, {
-        name: 'DelIcon',
+        name: 'remove',
         icon: <XMarkIcon/>,
-        desc: `An X shaped icon used to remove individual options in multi-select mode. It serves as a precise action trigger, allowing users to prune their selection list by dismissing specific tags or items with a single click.`,
+        desc: `The delete button of each chip in multiple mode. false removes the button, the Backspace shortcut and the long-press delete mode.`,
         file: null
     }, {
-        name: 'Checkmark',
+        name: 'check',
         icon: <CheckmarkIcon/>,
-        desc: 'A classic tick icon that signifies a successful selection. In multi-select mode, it appears inside the Checkbox to provide a clear visual confirmation that a specific option has been successfully toggled.',
+        desc: 'The tick inside the checkbox of a selected option in multiple mode. false leaves the checkbox empty.',
         file: null
     }, {
-        name: 'Checkbox', 
+        name: 'checkbox',
         icon: false,
-        desc: `By default, this is a simple border surrounding the Checkmark to indicate a toggleable state. However, it can be fully customized by uploading a unique icon to match your design system's specific multi-select aesthetic.`,
+        desc: `The checkbox frame of each option in multiple mode. Without it, the built-in 1em frame is drawn around the check icon.`,
         file: null
     }],
     drag: false}
@@ -42,14 +43,15 @@ const animation = {
 
 function reducer(state, action) {
     switch (action.type) {
-        case 'SET_ICON':
+        case 'SET_ICON': {
             const url = action.payload instanceof File ? URL.createObjectURL(action.payload) : action.payload
             return {
                 ...state,
-                items: state.items.map(item => 
+                items: state.items.map(item =>
                     item.name === action.name ? {...item, file: url, hover: false} : item
                 )
             }
+        }
         case 'SET_DRAG':
             return {...state, drag: action.payload}
         case 'SET_OVER':
@@ -123,7 +125,9 @@ function useIcons() {
         })
     }, [state.items])
 
-    return ({value, setValue, state, containerRefs, animation, dispatch})
+    const icons = useMemo(() => ({arrow: ChevronUp, ...Object.fromEntries(state.items.filter(i => i.file).map(i => [i.name, i.file]))}), [state.items])
+
+    return ({value, setValue, state, icons, containerRefs, animation, dispatch})
 }
 
 export default useIcons

@@ -1,3 +1,16 @@
+import {Loader} from 'lucide-react'
+
+// visible spinners only
+let observer
+const watch = el => {
+    if (!el) return
+    observer ??= new IntersectionObserver(entries => entries.forEach(({target, isIntersecting}) => target.toggleAttribute('data-visible', isIntersecting)))
+    observer.observe(el)
+    return () => observer.unobserve(el)
+}
+
+export const Spinner = props => <Loader ref={watch} className='rac-loader' {...props}/>
+
 export const GitHub = ({size = 24, color = 'currentColor', ...props}) => 
     <svg
         strokeLinejoin='round'

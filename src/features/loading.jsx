@@ -1,17 +1,18 @@
-import {Loader, Pencil, CircleCheck, CircleX, Check, Scan, ChevronDown} from 'lucide-react'
+import {Pencil, CircleCheck, CircleX, Check, Scan, ChevronUp} from 'lucide-react'
 import {AnimatePresence, m} from 'framer-motion'
 import SlideDown from '../components/slideDown'
-import {useReducer, useCallback} from 'react'
+import {Spinner} from '../components/icons'
+import {useReducer, useCallback, useRef, useEffect} from 'react'
 import {Select} from 'react-animated-select'
 
 const props = [
-  {prop: 'hasMore', value: 'boolean', default: 'false', text: 'Indicates whether more options are available for loading (used for infinite loading).', selectable: true},
-  {prop: 'loadMore', value: 'function', default: '() => {}', text: 'Callback triggered when more options need to be loaded.'},
-  {prop: 'loadMoreText', value: 'string', default: 'Loading', text: 'Text displayed inside the options list during loading.', editable: true},
-  {prop: 'loadOffset', value: 'number', default: '100', text: 'Distance (in pixels) from the bottom of the list that triggers loadMore.', editable: true},
-  {prop: 'loadAhead', value: 'number', default: '3', text: 'Number of remaining options before the end at which loading is triggered during keyboard navigation.', editable: true},
-  {prop: 'loadButton', value: 'boolean', default: 'false', text: 'Enables a manual “Load more” button instead of automatic loading.', selectable: true},
-  {prop: 'loadButtonText', value: 'string', default: 'Load more', text: 'Text displayed on the load button.', editable: true}
+  {prop: 'hasMore', value: 'boolean', default: 'false', text: 'More pages exist: shows the loading footer, or the “Load more” row with loadButton.', selectable: true},
+  {prop: 'loadMore', value: 'function', default: '() => {}', text: 'Loads the next page. A returned Promise unlocks the next load when it settles, success or failure.'},
+  {prop: 'texts.loadingMore', value: 'string', default: 'Loading', text: 'Text of the loading footer and of the load button while loading.', editable: true},
+  {prop: 'loadOffset', value: 'number', default: '100', text: 'Scroll distance (in pixels) from the end of the list that triggers loadMore.', editable: true},
+  {prop: 'loadAhead', value: 'number', default: '3', text: 'Keyboard highlight distance (in options) from the end of the list that triggers loadMore.', editable: true},
+  {prop: 'loadButton', value: 'boolean', default: 'false', text: 'A “Load more” row in the list instead of loading on scroll.', selectable: true},
+  {prop: 'texts.loadMore', value: 'string', default: 'Load more', text: 'Text of the “Load more” row.', editable: true}
 ]
 
 const colors = {
@@ -22,6 +23,8 @@ const colors = {
 }
 
 const options = ['Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5', 'Option 6', 'Option 7', 'Option 8', 'Option 9', 'Option 10', 'Option 11', 'Option 12', 'Option 13', 'Option 14']
+
+const loadedOptions = [...options, 'Loaded option 1', 'Loaded option 2', 'Loaded option 3', 'Loaded option 4', 'Loaded option 5']
 
 const animation = {
     initial: {x: -25, opacity: 0},
@@ -45,26 +48,23 @@ const appearAnim = {
 
 function Loading() {
     const [state, dispatch] = useReducer((prev, next) => ({ ...prev, ...next }), {
-        options: options,
         loaded: false,
         hovered: false,
         hasMore: true,
-        loadMoreText: 'Loading',
+        'texts.loadingMore': 'Loading',
         loadOffset: 100,
         loadAhead: 3,
         loadButton: true,
-        loadButtonText: 'Load more'
+        'texts.loadMore': 'Load more'
     })
     
-    const trigger = useCallback(() => {
-        const timer = setTimeout(() => {
-            dispatch({ 
-                options: [...state.options, 'Loaded option 1', 'Loaded option 2', 'Loaded option 3', 'Loaded option 4', 'Loaded option 5'],
-                loaded: true 
-            })
-        }, 2000)
-        return () => clearTimeout(timer)
-    }, [state.options])
+    const timer = useRef()
+    useEffect(() => () => clearTimeout(timer.current), [])
+
+    const trigger = useCallback(() => new Promise(resolve => {
+        clearTimeout(timer.current)
+        timer.current = setTimeout(resolve, 2000)
+    }).then(() => dispatch({loaded: true})), [])
 
     const handleChange = (prop, val) => dispatch({[prop]: val})
 
@@ -75,15 +75,15 @@ function Loading() {
         >
             <div className='rac-code-title-container'>
                 <div className='rac-code-icon'>
-                    <Loader className='rac-loader'/>
+                    <Spinner/>
                 </div>
                 <h3 className='rac-code-title'>
                     Infinite Loading
                 </h3>
             </div>
-            <p className='rac-loading-desc'>Explore the interactive states of the Select component. Toggle between Disabled, Loading, and Error modes to see dynamic style injections (rac-*-style) in action. Use the text props below to fully customize the messaging for every component state, from custom placeholders to specific error alerts.</p>
+            <p className='rac-loading-desc'>Load options page by page. loadMore fires when the list is scrolled close to its end, when the keyboard highlight comes close to it, or on a “Load more” row. Bursts of scroll events trigger one load, and a failed request returned as a Promise unlocks the next attempt. Edit the props below and open the Select to try it.</p>
             <div className='rac-loading-props'>
-                {props.map((item, index) =>
+                {props.map(item =>
                     <label className='rac-props-container' key={item.prop}>
                         <h3 className='rac-loading-prop'>{item.prop}</h3>
                         <span
@@ -151,7 +151,7 @@ function Loading() {
                 duration={300}
             >
                 <button
-                    onClick={() => dispatch({loaded: false, options: options})}
+                    onClick={() => dispatch({loaded: false})}
                     onMouseLeave={() => dispatch({hovered: false})}
                     onMouseEnter={() => dispatch({hovered: true})}
                     className='rac-loaded-succesfully'
@@ -200,15 +200,14 @@ function Loading() {
             </SlideDown>
             <Select
                 hasMore={!state.loaded && state.hasMore}
-                loadButtonText={state.loadButtonText}
+                texts={{loadMore: state['texts.loadMore'], loadingMore: state['texts.loadingMore']}}
                 loadOffset={Number(state.loadOffset)}
                 optionsClassName='rac-basic-options'
                 loadAhead={Number(state.loadAhead)}
-                loadMoreText={state.loadMoreText}
                 loadButton={state.loadButton}
                 className='rac-basic-select'
-                OpenIcon={<ChevronDown/>}
-                options={state.options}
+                icons={{arrow: ChevronUp}}
+                options={state.loaded ? loadedOptions : options}
                 loadMore={trigger}
             />
         </section>

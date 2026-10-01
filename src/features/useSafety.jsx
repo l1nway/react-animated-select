@@ -11,14 +11,16 @@ export const parse = (option) => {
     return String(option)
 }
 
+const sameWidths = (a, b) => Object.keys(a).length === Object.keys(b).length && Object.keys(b).every(key => a[key] === b[key])
+
 export function useSafety() {
     const [state, dispatch] = useReducer((prev, next) => {
         const actualNext = typeof next === 'function' ? next(prev) : next
-        return {...prev, ...actualNext}
+        return actualNext ? {...prev, ...actualNext} : prev
     }, {
         options: ['Option 1', true, false, undefined, null, console.log, {name: 'Option 7', disabled: true}, {name: 'Option 8'}, {random: 'Option 9'}, {name: 'Option 10', id: 2}, {id: 'Option 11'}],
         value: undefined,
-        height: 'auto',
+        height: null,
         option: '',
         widths: {}
     })
@@ -31,29 +33,14 @@ export function useSafety() {
 
     useLayoutEffect(() => {
         const measure = () => {
-            const update = {}
-            let hasChanged = false
-            
-            if (contentRef.current) {
-                const rect = contentRef.current.getBoundingClientRect()
-                update.height = Math.round(rect.height)
-                hasChanged = true
-            }
-
-            const newWidths = {}
+            const next = {height: contentRef.current ? Math.round(contentRef.current.getBoundingClientRect().height) : null, widths: {}}
             Object.keys(itemsRef.current).forEach(key => {
-                if (itemsRef.current[key]) {
-                    newWidths[key] = Math.round(itemsRef.current[key].scrollWidth)
-                    if (Math.round(itemsRef.current[key].scrollWidth) !== widths[key]) hasChanged = true
-                }
-                else {
-                    delete itemsRef.current[key]
-                    hasChanged = true
-                }
+                const el = itemsRef.current[key]
+                if (el) next.widths[key] = Math.round(el.scrollWidth)
+                else delete itemsRef.current[key]
             })
-
-            update.widths = newWidths
-            hasChanged && dispatch(update)
+            // skip unchanged sizes
+            dispatch(prev => prev.height === next.height && sameWidths(prev.widths, next.widths) ? null : next)
         }
 
         const resizeObserver = new ResizeObserver(measure)
@@ -67,14 +54,14 @@ export function useSafety() {
     }, [options])
 
     const containerAnim = useMemo(() => ({
-        animate: {height: height + 2, opacity: 1, borderWidth: '1px'},
+        animate: {height: height === null ? 'auto' : height + 2, opacity: 1, borderWidth: '1px'},
         initial: {height: 0, opacity: 0, borderWidth: 0},
         exit: {height: 0, opacity: 0, borderWidth: 0},
         transition: {duration: 0.3}
     }), [height])
 
     const itemAnim = useCallback((key) => ({
-        animate: {width: widths[key] + 2, opacity: 1, marginRight : '0.5em', borderWidth: '1px'},
+        animate: {width: key in widths ? widths[key] + 2 : 'auto', opacity: 1, marginRight : '0.5em', borderWidth: '1px'},
         initial: {width: 0, opacity: 0, marginRight: 0, borderWidth: 0},
         exit: {width: 0, opacity: 0, marginRight: 0, borderWidth: 0},
         transition: {duration: 0.3}
@@ -105,7 +92,7 @@ export function useSafety() {
                 return
             }
             dispatch(s => ({options: [...s.options, parsedValue], option: ''}))
-        } catch (e) {
+        } catch {
             if (options.some(opt => parse(opt) === parse(option))) {
                 shake(itemsRef.current[parse(option)])
                 return

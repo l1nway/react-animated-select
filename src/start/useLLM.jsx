@@ -1,157 +1,95 @@
-import {useCallback, useReducer, useRef, useMemo} from 'react'
-import {shake, clearShake} from './components'
-import axios from 'axios'
-import gsap from 'gsap'
+import {useCallback, useEffect, useReducer, useRef} from 'react'
+import {clearShake, merge, shake} from './components'
 
-function useLLM() {
-    const [state, dispatch] = useReducer((prev, next) => ({...prev, ...next}), {
-        recording: false,
-        loading: false,
-        answer: '',
-        value: '',
-        height: 0
-    })
-        
-    const {value, height} = state
-    
-    const refs = {
-        mediaRecorder: useRef(null),
-        audioChunks: useRef(null),
-        textarea: useRef(null),
-        answer: useRef(null),
-        height: useRef(null),
-        lottie: useRef(null)
-    }
-
-    const animText = useMemo(() => ({
-        initial: {
-            backgroundColor: 'transparent',
-            marginBottom: 0,
-            marginRight: 0,
-            marginLeft: 0,
-            marginTop: 0,
-            opacity: 0,
-            padding: 0,
-            height: 0,
-        },
-        animate: {
-            backgroundColor: '#1a1a24',
-            marginBottom: '1.5em',
-            marginRight: 0,
-            height: height,
-            padding: '1em',
-            marginLeft: 0,
-            marginTop: 0,
-            opacity: 1,
-        },
-        exit: {
-            backgroundColor: 'transparent',
-            marginBottom: 0,
-            height: height,
-            opacity: 0,
-            padding: 0,
-        },
-        transition: {
-            ease: [0, 0.55, 0.45, 1], 
-            duration: 0.6,
-        },
-    }), [height])
-
-    const askLLM = useCallback(async (e, audioBlob = null) => {
-        clearShake(refs.textarea.current)
-        e?.preventDefault()
-        
-        if (!value.trim() && !audioBlob) return
-        try {
-            dispatch({loading: true, height: refs?.height?.current?.scrollHeight || 0, answer: ''})
-
-            const formData = new FormData()
-            if (audioBlob) formData.append('audio', audioBlob, 'record.webm')
-            else formData.append('prompt', value.trim())
-            
-            const res = await axios.post('https://react-animated-select-backend.online/ask', formData)
-            dispatch({value: '', answer: res.data.answer})
-
-            requestAnimationFrame(() => {
-                if (refs.height.current) {
-                    dispatch({height: refs.height.current.scrollHeight})
-                    animateText(res.data.answer)
-                }
-            })
-        } catch (error) {
-            shake(refs.textarea.current)
-            console.error(error)
-        } finally {
-            dispatch({loading: false})
-        }
-    }, [value])
-
-    const animateText = useCallback((text) => {
-        const chars = '!@#$%^&*()_+-=[]{}|;:,.<>?/'
-        const obj = {val: 0}
-        
-        gsap.killTweensOf(obj)
-
-        gsap.to(obj, {
-            val: text.length,
-            duration: 1.5,
-            ease: 'none',
-            onUpdate: () => {
-                const progress = Math.floor(obj.val)
-                const scrambled = text.substring(0, progress) + 
-                    (progress < text.length 
-                        ? chars[Math.floor(Math.random() * chars.length)] 
-                        : '')
-                
-                if (refs.answer.current) refs.answer.current.innerText = scrambled
-            },
-            onComplete: () => dispatch({height: 'auto'})
-        })
-    }, [])
-
-    const onChange = useCallback((e) => {
-        clearShake(e.target)
-        dispatch({value: e.target.value})
-        e.target.setCustomValidity('')
-    }, [])
-
-    const startRecording = useCallback(async () => {
-        try {
-            clearShake(refs.textarea.current)
-            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-            ? 'audio/webm;codecs=opus'
-            : 'audio/webm'
-
-            const stream = await navigator.mediaDevices.getUserMedia({audio: true})
-
-            refs.mediaRecorder.current = new MediaRecorder(stream, {mimeType})
-            refs.audioChunks.current = []
-
-            refs.mediaRecorder.current.ondataavailable = (e) => (e.data.size > 0) && refs.audioChunks.current.push(e.data)
-
-            refs.mediaRecorder.current.onstop = async () => {
-                const audioBlob = new Blob(refs.audioChunks.current, {type: mimeType})
-                await askLLM(null, audioBlob)
-                stream.getTracks().forEach(track => track.stop())
-            }
-
-            refs.mediaRecorder.current.start(1000)
-            dispatch({recording: true})
-        } catch (err) {
-            console.error(err)
-            dispatch({recording: false})
-            shake(refs.textarea.current)
-        }
-    }, [])
-
-    const stopRecording = useCallback(() => {
-        if (refs.mediaRecorder.current && state.recording) {
-            refs.mediaRecorder.current.stop()
-            dispatch({recording: false})
-        }
-    }, [state.recording])
-
-    return ({state, refs, animText, askLLM, onChange, startRecording, stopRecording})
+export const MAX = 2048
+const API = 'https://react-animated-select-backend.online/ask'
+const TIMEOUT = 45000
+const SLOW = 3000
+const BUSY = 'The server is busy, still waiting for an answer…'
+const EMPTY = 'LLM technologies are not that advanced yet, unfortunately.'
+const FAILED = 'Something went wrong on the server. Try again later.'
+const ERRORS = {
+    timeout: 'The server took too long to answer. Try again.',
+    network: 'Could not reach the server. Check your connection.',
+    empty: 'No answer came back. Try rephrasing the question.',
+    413: 'The question is too long.',
+    429: 'Too many questions in a row. Wait a minute and try again.'
 }
 
-export default useLLM 
+function useLLM() {
+    const [state, dispatch] = useReducer(merge, {loading: false, answer: '', value: '', status: null, crash: null})
+    const textareaRef = useRef(null)
+    const request = useRef(null)
+    const refocus = useRef(null)
+    const timer = useRef()
+
+    useEffect(() => () => {
+        request.current?.abort()
+        clearTimeout(timer.current)
+    }, [])
+
+    // focus restore
+    useEffect(() => {
+        if (state.loading || !refocus.current) return
+        if (!textareaRef.current?.form?.contains(document.activeElement)) refocus.current.current?.focus({preventScroll: true})
+        refocus.current = null
+    }, [state.loading])
+
+    const notify = useCallback((text, error) => {
+        clearTimeout(timer.current)
+        dispatch({status: text ? {text, error} : null})
+        if (error) shake(textareaRef.current)
+        else clearShake(textareaRef.current)
+        if (text && !error) timer.current = setTimeout(() => dispatch({status: null}), 4000)
+    }, [])
+
+    const ask = useCallback(async (body, back) => {
+        request.current?.abort()
+        const ctrl = request.current = new AbortController()
+        const timeout = setTimeout(() => ctrl.abort('timeout'), TIMEOUT)
+        const slow = setTimeout(() => dispatch({crash: 'slow', status: {text: BUSY}}), SLOW)
+        refocus.current = textareaRef.current?.form?.contains(document.activeElement) ? back : null
+        notify(null)
+        dispatch({loading: true, answer: '', crash: null})
+        try {
+            const res = await fetch(API, {method: 'POST', body, signal: ctrl.signal}).catch(() => {throw new Error(navigator.onLine ? 'blocked' : 'network')})
+            if (!res.ok) throw new Error(res.status)
+            const {answer} = await res.json()
+            if (typeof answer !== 'string' || !answer.trim()) throw new Error('empty')
+            dispatch({answer, value: '', status: null, crash: null})
+        } catch (err) {
+            if (ctrl.signal.aborted && ctrl.signal.reason !== 'timeout') return
+            if (!ctrl.signal.aborted) console.error(err)
+            notify(ERRORS[ctrl.signal.aborted ? 'timeout' : err.message] ?? FAILED, true)
+            dispatch({crash: 'error'})
+        } finally {
+            clearTimeout(timeout)
+            clearTimeout(slow)
+            if (request.current === ctrl) dispatch({loading: false})
+        }
+    }, [notify])
+
+    const onChange = useCallback((e) => {
+        e.target.setCustomValidity(e.target.value.trim() ? '' : EMPTY)
+        clearShake(e.target)
+        dispatch({value: e.target.value, status: null, crash: null})
+    }, [])
+
+    const onInvalid = useCallback((e) => {
+        e.target.setCustomValidity(EMPTY)
+        shake(e.target)
+    }, [])
+
+    const onSubmit = useCallback((e) => {
+        e.preventDefault()
+        const text = state.value.trim()
+        if (state.loading || !text) return
+        const body = new FormData()
+        body.append('prompt', text)
+        ask(body, textareaRef)
+    }, [ask, state.value, state.loading])
+
+    return {state, textareaRef, ask, notify, onChange, onInvalid, onSubmit}
+}
+
+export default useLLM

@@ -1,5 +1,6 @@
 import Animations from './animations'
 import Styling from './styling'
+import {Motion} from '../components/motion'
 import Icons from './icons'
 
 function Features() {
@@ -8,9 +9,11 @@ function Features() {
             className='rac-section'
             id='custom'
         >
-            <Styling/>
-            <Icons/>
-            <Animations/>
+            <Motion>
+                <Styling/>
+                <Icons/>
+                <Animations/>
+            </Motion>
         </article>
     )
 }

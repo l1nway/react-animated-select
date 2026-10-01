@@ -1,39 +1,39 @@
-import {vscDarkPlus} from 'react-syntax-highlighter/dist/esm/styles/prism'
-import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter'
 import {Select, OptGroup, Option} from 'react-animated-select'
 import {Fragment, useCallback, useMemo, useState} from 'react'
-import {Group, Check, Scan, ChevronDown} from 'lucide-react'
-import {CopyButton} from '../start/components'
+import {Group, Check, Scan, ChevronUp} from 'lucide-react'
+import {CopyButton, CodeBlock} from '../components/code'
+import {snippet} from '../components/tokens'
 
 const options = [
     {id: 1, name: 'Option 1'},
     {id: 2, name: 'Option 2', group: 'Group 1', disabled: true},
     {id: 3, name: 'Option 3', group: 'Group 3'},
     {group: 'Group 2', disabled: true},
-    {group: 'Group 3', closed: false, options: [
+    {group: 'Group 3', options: [
         {id: 1, name: 'Option 1'},
         {id: 2, name: 'Option 2'}
     ]}
 ]
 
 const examples = [{
-    jsx: `<Select options=
-    [{id: 1, name: 'Option 1'},
-    {id: 2, name: 'Option 2', group: 'Group 1'},
-    {group: 'Group 2', disabled: true},
-    {id: 3, name: 'Option 3', group: 'Group 3',
-    disabled: true}]
-/>`
+    jsx: snippet`<Select options={[
+  {id: 1, name: 'Option 1'},
+  {id: 2, name: 'Option 2', group: 'Group 1'},
+  {group: 'Group 2', disabled: true},
+  {id: 3, name: 'Option 3', group: 'Group 3',
+    disabled: true}
+]}/>`
 }, {
-    jsx: `<Select options=[{
-    group: 'Group 3',
-    disabled: true,
-    options: [
-      {id: 1, name: 'Option 4'},
-      {id: 2, name: 'Option 5', disabled: true}
-    ]}/>`
+    jsx: snippet`<Select options={[{
+  group: 'Group 3',
+  disabled: true,
+  options: [
+    {id: 1, name: 'Option 4'},
+    {id: 2, name: 'Option 5', disabled: true}
+  ]
+}]}/>`
 }, {
-    jsx: `<Select>
+    jsx: snippet`<Select>
   <OptGroup
     name='Group 3' id='third-group'>
      <Option id='apple'>Option 9</Option>
@@ -59,12 +59,12 @@ function Grouping() {
 
     const props = useMemo(() => [{
         name: 'childrenFirst',
-        desc: <>prop first is responsible for which options will come first: through the {`<`}<span style={{color:'rgb(78, 201, 176)'}}>Select</span>{`/>`} tag or through prop <span style={{color: 'rgb(156, 220, 254)'}}>options</span>.</>,
+        desc: <>puts the JSX children of {`<`}<span style={{color:'rgb(78, 201, 176)'}}>Select</span>{`/>`} before the <span style={{color: 'rgb(156, 220, 254)'}}>options</span> array.</>,
         onChange: setChild,
         value: child
     }, {
         name: 'groupsClosed',
-        desc: 'prop is responsible for whether groups will be closed or open by default.',
+        desc: 'starts every group collapsed instead of open.',
         onChange: setClosed,
         value: closed
     }], [child, closed])
@@ -83,14 +83,14 @@ function Grouping() {
                     Grouping Options
                 </h3>
             </div>
-            <p className='rac-group-desc'>Grouping system supports three synchronization modes: declarative {`<`}<span style={{color:'rgb(78, 201, 176)'}}>OptGroup</span>{`/>`} tags (with support for <span style={{color: 'rgb(156, 220, 254)'}}>id/value, name/label, disabled,</span> and <span style={{color: 'rgb(156, 220, 254)'}}>closed</span> props), structured group objects for full control over collapsed states, or simple flat arrays where options are assigned to a group by name. All inputs are automatically merged and synchronized into a unified menu.</p>
+            <p className='rac-group-desc'>Grouping system supports three synchronization modes: declarative {`<`}<span style={{color:'rgb(78, 201, 176)'}}>OptGroup</span>{`/>`} tags (with support for <span style={{color: 'rgb(156, 220, 254)'}}>id/value, name/label, disabled, className</span> and <span style={{color: 'rgb(156, 220, 254)'}}>style</span> props), structured group objects with their own options, or simple flat arrays where options are assigned to a group by name. All inputs are merged into one menu. Groups can be disabled and collapsed: all of them start open, or all closed with <span style={{color: 'rgb(156, 220, 254)'}}>groupsClosed</span>.</p>
             <Select
                 optionsClassName='rac-basic-options'
                 className='rac-basic-select'
-                OpenIcon={<ChevronDown/>}
+                icons={{arrow: ChevronUp}}
                 childrenFirst={child}
                 groupsClosed={closed}
-                setValue={setValue}
+                onChange={setValue}
                 options={options}
                 value={value}
             >
@@ -100,7 +100,7 @@ function Grouping() {
                 </OptGroup>
             </Select>
             <div className='rac-group-checkbox'>
-                {props.map((item, index) =>
+                {props.map(item =>
                     <label
                         className='rac-children-first'
                         key={item.name}
@@ -126,20 +126,10 @@ function Grouping() {
                 )}
             </div>
             <div className='rac-groups-jsx'>
-                {examples.map((item, index) =>
-                    <Fragment key={item.jsx}>
-                        <SyntaxHighlighter
-                            className='rac-group-container'
-                            style={vscDarkPlus}
-                            language='jsx'
-                            customStyle={{
-                                backgroundColor: 'transparent',
-                                fontSize: '0.95rem'
-                            }}
-                        >
-                            {item.jsx}
-                        </SyntaxHighlighter>
-                        <CopyButton copy={copy} code={item.jsx} keyId={item.jsx} copied={copied}/>
+                {examples.map(item =>
+                    <Fragment key={item.jsx.text}>
+                        <CodeBlock code={item.jsx} className='rac-group-container'/>
+                        <CopyButton copy={copy} code={item.jsx.text} keyId={item.jsx.text} copied={copied}/>
                     </Fragment>
                 )}
             </div>

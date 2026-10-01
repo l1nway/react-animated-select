@@ -1,13 +1,12 @@
-import {Bug, Scan, Check, ChevronDown} from 'lucide-react'
+import {Bug, Scan, Check, ChevronUp} from 'lucide-react'
 import {options} from '../components/options'
 import {Select} from 'react-animated-select'
 import {useReducer} from 'react'
 
 const initialState = {
-    ownBehavior: false,
-    visibility: false,
-    alwaysOpen: false,
-    unmount: true
+    open: false,
+    keepMounted: false,
+    onOpenChange: true
 }
 
 function reducer(state, action) {
@@ -23,29 +22,22 @@ function reducer(state, action) {
 }
 
 const props = [{
-    name: 'visibility',
+    name: 'open',
     selected: false,
     editable: true,
-    desc: 'Responsible for managing the opening and closing of the drop-down options menu.',
+    keepFocus: true,
+    desc: 'Controlled open state of the drop-down options menu. Note for an outside toggle: pressing it moves the focus away, so the Select asks to close on blur before the toggle\'s click lands, and the click then reopens the menu. Give the toggle onMouseDown={e => e.preventDefault()} to keep the focus in the Select, as this checkbox does.',
 }, {
-    name: 'unmount',
+    name: 'keepMounted',
+    selected: false,
+    editable: true,
+    desc: 'Keeps the closed drop-down menu of options in the DOM, collapsed, instead of unmounting it.'
+}, {
+    name: 'onOpenChange',
     selected: true,
     editable: true,
-    desc: 'Responsible for unmounting the drop-down menu of options and icons when they are not active.'
-}, {
-    name: 'ownBehavior',
-    selected: false,
-    editable: true,
-    desc: 'Disables the default select behavior (opening on click and focus), controlled only by the visibility prop.'
-}, {
-    name: 'onOpen',
-    desc: 'Triggers the execution of a function when the drop-down menu is opened.'
-}, {
-    name: 'onClose',
-    desc: 'Triggers the execution of a function when the drop-down menu is closed.'
+    desc: 'Called with the next open state on every open and close (click, focus, keys, blur). Without it, open alone controls the menu: the default behavior (opening on click and focus) is disabled.'
 }]
-
-// (селект также открывается и закрывается по наведению на фокус, можно использовать внешнее управление посредством управления через ref)
 
 function Debug() {
     const [state, dispatch] = useReducer(reducer, initialState)
@@ -64,14 +56,17 @@ function Debug() {
                     Debug
                 </h3>
             </div>
-            <p className='rac-debug-desc'>Explore the interactive states of the Select component. Toggle between Disabled, Loading, and Error modes to see dynamic style injections (rac-*-style) in action. Use the text props below to fully customize the messaging for every component state, from custom placeholders to specific error alerts.</p>
+            <p className='rac-debug-desc'>Control the open state from outside, like a native input. Pass open together with onOpenChange to keep the default behavior and mirror it in your state, or open alone to open and close the menu only from your code. onOpenChange is never called on mount or for a no-op, and a disabled Select or one without options is never shown open, whatever open says.</p>
             <div className='rac-debug-props'>
-                {props.map((item, index) =>
+                {props.map(item =>
                     <div
                         className='rac-debug-container'
                         key={item.name}
                     >
-                        <label className='rac-debug-title-container'>
+                        <label
+                            onMouseDown={item.keepFocus ? e => e.preventDefault() : undefined}
+                            className='rac-debug-title-container'
+                        >
                             <h4 className='rac-debug-title'>{item.name}</h4>
                             {item.editable &&
                                 <div className='rac-checkbox-container'>
@@ -90,13 +85,12 @@ function Debug() {
                 )}
             </div>
             <Select
-                setVisibility={() => dispatch({type: 'TOGGLE_PROP', propName: 'visibility'})}
+                onOpenChange={state.onOpenChange ? () => dispatch({type: 'TOGGLE_PROP', propName: 'open'}) : undefined}
                 optionsClassName='rac-basic-options'
-                ownBehavior={state.ownBehavior}
-                visibility={state.visibility}
+                keepMounted={state.keepMounted}
                 className='rac-basic-select'
-                OpenIcon={<ChevronDown/>}
-                unmount={state.unmount}
+                icons={{arrow: ChevronUp}}
+                open={state.open}
                 options={options}
             />
         </section>

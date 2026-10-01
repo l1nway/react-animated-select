@@ -1,8 +1,7 @@
-import {vscDarkPlus} from 'react-syntax-highlighter/dist/esm/styles/prism'
-import {ShieldCogCorner, Plus, Trash, X, ChevronDown} from 'lucide-react'
-import {Prism as SyntaxHighlighter} from 'react-syntax-highlighter'
-import {m, AnimatePresence} from 'framer-motion'
+import {ShieldCogCorner, Plus, Trash, X, ChevronUp} from 'lucide-react'
 import {clearShake} from '../start/components'
+import {CodeBlock} from '../components/code'
+import {m, AnimatePresence} from 'framer-motion'
 import {Select} from 'react-animated-select'
 import {useSafety, parse} from './useSafety'
 
@@ -23,7 +22,7 @@ function Safety() {
                 </h3>
             </div>
             <p className='rac-safety-desc'>
-                This developer-first component is engineered for seamless integration and maximum runtime resilience, ensuring the application remains stable even when encountering malformed data. It features a robust error-handling layer that prevents crashes by gracefully processing invalid inputs; whether passed as numbers, strings, booleans, or objects missing standard name/label or id/value keys, the Select will attempt to parse and render them. Even in extreme cases where unsupported types like functions are provided as options, the component catches the exception and displays a safe "Invalid Option" fallback rather than breaking the render cycle.
+                This developer-first component is engineered for seamless integration and maximum runtime resilience, ensuring the application remains stable even when encountering malformed data. It features a robust error-handling layer that prevents crashes by gracefully processing invalid inputs; whether passed as numbers, strings, booleans, or objects missing standard name/label or id/value keys, the Select will attempt to parse and render them. Even in extreme cases where unsupported types like functions are provided as options, the component shows a safe "Invalid option" row (texts.invalidOption) rather than breaking the render cycle.
             </p>
             <AnimatePresence initial={false}>
                 {options.length > 0 &&
@@ -39,20 +38,13 @@ function Safety() {
                             <AnimatePresence initial={false}>
                                 {options.map((option, index) =>
                                     <m.div
-                                        ref={el => itemsRef.current[parse(option)] = el}
+                                        ref={el => {itemsRef.current[parse(option)] = el}}
                                         className='rac-safety-container'
                                         {...itemAnim(parse(option))}
                                         key={parse(option)}
                                         layout
                                     >
-                                        <SyntaxHighlighter
-                                            customStyle={{backgroundColor: 'transparent'}}
-                                            className='rac-safety-code'
-                                            style={vscDarkPlus}
-                                            language='jsx'
-                                        >
-                                            {parse(option)}
-                                        </SyntaxHighlighter>
+                                        <CodeBlock code={parse(option)} className='rac-safety-code'/>
                                         <Trash
                                             onClick={() => removeOption(index)}
                                             className='rac-safety-delete'
@@ -100,7 +92,7 @@ function Safety() {
                 optionsClassName='rac-basic-options'
                 onChange={v => dispatch({value: v})}
                 className='rac-basic-select'
-                OpenIcon={<ChevronDown/>}
+                icons={{arrow: ChevronUp}}
                 options={options}
                 value={value}
             />
