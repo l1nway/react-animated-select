@@ -23,7 +23,11 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', {varsIgnorePattern: '^([A-Z_]|m$)'}],
+      'no-unused-vars': ['error', {varsIgnorePattern: '^([A-Z_]|m$)', argsIgnorePattern: '^[A-Z_]'}],
     },
+  },
+  {
+    files: ['src/components/helpers.jsx'],
+    rules: {'react-refresh/only-export-components': 'off'},
   },
 ])

@@ -1,130 +1,65 @@
-import {useState, useCallback, useReducer, memo} from 'react'
-import {Info, Scan, Check, ChevronUp} from 'lucide-react'
-import {options} from '../components/options'
+import {useCallback, useReducer, useMemo} from 'react'
+import {merge, arrowIcons, options} from '../components/helpers'
 import {Select} from 'react-animated-select'
+import {Table} from '../components/section'
+import {Info} from 'lucide-react'
+import './states.css'
 
-const initialState = {
-    loading: false,
+// demo data
+const desc = 'Toggle the states of the Select. disabled works like a native disabled select: the value stays visible and nothing opens. loading and error only report: while there are options, the Select keeps working. Each state has its own attribute on the root to style (aria-disabled, aria-busy, data-error, data-empty) and its own text in the texts prop below. selectedText, when filled, replaces the title (and the chips in multiple mode) while there is a value; leave it empty to turn it off.'
+
+const props = [
+    {prop: 'options', type: 'array', default: '[]', text: 'Demo toggle: the full list or none. Without options the Select cannot open and shows texts.empty.', kind: 'tick', show: on => on ? '[…]' : '[]'},
+    {prop: 'disabled', type: 'boolean', default: 'false', text: 'Blocks the Select like a native disabled select: closed, no clear button, chips locked, value kept.', kind: 'tick'},
+    {prop: 'loading', type: 'boolean', default: 'false', text: 'Reports loading: aria-busy on the root, a loading footer in the list. Never blocks.', kind: 'tick'},
+    {prop: 'error', type: 'boolean', default: 'false', text: 'Reports a failed load: data-error on the root, an error row at the end of the list. Never blocks.', kind: 'tick'},
+    {prop: 'texts.empty', type: 'string', default: 'No options', text: 'Title when there are no options.', kind: 'edit'},
+    {prop: 'texts.disabled', type: 'string', default: 'Disabled', text: 'Title of a disabled Select without a value, in place of the placeholder.', kind: 'edit'},
+    {prop: 'texts.loading', type: 'string', default: 'Loading', text: 'Title while loading without a value, and the text of the loading footer.', kind: 'edit'},
+    {prop: 'texts.error', type: 'string', default: 'Failed to load', text: 'Title on error without a value, and the text of the error row.', kind: 'edit'},
+    {prop: 'placeholder', type: 'string', default: 'Choose option', text: 'Title while there are options and no value.', kind: 'edit'},
+    {prop: 'selectedText', type: 'string', default: 'undefined', text: 'Replaces the title (and the chips in multiple mode) while there is a value.', kind: 'edit'}
+]
+
+const initial = {
+    value: undefined,
+    options: true,
     disabled: false,
+    loading: false,
     error: false,
-    hasOptions: true,
-
-    placeholder: 'Choose option',
     'texts.empty': 'No options',
+    'texts.disabled': 'Disabled',
     'texts.loading': 'Loading',
     'texts.error': 'Failed to load',
-    'texts.disabled': 'Disabled',
-
-    inputValue: '',
-    disabledOption: false,
-    groupValue: '',
+    placeholder: 'Choose option',
+    selectedText: ''
 }
 
-const textSettings = ['texts.empty', 'texts.disabled', 'texts.loading', 'texts.error', 'placeholder']
-
-const RenderTextSettings = memo(({label, value, onChange}) => (
-    <label className='rac-prop-label'>
-        <span className='rac-prop-span'>{label}</span>
-        <input
-            onChange={(e) => onChange(label, e.target.value)}
-            className='rac-prop-value'
-            placeholder={label}
-            value={value}
-            type='text'
-        />
-    </label>
-))
-
-const settings = ['hasOptions', 'disabled', 'loading', 'error']
-
-const RenderSettings = memo(({label, value, onChange}) => (
-    <label className='rac-checkbox-wrapper'>
-        {label === 'hasOptions' ? 'options != []' : label}
-        <input
-            onChange={(e) => onChange(label, e.target.checked)}
-            className='rac-demo-checkbox'
-            data-rac-checked={value}
-            checked={value}
-            type='checkbox'
-        />
-        <div className='rac-checkbox-container'>
-            <Scan
-                style={{top: 0, left: '-1.65em'}}
-                className='rac-check-box'
-            />
-            <Check
-                className={`rac-check-mark ${value ? '--checked' : ''}`}
-                style={{top: '0.25em', left: '-1.5em'}}
-            />
-        </div>
-    </label>
-))
-
-function reducer(state, action) {
-  switch (action.type) {
-    case 'UPDATE':
-      return {...state, ...action.payload}
-    default: return state
-  }
-}
-
+// [DOC: semantic-table]
 function States() {
-    const [state, dispatch] = useReducer(reducer, initialState)
+    const [state, dispatch] = useReducer(merge, initial)
 
-    const [value, setValue] = useState()
+    const update = useCallback((prop, val) => dispatch({[prop]: val}), [])
+    const pick = useCallback(value => dispatch({value}), [])
 
-    const update = useCallback((label, val) => dispatch({type: 'UPDATE', payload: {[label]: val}}), [dispatch])
+    const {'texts.empty': empty, 'texts.disabled': disabled, 'texts.loading': loading, 'texts.error': error} = state
+    const texts = useMemo(() => ({empty, disabled, loading, error}), [empty, disabled, loading, error])
 
     return (
-        <section
-            style={{paddingTop: 0}}
-            className='rac-states'
-            id='states'
-        >
-            <div className='rac-code-title-container'>
-                <div className='rac-code-icon'>
-                    <Info/>
-                </div>
-                <h3 className='rac-code-title'>
-                    Component States
-                </h3>
-            </div>
-            <p className='rac-states-desc'>Toggle the states of the Select. disabled works like a native disabled select: the value stays visible and nothing opens. loading and error only report: while there are options, the Select keeps working. Each state has its own attribute on the root to style (aria-disabled, aria-busy, data-error, data-empty) and its own text in the texts prop below.</p>
+        <section className='rac-states rac-states-props' id='states'>
+            <Table id='states' icon={<Info/>} title='Component States' desc={desc} rows={props} state={state} onChange={update}/>
             <Select
-                options={state.hasOptions ? options : undefined}
-                optionsClassName='rac-basic-options'
-                texts={{empty: state['texts.empty'], disabled: state['texts.disabled'], loading: state['texts.loading'], error: state['texts.error']}}
+                options={state.options ? options : undefined}
+                selectedText={state.selectedText || undefined}
                 placeholder={state.placeholder}
-                className='rac-basic-select'
-                icons={{arrow: ChevronUp}}
                 disabled={state.disabled}
                 loading={state.loading}
-                onChange={setValue}
                 error={state.error}
-                value={value}
+                value={state.value}
+                icons={arrowIcons}
+                onChange={pick}
+                texts={texts}
             />
-            <div className='rac-states-container'>
-                <div className='rac-settings-checkboxes'>
-                    {settings.map(key => (
-                        <RenderSettings
-                            value={state[key]}
-                            onChange={update}
-                            label={key}
-                            key={key}
-                        />
-                    ))}
-                </div>
-                <div className='rac-settings-inputs'>
-                    {textSettings.map(key => (
-                        <RenderTextSettings
-                            value={state[key]}
-                            onChange={update}
-                            label={key}
-                            key={key}
-                        />
-                    ))}
-                </div>
-            </div>
         </section>
     )
 }

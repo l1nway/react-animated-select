@@ -1,0 +1,60 @@
+.rac-props-name {
+  min-width: max(10em, 15%);
+}
+
+.rac-props-state {
+  min-width: 7em;
+}
+
+.rac-props-soon {
+  color: #c084fc;
+  cursor: wait;
+
+  .rac-table-tick {
+    cursor: inherit;
+  }
+
+  svg {
+    flex-shrink: 0;
+    height: 1.6em;
+    width: 1.6em;
+  }
+}
+
+.rac-props-edit {
+  background-color: #1a1a24;
+  position: relative;
+  padding: 0;
+
+  &:hover .rac-props-pencil {
+    opacity: 1;
+  }
+
+  &:focus-within .rac-props-pencil {
+    opacity: 0;
+  }
+}
+
+.rac-props-input {
+  background-color: transparent;
+  padding: 0 1em;
+  font: inherit;
+  height: var(--rac-table-row);
+  min-width: 0;
+  color: inherit;
+  outline: none;
+  border: none;
+  width: 100%;
+}
+
+.rac-props-pencil {
+  color: rgba(168, 85, 247, 0.5);
+  transition: opacity 300ms;
+  pointer-events: none;
+  position: absolute;
+  inset: 0 1em 0 auto;
+  height: 1.6em;
+  width: 1.6em;
+  margin: auto 0;
+  opacity: 0;
+}

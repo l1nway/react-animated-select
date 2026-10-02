@@ -1,0 +1,216 @@
+.rac-table-scroll {
+  container-type: inline-size;
+  margin-bottom: 1em;
+  overflow-x: auto;
+  width: 100%;
+
+  &:focus-visible {
+    outline: 2px solid #c084fc;
+    outline-offset: 2px;
+  }
+}
+
+.rac-table {
+  --rac-line: #1f293780;
+  --rac-table-row: 3.2em;
+  --rac-hover: rgba(0, 0, 0, 0.3);
+  border-collapse: separate;
+  border-spacing: 0;
+  min-width: 100%;
+
+  caption {
+    text-align: left;
+  }
+
+  &:hover {
+    --rac-line: #8b5cf64d;
+  }
+
+  tbody {
+    background-color: #0e111a;
+  }
+
+  tbody th, tbody td {
+    transition: border-color 0.3s ease, outline-color 0.3s ease;
+    border-bottom: 1px solid var(--rac-line);
+    border-left: 1px solid var(--rac-line);
+    outline: 2px solid transparent;
+    outline-offset: -2px;
+    height: var(--rac-table-row);
+    white-space: nowrap;
+    font-weight: inherit;
+    font-size: inherit;
+    text-align: left;
+    padding: 0 1em;
+  }
+
+  tbody :is(th, td):has(:focus-visible) {
+    outline-color: #c084fc;
+  }
+
+  tbody td {
+    transition: border-color 0.3s ease, outline-color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: inset 0 0 0 100vmax transparent;
+  }
+
+  @media (hover: hover) {
+    tbody td:is(.rac-props-edit, :has(> label.rac-table-tick)):hover {
+      box-shadow: inset 0 0 0 100vmax var(--rac-hover);
+    }
+  }
+
+  tbody tr > :last-child {
+    border-right: 1px solid var(--rac-line);
+  }
+
+  thead td {
+    padding: 0;
+  }
+
+  thead th {
+    border-bottom: 1px solid var(--rac-line);
+    border-left: 1px solid var(--rac-line);
+    border-top: 1px solid var(--rac-line);
+    transition: border-color 0.3s ease;
+    background-color: #0e111a;
+    padding: 0.7em 1em;
+    white-space: nowrap;
+    font-size: inherit;
+    text-align: left;
+    font-weight: 500;
+    color: #9ca3af;
+  }
+
+  thead th:last-child {
+    border-right: 1px solid var(--rac-line);
+  }
+
+  &[data-head='hidden'] tbody tr:first-child > * {
+    border-top: 1px solid var(--rac-line);
+  }
+
+  tbody :is(th, td)[data-fill] {
+    padding: 0;
+  }
+
+  td[data-type='function'] {color: rgb(220, 220, 170);}
+  td[data-type='string'] {color: rgb(206, 145, 120);}
+  td[data-type='number'] {color: rgb(181, 206, 168);}
+  td[data-type='boolean'] {color: rgb(86, 156, 214);}
+}
+
+.rac-table .rac-table-text {
+  white-space: normal;
+
+  --lines: 2;
+
+  @media (max-width: 1024px) {--lines: 3;}
+
+  p {
+    min-width: calc(var(--len) / var(--lines) * 0.9ch);
+    text-wrap: balance;
+    padding: 0.6em 0;
+    margin: 0;
+
+    @supports (min-width: calc-size(max-content, size / 2)) {
+      min-width: calc-size(max-content, size * 1.1 / var(--lines));
+    }
+  }
+}
+
+.rac-table-tick {
+  font-family: Menlo, Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', 'Courier New', monospace;
+  justify-content: space-between;
+  height: var(--rac-table-row);
+  cursor: not-allowed;
+  align-items: center;
+  position: relative;
+  padding: 0 1em;
+  cursor: default;
+  display: flex;
+  gap: 1em;
+
+  [data-tone='fn'] {color: rgb(220, 220, 170);}
+  [data-tone='on'] {color: #3fb950;}
+  [data-tone='off'] {color: rgb(244, 71, 71);}
+}
+
+label.rac-table-tick {
+  cursor: pointer;
+}
+
+.rac-table-sticky {
+  position: sticky;
+  width: 100cqw;
+  left: 0;
+}
+
+.rac-table-desc {
+  text-justify: inter-word;
+  padding-bottom: 1em;
+  text-align: justify;
+}
+
+.rac-th {
+  align-items: center;
+  display: flex;
+  gap: 0.6em;
+
+  svg {
+    flex-shrink: 0;
+    color: #c084fc;
+    height: 1.1em;
+    width: 1.1em;
+  }
+}
+
+.rac-tick-input {
+  position: absolute;
+  cursor: pointer;
+  opacity: 0;
+  margin: 0;
+  inset: 0;
+}
+
+.rac-tick-box {
+  place-items: center;
+  flex-shrink: 0;
+  color: #c084fc;
+  display: grid;
+  height: 1.6em;
+  width: 1.6em;
+
+  svg {
+    grid-area: 1 / 1;
+  }
+
+  svg:first-child {
+    height: 100%;
+    width: 100%;
+  }
+
+  svg:last-child {
+    transition:
+      transform 500ms cubic-bezier(0.34, 2.8, 0.64, 1),
+      opacity 200ms ease;
+    transform: scale(0.5);
+    height: 70%;
+    width: 70%;
+    opacity: 0;
+  }
+}
+
+.rac-tick-input:checked + .rac-tick-box svg:last-child {
+  transform: scale(1);
+  opacity: 1;
+}
+
+.rac-tick-input:focus-visible + .rac-tick-box {
+  outline: 2px solid #c084fc;
+  outline-offset: 2px;
+  border-radius: 0.25em;
+}
+
+.rac-table .rac-tick-input:focus-visible + .rac-tick-box {
+  outline: none;
+}

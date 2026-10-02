@@ -1,21 +1,20 @@
-import Animations from './animations'
-import Styling from './styling'
+import {Part} from '../components/deferred'
 import {Motion} from '../components/motion'
-import Icons from './icons'
+import {groupOf} from '../menu/components'
 
-function Features() {
+const SUB = groupOf('custom').sub
+
+function Customization() {
     return (
         <article
             className='rac-section'
             id='custom'
         >
             <Motion>
-                <Styling/>
-                <Icons/>
-                <Animations/>
+                {SUB.map(item => <Part id={item.id} key={item.id}/>)}
             </Motion>
         </article>
     )
 }
-    
-export default Features
+
+export default Customization

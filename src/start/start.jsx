@@ -1,5 +1,4 @@
 import {CopyButton, CodeBlock} from '../components/code'
-import {useCallback, useEffect, useRef, useState} from 'react'
 import {Part} from '../components/deferred'
 import {setStore} from '../components/store'
 import {snippet} from '../components/tokens'
@@ -11,18 +10,6 @@ const INSTALL = snippet.bash`npm install react-animated-select`
 const tryDemo = () => setStore({scrollTo: 'playground'})
 
 function Start() {
-    const [copied, setCopied] = useState(false)
-    const timer = useRef()
-
-    useEffect(() => () => clearTimeout(timer.current), [])
-
-    const copy = useCallback((code, keyId) => {
-        navigator.clipboard.writeText(code)
-        setCopied(keyId)
-        clearTimeout(timer.current)
-        timer.current = setTimeout(() => setCopied(false), 2000)
-    }, [])
-
     return (
         <article
             className='rac-section'
@@ -42,10 +29,10 @@ function Start() {
                 </label>
                 <label className='rac-code-container' tabIndex={0}>
                     <CodeBlock code={INSTALL}/>
-                    <CopyButton copy={copy} code={INSTALL.text} keyId='install' copied={copied}/>
+                    <CopyButton code={INSTALL.text}/>
                 </label>
             </section>
-            <Usage copy={copy} copied={copied}/>
+            <Usage/>
             <Part id='question'/>
         </article>
   )

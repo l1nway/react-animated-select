@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useReducer, useRef} from 'react'
-import {clearShake, merge, shake} from './components'
+import {clearShake, merge, shake} from '../components/helpers'
 
 export const MAX = 2048
 const API = 'https://react-animated-select-backend.online/ask'

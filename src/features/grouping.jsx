@@ -1,9 +1,14 @@
 import {Select, OptGroup, Option} from 'react-animated-select'
-import {Fragment, useCallback, useMemo, useState} from 'react'
-import {Group, Check, Scan, ChevronUp} from 'lucide-react'
+import {useCallback, useReducer} from 'react'
+import {merge, arrowIcons, Heading} from '../components/helpers'
 import {CopyButton, CodeBlock} from '../components/code'
 import {snippet} from '../components/tokens'
+import {Table} from '../components/section'
+import {Card, Track} from '../components/track'
+import {Group, List, Boxes, Component, Tags} from 'lucide-react'
+import './grouping.css'
 
+// demo data
 const options = [
     {id: 1, name: 'Option 1'},
     {id: 2, name: 'Option 2', group: 'Group 1', disabled: true},
@@ -15,8 +20,11 @@ const options = [
     ]}
 ]
 
-const examples = [{
-    jsx: snippet`<Select options={[
+const methods = [{
+    title: 'Flat Array',
+    icon: <List/>,
+    desc: <>Set <code>group</code> on an option; same names share one group.</>,
+    code: snippet`<Select options={[
   {id: 1, name: 'Option 1'},
   {id: 2, name: 'Option 2', group: 'Group 1'},
   {group: 'Group 2', disabled: true},
@@ -24,7 +32,10 @@ const examples = [{
     disabled: true}
 ]}/>`
 }, {
-    jsx: snippet`<Select options={[{
+    title: 'Group Objects',
+    icon: <Boxes/>,
+    desc: <>A group object carries its own <code>options</code>.</>,
+    code: snippet`<Select options={[{
   group: 'Group 3',
   disabled: true,
   options: [
@@ -33,106 +44,74 @@ const examples = [{
   ]
 }]}/>`
 }, {
-    jsx: snippet`<Select>
+    title: 'OptGroup Tag',
+    icon: <Component/>,
+    desc: <>Declarative groups with children.</>,
+    code: snippet`<Select>
   <OptGroup
     name='Group 3' id='third-group'>
      <Option id='apple'>Option 9</Option>
      <Option id='banana'>Option 10</Option>
   </OptGroup>
 </Select>`
+}, {
+    title: 'Option Group Prop',
+    icon: <Tags/>,
+    desc: <>Pass <code>group</code> to a single option tag.</>,
+    code: snippet`<Select>
+  <Option id='cherry' group='Group 3'>
+    Option 11
+  </Option>
+  <Option id='plum' group='Group 4'>
+    Option 12
+  </Option>
+</Select>`
 }]
 
+const Tag = ({children}) => <>{'<'}<span className='rac-grouping-tag'>{children}</span>{'/>'}</>
+const Prop = ({children}) => <span className='rac-grouping-prop'>{children}</span>
+
+const desc = <>Grouping system supports four synchronization modes: declarative <Tag>OptGroup</Tag> tags (with support for <Prop>id/value, name/label, disabled, className</Prop> and <Prop>style</Prop> props), structured group objects with their own options, simple flat arrays where options are assigned to a group by name, or the <Prop>group</Prop> prop on a single <Tag>Option</Tag>. All inputs are merged into one menu. Groups can be disabled and collapsed: all of them start open, or all closed with <Prop>groupsClosed</Prop>. The Select is smart enough to gather options into a group by matching its name, but to avoid unwanted matches, prefer unique ids.</>
+
+const props = [
+    {prop: 'childrenFirst', type: 'boolean', default: 'false', text: <>Puts the JSX children of <Tag>Select</Tag> before the <Prop>options</Prop> array.</>, kind: 'tick'},
+    {prop: 'groupsClosed', type: 'boolean', default: 'false', text: 'Starts every group collapsed instead of open.', kind: 'tick'}
+]
+
 function Grouping() {
-    const [value, setValue] = useState(null)
-    const [copied, setCopied] = useState(false)
-    const [child, setChild] = useState(false)
-    const [closed, setClosed] = useState(false)
+    const [state, dispatch] = useReducer(merge, {value: null, childrenFirst: false, groupsClosed: false})
 
-    const copy = useCallback((code, keyId) => {
-        navigator.clipboard.writeText(code)
-        setCopied(keyId)
-
-        const timer = setTimeout(() => setCopied(false), 2000)
-
-        return () => clearTimeout(timer)
-    }, [])
-
-    const props = useMemo(() => [{
-        name: 'childrenFirst',
-        desc: <>puts the JSX children of {`<`}<span style={{color:'rgb(78, 201, 176)'}}>Select</span>{`/>`} before the <span style={{color: 'rgb(156, 220, 254)'}}>options</span> array.</>,
-        onChange: setChild,
-        value: child
-    }, {
-        name: 'groupsClosed',
-        desc: 'starts every group collapsed instead of open.',
-        onChange: setClosed,
-        value: closed
-    }], [child, closed])
+    const update = useCallback((prop, val) => dispatch({[prop]: val}), [])
+    const pick = useCallback(value => dispatch({value}), [])
 
     return (
-        <section
-            style={{paddingTop: 0}}
-            className='rac-states'
-            id='grouping'
-        >
-            <div className='rac-code-title-container'>
-                <div className='rac-code-icon'>
-                    <Group/>
-                </div>
-                <h3 className='rac-code-title'>
-                    Grouping Options
-                </h3>
-            </div>
-            <p className='rac-group-desc'>Grouping system supports three synchronization modes: declarative {`<`}<span style={{color:'rgb(78, 201, 176)'}}>OptGroup</span>{`/>`} tags (with support for <span style={{color: 'rgb(156, 220, 254)'}}>id/value, name/label, disabled, className</span> and <span style={{color: 'rgb(156, 220, 254)'}}>style</span> props), structured group objects with their own options, or simple flat arrays where options are assigned to a group by name. All inputs are merged into one menu. Groups can be disabled and collapsed: all of them start open, or all closed with <span style={{color: 'rgb(156, 220, 254)'}}>groupsClosed</span>.</p>
+        <section className='rac-states rac-grouping' id='grouping' aria-labelledby='grouping-heading'>
+            <Heading icon={<Group/>} id='grouping-heading' title='Grouping Options' desc={desc}/>
             <Select
-                optionsClassName='rac-basic-options'
-                className='rac-basic-select'
-                icons={{arrow: ChevronUp}}
-                childrenFirst={child}
-                groupsClosed={closed}
-                onChange={setValue}
+                childrenFirst={state.childrenFirst}
+                groupsClosed={state.groupsClosed}
+                value={state.value}
+                icons={arrowIcons}
                 options={options}
-                value={value}
+                onChange={pick}
             >
                 <OptGroup name='Group 3' id='third-group'>
                     <Option id='apple'>Option 9</Option>
                     <Option id='banana'>Option 10</Option>
                 </OptGroup>
+                <Option id='cherry' group='Group 3'>Option 11</Option>
             </Select>
-            <div className='rac-group-checkbox'>
-                {props.map(item =>
-                    <label
-                        className='rac-children-first'
-                        key={item.name}
-                    >
-                        <div className='rac-checkbox-container'>
-                            <input
-                                onChange={(e) => item.onChange(e.target.checked)}
-                                className='rac-demo-checkbox'
-                                checked={item.value}
-                                type='checkbox'
-                            />
-                            <Scan
-                                style={{left: 0, top: '-0.8em'}}
-                                className='rac-check-box'/>
-                            <Check
-                                className={`rac-check-mark ${item.value ? '--checked' : ''}`}
-                                style={{top: '-0.55em', left: '0.1em'}}
-                            />
+            <Table id='grouping-props' title='Grouping props' rows={props} state={state} onChange={update}/>
+            <Track label='Grouping methods'>
+                {methods.map(({code, ...item}) =>
+                    <Card key={item.title} className='rac-group-card' {...item}>
+                        <div className='rac-group-code'>
+                            <CodeBlock code={code}/>
+                            <CopyButton code={code.text}/>
                         </div>
-                        <h4 className='rac-child-title'>{item.name}</h4>
-                        <span style={{textWrap: 'nowrap'}}>{item.desc}</span>
-                    </label>
+                    </Card>
                 )}
-            </div>
-            <div className='rac-groups-jsx'>
-                {examples.map(item =>
-                    <Fragment key={item.jsx.text}>
-                        <CodeBlock code={item.jsx} className='rac-group-container'/>
-                        <CopyButton copy={copy} code={item.jsx.text} keyId={item.jsx.text} copied={copied}/>
-                    </Fragment>
-                )}
-            </div>
+            </Track>
         </section>
     )
 }

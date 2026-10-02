@@ -1,0 +1,60 @@
+.rac-debug {
+  border-bottom: 0.1px solid rgba(168, 85, 247, 0.3);
+  flex-direction: column;
+  padding-bottom: 1.5em;
+  margin-bottom: 1.5em;
+  display: flex;
+  width: 100%;
+  gap: 1em;
+}
+
+.rac-debug-bug {
+  color: rgb(78, 201, 176);
+}
+
+.rac-debug .rac-props-pick {
+  position: relative;
+
+  &::before {
+    min-width: calc(var(--n) * (var(--len) * 1ch + 2em));
+    display: block;
+    content: '';
+  }
+}
+
+.rac-debug .rac-props-choices {
+  --rac-pill-inset: 0;
+  background-color: transparent;
+  position: absolute;
+  border-radius: 0;
+  border: none;
+  inset: 0;
+
+  .rac-pill::before {
+    border-radius: 0;
+  }
+
+  .rac-segmented-item {
+    font-family: Menlo, Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', 'Courier New', monospace;
+    transition: color 0.3s ease, background-color 0.3s ease;
+    align-content: center;
+    border-radius: 0;
+    font-size: inherit;
+    padding: 0 1em;
+    color: inherit;
+
+    @media (hover: hover) {
+      &:hover:not(:has(:checked)) {
+        background-color: var(--rac-hover);
+      }
+    }
+
+    &:has(:focus-visible) {
+      outline: none;
+    }
+  }
+
+  [data-tone='none'] {color: rgb(86, 156, 214);}
+  [data-tone='on'] {color: #3fb950;}
+  [data-tone='off'] {color: rgb(244, 71, 71);}
+}

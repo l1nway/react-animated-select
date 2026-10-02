@@ -1,0 +1,42 @@
+/* [DOC: button] */
+.rac-button {
+  transition: border-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+  background-color: #1a1a24;
+  border-radius: 0.5rem;
+  padding: 0.5em 1.25em;
+  align-items: center;
+  cursor: pointer;
+  color: #f3f4f6;
+  display: flex;
+  font: inherit;
+  gap: 0.5em;
+
+  &:hover:not(:disabled, [aria-disabled='true']), &:focus-visible {
+    border-color: #c084fc;
+    color: #c084fc;
+  }
+
+  &:focus-visible {
+    outline: 2px solid #a78bfa;
+    outline-offset: 2px;
+  }
+
+  &:disabled, &[aria-disabled='true'] {
+    cursor: progress;
+    opacity: 0.5;
+  }
+
+  svg {
+    flex-shrink: 0;
+    height: 1em;
+    width: 1em;
+  }
+}
+
+.rac-button-icon {
+  place-items: center;
+  display: grid;
+  height: 1em;
+  width: 1em;
+}

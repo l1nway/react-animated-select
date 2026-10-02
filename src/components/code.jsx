@@ -1,17 +1,34 @@
-import {memo, useEffect, useMemo, useRef, useState} from 'react'
-import {Copy, CopyCheck} from 'lucide-react'
+import {memo, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState} from 'react'
+import {Copy, CopyCheck, Hammer} from 'lucide-react'
 import {plain, tokenize} from './tokens'
+import './code.css'
 
-export const CopyButton = ({copy, code, keyId, copied}) =>
-    <button
-        onClick={() => copy(code, keyId)}
-        data-copied={copied === keyId || undefined}
-        className='rac-code-button'
-        tabIndex={-1}
-    >
-        <Copy className='rac-copy-icon'/>
-        <CopyCheck className='rac-copy-icon'/>
-    </button>
+export function CopyButton({code}) {
+    const [copied, setCopied] = useState(false)
+    const timer = useRef()
+
+    useEffect(() => () => clearTimeout(timer.current), [])
+
+    const copy = () => {
+        navigator.clipboard.writeText(code)
+        setCopied(true)
+        clearTimeout(timer.current)
+        timer.current = setTimeout(() => setCopied(false), 2000)
+    }
+
+    return (
+        <button
+            aria-label={copied ? 'Copied' : 'Copy code'}
+            data-copied={copied || undefined}
+            className='rac-code-button'
+            onClick={copy}
+            type='button'
+        >
+            <Copy className='rac-copy-icon' aria-hidden='true'/>
+            <CopyCheck className='rac-copy-icon' aria-hidden='true'/>
+        </button>
+    )
+}
 
 const PLAIN = {color: '#9CDCFE'}
 
@@ -63,6 +80,16 @@ export function CodeBlock({code, language = 'jsx', className = 'rac-code-solid'}
     )
 }
 
+// planned feature stub
+export const Soon = ({title, code}) =>
+    <div className='rac-soon' role='note'>
+        <div className='rac-soon-badge'>
+            <Hammer aria-hidden='true'/>
+            <span><b>In development</b>{title && <>: {title}</>}</span>
+        </div>
+        {code && <CodeBlock code={code} className='rac-soon-code'/>}
+    </div>
+
 // line diff
 const solid = text => text.replace(/\s/g, '').length
 const lead = text => text.length - text.trimStart().length
@@ -108,33 +135,55 @@ const diff = (A, B) => {
 
 const seg = (on, snip, i, from, to) => to > from && <span className='rac-morph-seg' style={{'--n': to - from}} data-on={on || undefined}>{spans(snip, i, from, to)}</span>
 
-const morph = ([a, b], A, B, rows, onA) => rows.map((row, k) => {
+// target side on
+const morph = ([a, b], A, B, rows) => rows.map((row, k) => {
     // one side only
     if (row.a == null || row.b == null) {
-        const own = row.a != null
-        const [snip, i, text] = own ? [a, row.a, A[row.a]] : [b, row.b, B[row.b]]
+        const on = row.b != null
+        const [snip, i, text] = on ? [b, row.b, B[row.b]] : [a, row.a, A[row.a]]
         return (
-            <div key={k} className='token-line rac-morph-row' data-on={own === onA || undefined}>
+            <div key={k} className='token-line rac-morph-row' data-on={on || undefined}>
                 {spans(snip, i, 0, lead(text))}
-                {seg(own === onA, snip, i, lead(text), text.length)}
+                {seg(on, snip, i, lead(text), text.length)}
             </div>
         )
     }
-    const [snip, i, text] = onA ? [a, row.a, A[row.a]] : [b, row.b, B[row.b]]
-    if (row.p == null) return <div key={k} className='token-line'>{text ? spans(snip, i) : '\n'}</div>
+    const text = B[row.b]
+    if (row.p == null) return <div key={k} className='token-line'>{text ? spans(b, row.b) : '\n'}</div>
     // changed middle
     return (
         <div key={k} className='token-line'>
-            {spans(snip, i, 0, row.p)}
-            {seg(onA, a, row.a, row.p, A[row.a].length - row.s)}
-            {seg(!onA, b, row.b, row.p, B[row.b].length - row.s)}
-            {spans(snip, i, text.length - row.s)}
+            {spans(b, row.b, 0, row.p)}
+            {seg(false, a, row.a, row.p, A[row.a].length - row.s)}
+            {seg(true, b, row.b, row.p, text.length - row.s)}
+            {spans(b, row.b, text.length - row.s)}
         </div>
     )
 })
 
-export const CodeMorph = memo(function CodeMorph({codes, active}) {
-    const [A, B] = useMemo(() => codes.map(code => code.text.split('\n')), [codes])
-    const rows = useMemo(() => diff(A, B), [A, B])
-    return <pre className='rac-code rac-code-solid' style={PLAIN}>{morph(codes, A, B, rows, active === 0)}</pre>
+// [DOC: code-morph]
+export const CodeMorph = memo(function CodeMorph({code, onBusy}) {
+    const ref = useRef(null)
+    const [pair, setPair] = useState({from: code, to: code, step: 0})
+    if (pair.to !== code) setPair({from: pair.to, to: code, step: pair.step + 1})
+    const {from, to, step} = pair
+    const [A, B] = useMemo(() => [from.text.split('\n'), to.text.split('\n')], [from, to])
+    const rows = useMemo(() => from === to ? B.map((_, i) => ({a: i, b: i})) : diff(A, B), [from, to, A, B])
+    const busy = useEffectEvent(value => onBusy?.(value))
+
+    useLayoutEffect(() => {
+        if (from === to) return
+        const running = ref.current.getAnimations({subtree: true})
+        const lock = running.length > 0
+        let live = true
+        if (lock) busy(true)
+        // collapse to plain lines
+        Promise.allSettled(running.map(item => item.finished)).then(() => live && setPair(prev => ({from: prev.to, to: prev.to, step: prev.step + 1})))
+        return () => {
+            live = false
+            if (lock) busy(false)
+        }
+    }, [from, to])
+
+    return <pre ref={ref} key={step} className='rac-code rac-code-solid' style={PLAIN}>{morph([from, to], A, B, rows)}</pre>
 })

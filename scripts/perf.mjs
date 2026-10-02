@@ -143,7 +143,15 @@ const entry = +(chunks.reduce((sum, file) => sum + gzipSync(readFileSync(join(DI
 const dir = mkdtempSync(join(tmpdir(), 'rac-perf-'))
 const browser = spawn(browserPath, ['--headless=new', '--remote-debugging-port=0', `--user-data-dir=${dir}`, '--no-first-run', '--no-default-browser-check', '--disable-extensions', 'about:blank'], {stdio: 'ignore'})
 const server = spawn(process.execPath, [join(ROOT, 'node_modules/vite/bin/vite.js'), 'preview', '--port', String(PORT), '--strictPort'], {cwd: ROOT, stdio: 'ignore'})
+let port
+// edge hands off to another process
+const quit = () => fetch(`http://127.0.0.1:${port}/json/version`).then(r => r.json()).then(({webSocketDebuggerUrl}) => new Promise(resolve => {
+    const ws = new WebSocket(webSocketDebuggerUrl)
+    ws.onopen = () => ws.send(JSON.stringify({id: 1, method: 'Browser.close'}))
+    ws.onclose = ws.onerror = resolve
+}))
 const stop = async () => {
+    if (port) await quit().catch(() => {})
     browser.kill()
     server.kill()
     await sleep(800)
@@ -154,7 +162,7 @@ let result
 try {
     const url = `http://localhost:${PORT}${base}`
     await until(async () => (await fetch(url)).ok)
-    const port = await until(async () => readFileSync(join(dir, 'DevToolsActivePort'), 'utf8').split('\n')[0].trim())
+    port = await until(async () => readFileSync(join(dir, 'DevToolsActivePort'), 'utf8').split('\n')[0].trim())
     result = {entry, mobile: await measure(port, url, 'mobile'), desktop: await measure(port, url, 'desktop')}
 } catch (error) {
     await stop()

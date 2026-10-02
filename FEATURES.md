@@ -14,120 +14,63 @@ Keep it true: an entry changes in the same edit as the code it describes.
 
 ## Options panel in a portal
 
-- **What you get:** the list is never clipped by `overflow: hidden` parents or hidden under other stacking contexts, whether in modals, tables or scroll containers. It flips upward when there is no room below, and the trigger arrow already points the right way before the list opens. Inside a modal or a focus trap, `container` puts the panel into the modal's own element, so a click in the list is not an "outside click"; a `transform` on that element (a centered dialog) is compensated, and the panel still sits at the trigger.
-- **How:** a `position: fixed` portal into `document.body` (or `container`), placed before its open height is measured and kept in place by a capturing scroll listener and `ResizeObserver`. After placing, it checks where it really landed and corrects for a transformed containing block. While closed, an `IntersectionObserver` refreshes the up/down estimate. The direction lives in a tiny store, so layout never goes through React state. The custom properties (`--*` keys) of the Select's `style` are copied onto the panel, so one place themes both. The panel carries the same `data-placement` as the trigger.
-- **Where:** `dropdown.jsx`; doc-keys `options-panel`, `dropdown-position`.
-- **Limits:** a scaled container (`scale`, `zoom`) is not compensated.
-- **Demo:** the playground's `container: transformed` (Стили) portals into a fixed box with a `transform`; the panel still opens right under the trigger. Idea: a Select inside a small `overflow: hidden` box and one at the bottom edge of the viewport.
+**Added to the demo:** `#layout`.
 
 ## Accessibility (ARIA combobox)
 
-- **What you get:** screen readers see a real combobox with a listbox of options, not a pile of divs.
-- **How:** the trigger is `role='combobox'` with `aria-expanded`, `aria-controls`, `aria-haspopup='listbox'`, `aria-disabled` and `aria-activedescendant` (the highlighted option while open). The list is `role='listbox'` (`aria-multiselectable` in multiple mode). Items are `role='option'` with `aria-selected` / `aria-disabled`; each group's options sit in a `role='group'` labelled by its header. Option and header DOM ids come from one collision-free helper, so `aria-activedescendant` always matches exactly one element. The root also reports `aria-busy` while loading and `aria-required` with `required`. The accessible name is your `aria-label` / `aria-labelledby` (any `aria-*` and `data-*` prop is forwarded to the combobox), otherwise the placeholder. The clear and chip delete controls are real `<button>`s with translatable labels (`texts.clear`, `texts.remove`); icons and the arrow are `aria-hidden`.
-- **Keyboard:** focus (click or Tab) opens the list. Enter / Space select, ArrowUp / ArrowDown move (skipping disabled options and collapsed groups), PageUp / PageDown jump by ten, Home / End go to the ends, typing letters jumps to the next option that starts with them (typeahead, like a native select). Group headers are on the path: Enter / Space open and close a group, so options of a closed group are reachable. Escape leaves touch delete mode or closes the list (and stops there, so a surrounding modal stays open); Tab closes and moves on; Delete clears; Backspace removes the last chip (or clears a single value). The highlighted option scrolls into view.
-- **Where:** `trigger.jsx`, `dropdown.jsx`, `optionList.jsx`, `useSelectBehavior.js`, `select.jsx` (`ATTR`); doc-keys `trigger`, `highlight`, `typeahead`, `select-behavior`, `dom-ids`, `option-list`, `public-api`.
-- **Limits:** a group header's open state is visual only (`data-open`): ARIA has no expandable child of a listbox. A `<label htmlFor>` cannot name the combobox (a `div` is not labelable); use `aria-labelledby`. A modal that listens for Escape in the capture phase (Radix) still sees it first.
-- **Demo:** the playground's Форма и доступность section (`id`, `aria-label`); `data: groups` with `groupsClosed` operated by the keyboard only.
+**Added to the demo:** `#a11y`.
 
 ## Native form fields
 
-- **What you get:** give the Select a `name` and it submits with its `<form>` like a native select (one field per value in multiple mode, `FormData.getAll`); `required` blocks the submit of an empty Select with the browser's own bubble, pointing at the Select.
-- **How:** invisible real inputs inside the trigger, one per value, that hand focus to the combobox; objects are sent as JSON. `disabled` disables them.
-- **Where:** `trigger.jsx` (`FormField`), `base.css` (`.rac-input`); doc-key `form-field`.
-- **Limits:** `form.reset()` does not reset the Select.
-- **Demo:** the playground's `name` / `required` with the «Отправить форму» button; the log shows the `FormData`.
+**Added to the demo:** `#forms`.
 
 ## Zero-dependency animations
 
-- **What you get:** smooth open/close, group collapse, chip enter/exit and title cross-fades with no animation library. Animations reverse mid-way without a jump and respect `prefers-reduced-motion`.
-- **How:** one primitive, `Collapse`, on the Web Animations API (measure in a layout effect, animate the whole box on one axis, optional fade, `reverse()` when interrupted, clipping only while animating, no inline styles or classes left behind). `Presence` keeps leaving children mounted until their exit finishes, replacing `react-transition-group`. The trigger's height follows the number of chip rows through the same API. `duration`, `easing` and `animateOpacity` are props; `duration` and `easing` drive every animation, the WAAPI ones through the config and the CSS transitions through `--rac-duration` / `--rac-ease`. Reduced motion shortens them too and stops the looping indicators.
-- **Where:** `motion.jsx`, `useChipLayout.js`; doc-keys `collapse`, `presence`, `value-height`.
-- **Demo:** the playground's Анимация section (`duration`, `easing`, `animateOpacity`, `keepMounted`); toggle the list rapidly (it reverses in place).
+**Added to the demo:** `#animations` (`keepMounted` in `#debug`).
 
 ## Fine-grained re-renders
 
-- **What you get:** hundreds of options or many Selects on one page stay fast; hovering an option re-renders two rows, not the list.
-- **How:** contexts are split by change rate (config, stable actions, state). Very frequent values (highlight, chip hover and swipe, panel direction) live in small external stores read through selectors. Rows and chips are `memo` with stable props. Inline consumer literals (`options={[...]}`, `style={{...}}`, JSX children) are stabilized by value, not by identity.
-- **Where:** `state.js`, `select.jsx`, `useSelectModel.js`, `optionList.jsx`, `chip.jsx`; doc-keys `contexts`, `store`, `stable-hooks`, `public-api`.
-- **Demo idea:** the performance demo with a large list and a render counter.
+**Added to the demo:** `#performance`.
 
 ## Options as JSX or data
 
-- **What you get:** pass `options` as primitives, objects, groups or a dictionary, or write `<Option/>` / `<OptGroup/>` children with any JSX inside, or both at once (`childrenFirst` decides the order). Groups can be disabled, styled and collapsed; all groups start open (or all closed with `groupsClosed`), however they were declared.
-- **Custom rows, two ways:** `renderOption={(item, {selected, disabled}) => …}` draws rows for array data (like MUI `renderOption` or react-select `formatOptionLabel`). `defineOption(props => <Option …/>)` makes a reusable option component (`countries.map(c => <CountryOption c={c}/>)`) that still renders on the server.
-- **How:** both sources are normalized into one flat list during render (`normalizeOptions`). JSX children are read as data (`collectOptions`), so their order is the tree order and they work on the server. Wrong children (HTML tags, text, ordinary wrappers) are ignored with one clear dev warning each, never a silent drop or console spam.
-- **Where:** `model.js`, `select.jsx`, `useSelectModel.js`, `optionList.jsx`, `utils.jsx`; doc-keys `option-model`, `jsx-options`, `define-option`, `dev-warnings`, `option-list`.
-- **Limits:** an `<Option/>` inside an ordinary wrapper component is ignored (use `defineOption`). A `defineOption` render function cannot use hooks; put them in the option's content. `renderOption` affects list rows, and the title and chips only with `valueAsOption`.
-- **Demo idea:** the same list written as an array and as JSX, side by side.
+**Added to the demo:** `#usage`, `#grouping`, `#content`.
 
 ## Any data, never broken
 
-- **What you get:** whatever shape the options come in, each one stays its own option. Duplicates (`1, 1, 1`, `true, true`, equal strings, equal objects), `NaN`, `null` / `undefined` / `''` placeholders, functions, circular objects, dictionaries, `Date`s and class instances, `<Option value={0}/>`, two `<Option/>` with the same `id`: the click selects exactly the row you clicked, unchecking removes exactly that row and its chip, and nothing throws. A value whose options vanish (or arrive later) stays on screen, and its chips stay in place without replaying their animation.
-- **How:** every normalized option gets a unique internal id (positional for arrays, suffixed for repeated JSX ids). Besides the `value`, the Select remembers the ids the user picked and uses them to choose between equal candidates when it maps `value` back onto the options. Matching is by identity (with `NaN` equal to itself), then by JSON for objects, with a stringify that never throws. A value without an option becomes a virtual entry; chips are keyed apart from ids, so a chip whose id changes with the catalog keeps its key.
-- **Where:** `model.js` (`normalizeOptions`, `resolveSelection`), `useSelectModel.js`, `useSelect.js`, `trigger.jsx` (`useChipKeys`); doc-keys `option-model`, `selection-identity`, `jsx-options`, `chip-keys`.
-- **Limits:** `value` and the `onChange` ids cannot tell equal duplicates apart; a value set from outside that differs from the last commit takes the first free duplicates in list order. Give duplicates distinct `id`s when the consumer needs to know which one was picked.
-- **Demo:** `data: stress` in the `App.jsx` playground: `1, 1, 1`, `true ×3`, equal strings, `NaN, NaN`, equal objects, two `<Option id='дубль id'>` and two `<Option>` with the same text. Toggle `noOptions`: the chips stay put.
+**Added to the demo:** `#safety`.
 
 ## Selected options in the value area
 
-- **What you get:** a rich option (icon + text, a card) stays light where space is tight. By default the trigger shows only the option's text, in the title and in the chips, so a heavy row never breaks the trigger height or the chip rows. One prop, `valueAsOption`, renders the option's own content in the trigger instead, so a chip looks like its row.
-- **Text mode (default):** the text comes from the model's label chain (`label` / `name` / `id` / `value`) and, for a JSX option without any of them, from the strings and numbers inside its JSX (a walk over the element tree). An option with no text at all (an image only) has no honest text form: give it a `label`, otherwise it shows the `texts.emptyOption` text and warns once in development.
-- **Rich mode (`valueAsOption`):** the chip and the single-value title render the same content as the row: the `<Option/>` JSX, or `renderOption(item, {selected: true, disabled})` for array data. The per-option `className` and `style` of the `<Option/>` move onto the chip (and the title), and the content sits in the same `rac-option-jsx` wrapper, so one rule styles both. The checkbox, the loading dots and the row states (hover, highlight, selected tint) are not carried over; the chip keeps its own `.rac-chip` look and its delete button.
-- **Styling:** chips are plain `.rac-chip` elements, so they are restyled with CSS in both modes. Shared rules are written once: `.rac-option-jsx, .rac-chip {…}`.
-- **Limits:** the chip cannot show different JSX from the row; it is the same content or the text. Interactive elements inside rich content (buttons, links) fight the chip's own clicks, swipe and long press: keep the content decorative. Rich content is rendered once per chip and once in the list, so very heavy blocks cost more in a large multiple selection. State texts (error, loading, disabled, `selectedText`) are never turned into option content.
-- **Where:** `utils.jsx` (`optionContent`), `select.jsx` (`getText`, `DEFAULT_PROPS`), `model.js`, `useSelectModel.js` (`valueOption`), `trigger.jsx`, `chip.jsx`, `optionList.jsx`; doc-keys `option-content`, `option-model`, `chip`, `option-list`.
-- **Demo:** `data: rich` in the `App.jsx` playground: rich options (icon + text with `className` / `style`, an image with a `label`, a heavy block, an array option for `renderOption`) with the `valueAsOption` and `renderOption` toggles.
+**Added to the demo:** `#content`.
 
 ## Controlled or uncontrolled
 
-- **What you get:** `value` / `defaultValue` and `open` work like native inputs: pass them to control the Select from outside, or leave them out. `onOpenChange(next)` reports every open and close in both modes (never on mount); `open` without `onOpenChange` hands the open state entirely to the consumer. An outside `value` without a matching option is still shown. Clearing reports `null` in single mode and `[]` in multiple mode; picking the already selected option of a single Select just closes the list, with no `onChange`, like a native select. `onFocus` / `onBlur` report focus entering and leaving the Select as a whole (list included).
-- **How:** controlled values are derived on every render; internal state is used only in uncontrolled mode. `commit` is the single exit for a new value, `setVisibility` the single exit for the open state (it skips no-op requests).
-- **Where:** `useSelect.js`, `useSelectModel.js`; doc-keys `select-store`, `option-model`.
-- **Demo:** the playground's `valueMode` and `openMode` (`controlled`, `manual`) with the `open = …`, `value = undefined` and `value извне` buttons; the log shows every `onChange` / `onOpenChange`.
+**Added to the demo:** `#debug`.
 
 ## Multiple selection with chips
 
-- **What you get:** selected values become chips that animate in and out while the rows stay still, with a delete button over the chip or inside it (`deleteInline`), shown on hover or always (`deleteAlways`). With `deleteInline` on hover, the hovered chip's delete button slides open inside it and only its row neighbours make room; however fast or chaotically the pointer moves, no chip changes rows, and there is no hover delay.
-- **How:** chips are `Presence` children that animate their width. While any chip animates, the rows are held: an invisible clone of the chip area, where every chip has its full width, tells where each row ends, and a zero-height line break after each row end keeps every chip on its row until all animations finish. Then the rows reflow in one step, and every chip that moved slides there (FLIP). Moves that happen at once (a chip inserted in the middle, a re-added chip, a reordered `value`) slide the same way. The trigger animates its height when rows are added or removed. For inline buttons on hover, every row is laid out as if the area were one delete button narrower, plus a quarter pixel for Firefox's sub-pixel rounding (the same breaks, kept at rest). The delete buttons run on one shared clock, so the open width in a row never exceeds one button, even mid-handover.
-- **Where:** `trigger.jsx`, `chip.jsx`, `useChipLayout.js`, `motion.jsx`; doc-keys `value`, `value-height`, `chip`, `chip-layout`, `chip-hold`, `delete-reserve`, `collapse-group`, `presence`.
-- **Limits:** a chip re-added while it is still leaving moves to its new place (the end) and grows back there. A `row-gap` on `.rac-value` adds one gap per break (during animations, and always with inline buttons on hover). Touch delete mode still widens every chip at once, outside the hold. With inline buttons on hover, a row filled to within 0.25 px moves its last chip to the next row. A consumer border on `.rac-chip-del` may overflow that slack in Firefox, which snaps thin borders to device pixels.
-- **Demo:** `data: stress` in the playground (nine chips over several rows) with `deleteInline` on to sweep the pointer over the chips; remove from the middle and re-add through the list. The scripted `ChipStress` bursts are no longer in `App.jsx`.
+**Added to the demo:** `#multiple`.
 
 ## Touch delete mode
 
-- **What you get:** on touch devices, a long press on a chip enters delete mode (chips shake, a tap removes one, the device vibrates); a swipe left reveals one chip's delete icon. The page still scrolls vertically when the finger lands on a chip, and a slightly trembling finger still gets its long press.
-- **Where:** `chip.jsx`, `useChipLayout.js`; doc-key `touch-delete`.
-- **Demo idea:** device emulation in DevTools.
+**Added to the demo:** `#multiple`, `#a11y`.
 
 ## Async loading
 
-- **What you get:** infinite lists: `loadMore` fires when the list is scrolled within `loadOffset` px of its end or the keyboard highlight comes within `loadAhead` options of it, or on a "Load more" button (`loadButton`). Bursts of scroll events trigger one load. When `loadMore` returns a Promise, a failed request unlocks the next attempt.
-- **Where:** `useSelect.js`, `useSelectBehavior.js`, `dropdown.jsx`; doc-keys `select-store`, `select-behavior`.
-- **Limits:** without a Promise, the lock opens only when the option count, `hasMore` or `loadButton` changes, so a failed load blocks further loads. A `loadMore` that throws synchronously unlocks at once; the error is reported to the console, not thrown into the tree.
-- **Demo:** `data: async` in the playground: a fake paginated API with `delay` and `failLoads`.
+**Added to the demo:** `#loading`.
 
 ## States and layout stability
 
-- **What you get:** placeholder, value, chips, loading, empty, disabled and error states, each with its own text (`placeholder`, `texts.empty`, `texts.loading`, …) and its own attribute on the root to style (`data-empty`, `aria-busy`, `data-error`, `aria-disabled`). Switching between them cross-fades the title.
-- **A status never hides data:** `disabled` works like a native `<select disabled>` (the value stays visible, nothing opens or deletes). `loading` and `error` only report: with options the Select keeps working (open, select, clear, delete chips); only an empty list blocks it, as any empty list does. One `error` covers a failed first load and a failed load-more: a red border and an error row at the end of the list. Loading (the `loading` prop or a pending `loadMore`) draws a thin moving stripe at the bottom of the trigger, one CSS rule to restyle or drop.
-- **Where:** `useSelectModel.js` (`active`, title), `trigger.jsx`, `dropdown.jsx` (status row), `base.css` (cursors), `theme.css` (stripe); doc-keys `state-semantics`, `value`, `state-attributes`.
-- **Limits:** the title is keyed by its text, so any text change (typing a `placeholder`, `selectedText`, switching `texts`) replays the title animation; keying by the state is planned with the animation rework. The error is announced only through the title (when there is no value) and the error row; there is no `aria-describedby` link yet.
-- **Demo:** the playground's Состояния section (`disabled`, `loading`, `error`, `noOptions`), combined with `data: async` and `failLoads`.
+**Added to the demo:** `#states`.
 
 ## Grows with its content, truncates at the limit
 
-- **What you get:** the Select never breaks its container. Put it where the layout sizes it by content (a flex toolbar, an `auto` grid column, `width: fit-content`): it grows smoothly with the chosen title and with every added chip, and shrinks back, with the chip rows computed for the width it grows to, so chips never jump to a new row and back. Once there is no room left, a long title and any chip wider than the row are cut with an ellipsis, and the trigger keeps its height. With a fixed width it simply truncates.
-- **How:** the root is `max-width: 100%` and `min-width: 0`; the title and the chip label use `text-overflow: ellipsis`. Animations lift the chip's width limit while they run, so the ellipsis never slides along with an enter or exit. The invisible clone that computes the chip rows is laid out in place of the real value area for one synchronous measurement, so it gets the width the Select will have, including the room for inline delete buttons. Two truncated titles cross-fading in one row run on one clock and cannot overflow it.
-- **Where:** `base.css`, `useChipLayout.js` (`ghostRows`), `trigger.jsx`, `chip.jsx`, `motion.jsx` (`LIMITS`); doc-keys `trigger-width`, `chip-hold`, `delete-reserve`, `collapse`.
-- **Limits:** a wrapper that shrinks to fit without being a flex or grid parent (`inline-block`, a float, `fit-content` on the wrapper) overflows by its widest text unless it has `max-width: 100%`. Rich content (`valueAsOption`) is clipped, not ellipsized. The ellipsis appears when an animation ends, not during it. With inline delete buttons in a content-sized Select, hovering a chip widens the Select by one button.
-- **Demo:** the playground's `frame` control (Стили): `fit` (a flex item that grows) and `narrow` (220px); `data: simple` has one very long option, in single and multiple mode, with and without `deleteInline`.
+**Added to the demo:** `#layout`.
 
 ## Deep customization
 
-- **What you get:** plain CSS always wins: the library styles sit in `@layer rac`, so `.rac-chip {border-radius: 1em}` works without `!important` or specificity games. Inside it, `rac.base` holds only what the Select needs to work and `rac.theme` a small neutral look, so the default look is easy to replace. A flat tree (the trigger is the root, one value area, the title, the clear button, the arrow) with short `rac-` classes, states as ARIA / `data-*` attributes instead of modifier classes, and a handful of `--rac-*` variables: set `--rac-fg` / `--rac-bg` and every hover, highlight, selection and chip tint follows. `className`, `optionsClassName` and `style` reach the trigger and the panel. Icons (`icons.arrow`, `clear`, `remove`, `check`, `checkbox`) accept a URL, an element or a component and need no class. Every text is in `texts` (see Props). The full reference is `STYLES.md`.
-- **Where:** `base.css`, `theme.css`, `trigger.jsx`, `utils.jsx` (`renderIcon`, `flag`), `select.jsx` (`DEFAULT_PROPS`); doc-keys `styles-layer`, `state-attributes`.
-- **Limits:** a consumer who uses cascade layers must declare `rac` first (`@layer rac, app;`).
-- **Demo:** the playground's Стили section (`className`, `optionsClassName`, `tokens` sets `--rac-fg` / `--rac-bg` through `style`, `dark` switches the page color scheme), plus `icons` and `texts`. A full theme switcher is still an idea.
+**Added to the demo:** `#styling` (icons in `#icons`, `texts` in `#states` and `#loading`).
 
 ## Planned
 
@@ -139,7 +82,7 @@ Not implemented yet: the next library edits, recorded on 2026-10-01 so a later s
 - **Accepted API sketch:** `motion={{panel: motion.drop, chip: {...motion.pop, duration: 180}, title: motion.ticker, move: {easing: 'cubic-bezier(.3, 1.4, .5, 1)'}, groupItems: ({index}) => ({...motion.fade, delay: index * 15}), clear: false}}`. Roles: `panel`, `groupItems`, `title`, `chip`, `chipDelete`, `clear`, `arrow`, `move` (FLIP), `height` (trigger height), `check`. A role is a preset, a spec (keyframes, duration, easing, delay), a function of `{placement, index, count, direction}`, or `false`. Presets are exported plain data. A `SelectDefaults` context sets them for every Select below it.
 - **Two layers:** the library owns the layout layer (the real size of the box, monotonic easing, the invariants of the rows, the hold and the reserve); the consumer owns the visual layer (opacity, transform, blur, clip-path, overshoot allowed). A dev warning fires when an overshooting easing lands on the layout layer.
 - **Decided:** the size animation stays a real `width` / `height` animation of the whole box. Replacing it with a negative margin, `clip-path` or `transform` was rejected: cheaper for the browser, but it looks cheap. Transforms stay for FLIP moves and the visual layer.
-- **Also in this step:** the title keyed by its state, not its text (see States, Limits), with a width morph from the old title to the new one (removes the title clock and the 0.25 px slack); every trigger reviewed (animate on a change of option or state, never on a mere text change); reduced motion per role; stagger; touch delete mode entering and leaving through the row hold.
+- **Also in this step:** the title keyed by its state, not its text (today any text change, such as typing a `placeholder`, replays the title animation), with a width morph from the old title to the new one (removes the title clock and the 0.25 px slack); every trigger reviewed (animate on a change of option or state, never on a mere text change); reduced motion per role; stagger; touch delete mode entering and leaving through the row hold.
 
 ### Virtualized option list
 
@@ -162,6 +105,7 @@ Not implemented yet: the next library edits, recorded on 2026-10-01 so a later s
 - **Gestures:** mouse: drag past a few pixels. Touch: the long press already enters delete mode, where the chips shake; that mode also becomes the rearrange mode (the iOS home-screen model: drag to move, tap × to delete). While dragging, the chip follows the pointer, the target is the nearest slot across rows, the others move out of the way by FLIP, and the drop commits one `onChange`. A drag never opens the panel or triggers a click.
 - **Keyboard parity (required):** chips are not focusable today. Reordering needs chip focus first (arrows move between chips, a modifier plus arrows moves the chip), with a polite live announcement from `texts`.
 - **Haptics:** `navigator.vibrate` exists only on Android browsers, and iOS Safari has no web vibration. A `haptics` prop (`true`, `false` or `(kind) => void`) routes pick-up, each slot crossed, drop, entering delete mode and delete to `vibrate` by default, or to the host's API (Capacitor Haptics, Telegram `HapticFeedback`). The existing delete-mode vibration moves onto it.
+- **Demo integration note:** When chip reordering ships, the safety feature's chip-only Select will need to be updated to use this feature for reordering the displayed values.
 
 ## Props
 

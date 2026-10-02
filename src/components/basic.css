@@ -1,0 +1,9 @@
+.rac-select, .rac-options {
+  --rac-bg: #0a0a0f;
+  --rac-fg: #fff;
+  border-radius: 0.5rem;
+}
+
+.rac-options {
+  border: 0.1px solid #8b5cf64d;
+}

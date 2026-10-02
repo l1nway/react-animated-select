@@ -96,16 +96,6 @@ export const animIcon = {
     }
 }
 
-export const shake = (el) => {
-  el.classList.remove('--null')
-  void el.offsetWidth
-  el.classList.add('--null')
-}
-
-export const clearShake = (el) => el?.classList.remove('--null')
-
-export const merge = (prev, next) => Object.keys(next).some(key => !Object.is(prev[key], next[key])) ? {...prev, ...next} : prev
-
 export const submit = (e) => {
     if (e.key !== 'Enter' || e.shiftKey || e.nativeEvent.isComposing || e.keyCode === 229) return
     e.preventDefault()

@@ -1,5 +1,5 @@
 import {useCallback, useEffect, useMemo, useReducer, useRef} from 'react'
-import {merge} from './components'
+import {merge} from '../components/helpers'
 
 export const LIMIT = 60
 export const WARN = 15

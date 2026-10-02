@@ -1,0 +1,126 @@
+.rac-icons {
+  padding-top: 1em;
+}
+
+.rac-icons-atom {
+  color: #c084fc;
+}
+
+.rac-icons-cover {
+  position: absolute;
+  cursor: pointer;
+  height: 100%;
+  width: 100%;
+  opacity: 0;
+  z-index: 9;
+  margin: 0;
+  left: 0;
+  top: 0;
+}
+
+.rac-icons-container {
+  white-space: nowrap;
+}
+
+.rac-icons-container .rac-icons-key {
+  position: relative;
+
+  &::after {
+    transition: 300ms border-color;
+    border: 2px dashed transparent;
+    pointer-events: none;
+    position: absolute;
+    content: '';
+    inset: 0;
+  }
+
+  &:hover::after {
+    border-color: rgb(192, 132, 252);
+  }
+
+  &:is(:hover, :has(:focus-visible)) .rac-icons-upload {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.rac-icons-title-container {
+  min-height: var(--rac-table-row);
+  box-sizing: border-box;
+  align-items: center;
+  padding: 0 2.5em 0 calc(0.5em + 2px);
+  cursor: pointer;
+  min-width: 11em;
+  display: flex;
+  gap: 0.75em;
+}
+
+.rac-icons-table[data-drag] .rac-icons-key::after {
+  border-color: #8b5cf64d;
+}
+
+.rac-icons-table .rac-icons-key[data-over]::after {
+  border-color: rgb(192, 132, 252);
+}
+
+.rac-icons-container .rac-table-text {
+  white-space: normal;
+}
+
+.rac-icons-title {
+  font-weight: bold;
+  margin: 0;
+}
+
+.rac-icons-upload {
+  transition:
+    transform 500ms cubic-bezier(0.34, 1.8, 0.64, 1),
+    opacity 200ms ease;
+  transform: scale(0.5);
+  color: #c084fc;
+  opacity: 0;
+
+  @media (hover: none) {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.rac-icons-icon {
+  align-items: center;
+  display: flex;
+  height: 1.5em;
+  width: 1.5em;
+}
+
+div.rac-icons-icon:empty {
+  border: 1px solid gray;
+}
+
+.rac-file-icons {
+  align-items: center;
+  position: absolute;
+  inset-block: 0;
+  right: 0.5em;
+  display: flex;
+}
+
+.rac-icons-container * {
+  pointer-events: none;
+}
+
+.rac-icons-container label,
+.rac-icons-container input,
+.rac-icons-container button {
+    pointer-events: auto;
+}
+
+.rac-icons .rac-table-desc {
+  code {
+    font: inherit;
+  }
+
+  [data-tone='prop'] {color: rgb(156, 220, 254);}
+  [data-tone='tag'] {color: rgb(86, 156, 214);}
+  [data-tone='off'] {color: rgb(244, 71, 71);}
+}

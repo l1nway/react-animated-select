@@ -1,0 +1,35 @@
+.rac-a11y {
+  flex-direction: column;
+  padding-bottom: 1.5em;
+  display: flex;
+  width: 100%;
+  gap: 1.5em;
+}
+
+.rac-a11y kbd {
+  font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+  border: 1px solid #1f2937;
+  border-bottom-width: 2px;
+  background-color: #1a1a24;
+  border-radius: 0.25em;
+  padding: 0 0.4em;
+  font-size: 1em;
+}
+
+.rac-table.rac-a11y-keys {
+  width: 100%;
+  margin: 0;
+
+  :is(th, td) {
+    padding: 0.55em 1em;
+  }
+
+  tbody td {
+    white-space: normal;
+  }
+
+  tbody th {
+    white-space: nowrap;
+    width: 1%;
+  }
+}

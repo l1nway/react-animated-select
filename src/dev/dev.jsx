@@ -1,6 +1,7 @@
-import Playground from './playground'
-import Author from './author'
-import Debug from './debug'
+import {Part} from '../components/deferred'
+import {groupOf} from '../menu/components'
+
+const SUB = groupOf('dev').sub
 
 function Dev() {
     return (
@@ -8,11 +9,9 @@ function Dev() {
             className='rac-section'
             id='dev'
         >
-            <Debug/>
-            <Playground/>
-            <Author/>
+            {SUB.map(item => <Part id={item.id} key={item.id}/>)}
         </article>
     )
 }
-    
+
 export default Dev

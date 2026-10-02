@@ -1,0 +1,158 @@
+.rac-forms-demo {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  display: grid;
+  gap: 1.5em;
+
+  @media (max-width: 1280px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+.rac-forms-form {
+  --rac-line: #1f293780;
+  transition: border-color 0.3s ease;
+  border: 1px solid var(--rac-line);
+  background-color: #0e111a;
+  flex-direction: column;
+  border-radius: 0.5rem;
+  display: flex;
+
+  &:hover, &:focus-within {
+    --rac-line: #8b5cf64d;
+  }
+}
+
+.rac-forms-field {
+  align-content: start;
+  padding: 1em 1em 0;
+  display: grid;
+  gap: 0.5em;
+}
+
+.rac-forms-label {
+  font-weight: 500;
+  color: #9ca3af;
+}
+
+.rac-forms-foot {
+  padding: 1em;
+  display: flex;
+}
+
+.rac-forms-result {
+  position: relative;
+  display: flex;
+  flex: 1 0 0;
+}
+
+.rac-forms-output {
+  font-family: Menlo, Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', 'Courier New', monospace;
+  border-radius: 0 0 calc(0.5rem - 1px) calc(0.5rem - 1px);
+  transition: border-color 0.3s ease;
+  border-top: 1px solid var(--rac-line);
+  background-color: #1a1a24;
+  padding: 0.75em 1em;
+  align-content: start;
+  min-height: 9em;
+  font-size: 13px;
+  overflow: auto;
+  display: grid;
+  flex: 1;
+  gap: 0.35em;
+}
+
+.rac-forms-entry {
+  --len: calc(var(--n) + 9);
+  animation: rac-forms-type calc(var(--len) * 25ms) steps(var(--len)) calc(var(--i) * 300ms) both;
+  grid-template-columns: 8ch minmax(0, 1fr);
+  overflow-wrap: anywhere;
+  width: fit-content;
+  max-width: 100%;
+  display: grid;
+  gap: 1ch;
+
+  b {
+    font-weight: normal;
+    color: #9cdcfe;
+  }
+}
+
+.rac-forms-output[data-leaving] .rac-forms-entry {
+  animation: rac-forms-erase 0.25s ease both;
+}
+
+.rac-forms-hint {
+  animation: rac-forms-fade 0.25s ease both;
+  color: #9ca3af;
+}
+
+@keyframes rac-forms-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes rac-forms-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rac-forms-erase {
+  to {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+}
+
+/* [DOC: forms-layout] */
+.rac-forms-code {
+  contain: size;
+  display: grid;
+
+  .rac-code {
+    overscroll-behavior: contain;
+    height: 100%;
+  }
+}
+
+.rac-forms-tabs {
+  width: fit-content;
+  visibility: hidden;
+}
+
+@media (max-width: 1280px) {
+  .rac-forms-tabs {
+    visibility: visible;
+  }
+
+  .rac-forms-demo > * {
+    transition: opacity 0.25s ease, visibility 0.25s;
+    grid-area: 1 / 1;
+  }
+
+  .rac-forms-demo[data-tab='demo'] > .rac-forms-code, .rac-forms-demo[data-tab='code'] > .rac-forms-form {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .rac-forms-output {
+    min-height: 11.25em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rac-forms-demo > * {
+    transition: none;
+  }
+
+  .rac-forms-entry, .rac-forms-hint {
+    animation: none;
+  }
+}

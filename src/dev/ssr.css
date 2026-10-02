@@ -1,0 +1,119 @@
+.rac-ssr-head {
+  flex-wrap: wrap;
+  gap: 0.75em;
+}
+
+.rac-ssr-desc {
+  text-justify: inter-word;
+  text-align: justify;
+  margin: 0;
+}
+
+.rac-ssr-demo {
+  flex-direction: column;
+  display: flex;
+  gap: 1.25em;
+}
+
+.rac-ssr-lanes {
+  grid-template-columns: repeat(auto-fit, minmax(16em, 1fr));
+  display: grid;
+  gap: 1em;
+}
+
+.rac-ssr-lane {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  flex-direction: column;
+  border-radius: 0.75em;
+  padding: 1em;
+  display: flex;
+  gap: 0.75em;
+}
+
+.rac-ssr-slot {
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  visibility: hidden;
+  border-radius: 0.5em;
+  transition: opacity 0.4s, transform 0.4s, visibility 0.4s;
+  transform: scale(0.96);
+  opacity: 0;
+
+  .rac-ssr-lane[data-shown='true'] & {
+    visibility: visible;
+    transform: none;
+    opacity: 1;
+  }
+
+  .rac-ssr-lane[data-live='false'] & {
+    cursor: progress;
+  }
+}
+
+.rac-ssr-badge {
+  font-size: 0.85em;
+  display: grid;
+
+  & span {
+    grid-area: 1 / 1;
+  }
+
+  .rac-ssr-ghost {
+    visibility: hidden;
+  }
+
+  [data-tone='none'] {color: rgb(244, 71, 71);}
+  [data-tone='static'] {color: #a3e635;}
+  [data-tone='live'] {color: #4ade80;}
+}
+
+.rac-ssr-timeline {
+  background: rgba(255, 255, 255, 0.08);
+  margin: 0 0 1.5em;
+  position: relative;
+  height: 4px;
+
+  & i {
+    transform-origin: left;
+    background: #c084fc;
+    position: absolute;
+    inset: 0;
+    transform: scaleX(0);
+
+    &[data-play='true'] {
+      animation: rac-ssr-fill var(--total) linear forwards;
+    }
+  }
+
+  & span {
+    transform: translateX(-50%);
+    transition: color 0.3s;
+    white-space: nowrap;
+    color: #9ca3af;
+    font-size: 0.8em;
+    position: absolute;
+    top: 0.9em;
+
+    &[data-passed='true'] {
+      color: #c084fc;
+    }
+  }
+}
+
+.rac-ssr-note {
+  color: #9ca3af;
+  font-size: 0.85em;
+  margin: 0;
+}
+
+@keyframes rac-ssr-fill {
+  to {
+    transform: scaleX(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rac-ssr-timeline i[data-play='true'] {
+    animation: none;
+    transform: none;
+  }
+}

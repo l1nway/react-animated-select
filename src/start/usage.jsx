@@ -1,7 +1,9 @@
 import {Zap, Star, Shield, ChevronUp, X, MousePointer2} from 'lucide-react'
 import {CopyButton, CodeMorph} from '../components/code'
 import {snippet} from '../components/tokens'
+import {Segmented} from '../components/segmented'
 import {Select, Option} from 'react-animated-select'
+import {Title} from '../components/helpers'
 import {Fragment, useState} from 'react'
 
 // demo data
@@ -17,20 +19,28 @@ const TABS = [{
     code: snippet`import {Select, Option} from 'react-animated-select'\nimport {useState} from 'react'\nimport {Zap, Star, Shield} from 'lucide-react'\n\nfunction App() {\n  const [value, setValue] = useState()\n\n  return (\n    <Select\n      placeholder='Choose plan'\n      value={value}\n      onChange={setValue}\n    >\n      <Option value='basic'><Zap/>Basic</Option>\n      <Option value='pro'><Star/>Pro</Option>\n      <Option value='enterprise' disabled><Shield/>Enterprise</Option>\n    </Select>\n  )\n}`
 }]
 
-const CODES = TABS.map(item => item.code)
 const ICONS = {arrow: ChevronUp, clear: X}
 
-// tab arrow keys
-const arrows = e => {
-    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return
-    const other = e.currentTarget.nextElementSibling ?? e.currentTarget.previousElementSibling
-    other.focus()
-    other.click()
+const CSS = `
+.rac-start-usage {
+  border-bottom: 0.1px solid rgba(168, 85, 247, 0.3);
+  flex-direction: column;
+  padding-bottom: 2em;
+  margin-bottom: 1em;
+  padding-top: 1em;
+  display: flex;
+  gap: 1em;
 }
 
-export default function Usage({copy, copied}) {
+.rac-usage-stage {
+  padding: 2em;
+}
+`
+
+export default function Usage() {
     const [tab, setTab] = useState(0)
     const [value, setValue] = useState()
+    const [busy, setBusy] = useState(false)
     const active = TABS[tab]
 
     const pick = i => {
@@ -41,39 +51,16 @@ export default function Usage({copy, copied}) {
 
     return (
         <section className='rac-start-usage' id='usage'>
+            <style href='rac-usage' precedence='low'>{CSS}</style>
             <div className='rac-code-title-container2'>
-                <div className='rac-code-title-container'>
-                    <div className='rac-code-icon'>
-                        <MousePointer2/>
-                    </div>
-                    <h3 className='rac-code-title'>Usage</h3>
-                </div>
-                <div className='rac-usage-tabs' role='tablist' aria-label='Options source'>
-                    <span className='rac-pill' style={{'--index': tab, '--count': TABS.length}} aria-hidden='true'/>
-                    {TABS.map((item, i) => (
-                        <button
-                            className='rac-usage-tab'
-                            tabIndex={i === tab ? 0 : -1}
-                            aria-controls='usage-panel'
-                            id={`usage-tab-${item.id}`}
-                            aria-selected={i === tab}
-                            onClick={() => pick(i)}
-                            onKeyDown={arrows}
-                            key={item.id}
-                            role='tab'
-                        >
-                            {item.text}
-                        </button>
-                    ))}
-                </div>
+                <Title icon={<MousePointer2/>}>Usage</Title>
+                <Segmented tabs id='usage' label='Options source' items={TABS} value={tab} onPick={pick} disabled={busy}/>
             </div>
             <p className='rac-code-desc'>Pass the options as an array or write them as <code>{'<Option/>'}</code> children: the rest of the code stays the same. JSX children can hold any content, such as icons. Note the value shape: an object from the array is reported as the whole object, an <code>{'<Option/>'}</code> as its <code>value</code>.</p>
             <div className='rac-code-container' tabIndex={0}>
-                <div className='rac-basic-select-container'>
+                <div className='rac-usage-stage'>
                     <Select
                         options={tab === 0 ? plans : undefined}
-                        optionsClassName='rac-basic-options'
-                        className='rac-basic-select'
                         placeholder='Choose plan'
                         onChange={setValue}
                         icons={ICONS}
@@ -89,8 +76,8 @@ export default function Usage({copy, copied}) {
                     </Select>
                 </div>
                 <div className='rac-code-wrapper' id='usage-panel' role='tabpanel' aria-labelledby={`usage-tab-${active.id}`}>
-                    <CodeMorph codes={CODES} active={tab}/>
-                    <CopyButton copy={copy} code={active.code.text} keyId={active.id} copied={copied}/>
+                    <CodeMorph code={active.code} onBusy={setBusy}/>
+                    <CopyButton code={active.code.text}/>
                 </div>
             </div>
         </section>

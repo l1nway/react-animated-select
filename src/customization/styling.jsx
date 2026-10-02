@@ -1,100 +1,87 @@
+import {useCallback, useReducer, memo} from 'react'
 import {LineStyle, SquareArrowDown} from 'lucide-react'
 import SlideDown from '../components/slideDown'
 import {Select} from 'react-animated-select'
-import {useReducer, Fragment} from 'react'
+import {merge, Title} from '../components/helpers'
+import {Table, Text} from '../components/section'
+import {PRESETS, TABLES} from './reference'
+import {Showcase, Toggle} from './showcase'
+import './styling.css'
 
-const inputs = [
-    {name: '--rac-bg', value: 'color-mix(in srgb, Canvas 98%, CanvasText 2%)', desc: 'Trigger and list background, trigger border; the base of every tint'},
-    {name: '--rac-fg', value: 'CanvasText', desc: 'Trigger and list text; the color of every tint'},
-    {name: '--rac-danger', value: '#e7000b', desc: 'Error border and error row, false values, invalid options, chip delete colors, delete mode'},
-    {name: '--rac-success', value: '#4caf50', desc: 'Color of true values'},
-    {name: '--rac-row', value: '2em', desc: 'Height of one row of the value area; chips are sized from it'},
-    {name: '--rac-list-max-height', value: '250px', desc: 'List height limit in any length unit; also read by JS to decide whether the panel opens upward'}
+// demo data
+const cities = ['Amsterdam', 'Berlin', 'Copenhagen', 'Lisbon', 'Oslo', 'Prague', 'Vienna']
+
+const desc = <>All library styles live in <code>@layer rac</code>: <code>rac.base</code> holds what the Select needs to work, <code>rac.theme</code> a small neutral look. Any plain CSS on the <code>rac-*</code> classes wins over both without <code>!important</code>; if your app uses cascade layers too, declare the library first: <code>@layer rac, app;</code>. Only shared values are variables: set <code>--rac-fg</code> and <code>--rac-bg</code>, and every hover, highlight, selection and chip tint follows. States are attributes, not modifier classes: <code>[aria-expanded]</code>, <code>[data-placement]</code>, <code>[aria-busy]</code>, <code>[data-error]</code>, <code>[aria-disabled]</code>, <code>[data-empty]</code>. <code>className</code> and <code>style</code> reach the trigger, <code>optionsClassName</code> the panel; the panel is a portal, so the <code>--*</code> keys of <code>style</code> are copied onto it.</>
+
+const title = <Title icon={<LineStyle/>}>Styling & Variables</Title>
+
+const FLAGS = [
+    {name: 'multiple', note: '.rac-chip'},
+    {name: 'loading', note: '[aria-busy]'},
+    {name: 'error', note: '[data-error]'},
+    {name: 'disabled', note: '[aria-disabled]'}
 ]
 
-const derived = [
-    {name: '--rac-tint-1', value: 'color-mix(in srgb, var(--rac-fg) 5%, var(--rac-bg))', desc: 'Trigger hover, scrollbar track'},
-    {name: '--rac-tint-2', value: 'color-mix(in srgb, var(--rac-fg) 10%, var(--rac-bg))', desc: 'Chips, highlighted option, scrollbar thumb'},
-    {name: '--rac-tint-3', value: 'color-mix(in srgb, var(--rac-fg) 20%, var(--rac-bg))', desc: 'Selected option, hovered chip'},
-    {name: '--rac-muted', value: 'color-mix(in srgb, var(--rac-fg) 55%, var(--rac-bg))', desc: 'Disabled and loading options, disabled groups, the checkbox frame, the busy stripe'},
-    {name: '--rac-duration-fast', value: 'calc(var(--rac-duration) * 0.5)', desc: 'Chip and option background transitions'}
-]
+const flip = open => !open
 
-const fromProps = [
-    {name: '--rac-duration', value: '300ms', desc: 'Set by the duration prop. Every CSS transition; 1ms under prefers-reduced-motion'},
-    {name: '--rac-ease', value: 'ease', desc: 'Set by the easing prop. Every CSS transition'}
-]
-
-const tables = [{
-    name: 'Input variables',
-    opened: false,
-    element: inputs
-}, {
-    name: 'Derived variables',
-    opened: false,
-    element: derived,
-}, {
-    name: 'Prop variables',
-    element: fromProps,
-    opened: false
-}]
+// [DOC: styling-tables]
+const Reference = memo(({table}) => {
+    const [open, toggle] = useReducer(flip, false)
+    const {id, name, columns, element} = table
+    const panel = `styling-ref-${id}`
+    return (
+        <>
+            <button className='rac-styling-label' onClick={toggle} aria-expanded={open} aria-controls={panel} type='button'>
+                <span className='rac-styling-maintitle'>{name}</span>
+                <SquareArrowDown className='rac-styling-icon' aria-hidden='true'/>
+            </button>
+            <SlideDown visibility={open} className='rac-styling-container' id={panel} duration={500}>
+                <Table id={`styling-${id}`} title={name} columns={columns} className='rac-styling-table'>
+                    {element.map(item =>
+                        <tr key={item.name + item.value}>
+                            <th className='rac-styling-title' scope='row' data-depth={item.depth}>{item.name}</th>
+                            <td className='rac-styling-value' style={{color: item.value}}>{item.value}</td>
+                            <Text>{item.desc}</Text>
+                        </tr>
+                    )}
+                </Table>
+            </SlideDown>
+        </>
+    )
+})
 
 function Styling() {
-    const [openSections, dispatch] = useReducer((state, name) => ({ ...state, [name]: !state[name] }), {})
+    const [state, dispatch] = useReducer(merge, {preset: 0, value: null, multiple: false, loading: false, error: false, disabled: false})
+    const preset = PRESETS[state.preset]
+
+    const pick = useCallback(i => dispatch({preset: i}), [])
+    const setValue = useCallback(value => dispatch({value}), [])
+    const toggle = useCallback((name, on) => dispatch(name === 'multiple' ? {multiple: on, value: null} : {[name]: on}), [])
 
     return (
-        <section
-            className='rac-states'
-            style={{margin: 0}}
-            id='styling'
-        >
-            <div className='rac-code-title-container'>
-                <div className='rac-code-icon'>
-                    <LineStyle/>
+        <section className='rac-states rac-styling-section' id='styling'>
+            <Showcase id='styling' label='Theme preset' tabs={PRESETS} active={state.preset} onPick={pick} codes={preset.codes} title={title} desc={desc}>
+                <div className='rac-showcase-stage'>
+                    <style>{preset.codes[1].text}</style>
+                    <Select
+                        placeholder='Choose a city'
+                        disabled={state.disabled}
+                        multiple={state.multiple}
+                        loading={state.loading}
+                        error={state.error}
+                        value={state.value}
+                        onChange={setValue}
+                        options={cities}
+                        {...preset.props}
+                    />
+                    <div className='rac-showcase-toggles'>
+                        {FLAGS.map(item => <Toggle key={item.name} name={item.name} note={item.note} checked={state[item.name]} onChange={toggle}/>)}
+                    </div>
                 </div>
-                <h3 className='rac-code-title'>
-                    Styling & Variables
-                </h3>
-            </div>
-            <p className='rac-states-desc'>All library styles live in @layer rac, so plain CSS on the rac-* classes wins without !important. Only shared values are variables: set --rac-fg and --rac-bg, and every hover, highlight, selection and chip tint follows. Everything else is a plain property on its class. The options panel is a portal, so the --* keys of the Select's style prop are copied onto it.</p>
+            </Showcase>
             <div className='rac-styling'>
-                {tables.map(table =>
-                    <Fragment key={table.name}>
-                        <label
-                            style={{
-                                paddingBottom: openSections[table.name] ? '0' : '1em',
-                                borderColor: openSections[table.name] ? 'transparent' : ''
-                            }}
-                            onClick={() => dispatch(table.name)}
-                            className='rac-styling-label'
-                        >
-                            <h4 className='rac-styling-maintitle'>{table.name}</h4>
-                            <SquareArrowDown
-                                className='rac-styling-icon'
-                                style={{transform: openSections[table.name] ? 'rotate(-180deg)' : ''}}
-                            />
-                        </label>
-                        <SlideDown
-                            visibility={openSections[table.name]}
-                            className='rac-styling-container'
-                            easing='ease-in'
-                            duration={500}
-                        >
-                            {table.element.map((item) =>
-                                <div className='rac-styling-item' key={item.name}>
-                                    <h4 className='rac-styling-title'>{item.name}</h4>
-                                    <span className='rac-styling-value' style={{color: item.value}}>{item.value}</span>
-                                    <span className='rac-styling-desc'>{item.desc}</span>
-                                </div>
-                            )}
-                        </SlideDown>
-                    </Fragment>
-                )}
+                {TABLES.map(table => <Reference key={table.id} table={table}/>)}
             </div>
-            {/* <Select
-                optionsClassName='rac-basic-options'
-                className='rac-basic-select'
-            /> */}
         </section>
     )
 }

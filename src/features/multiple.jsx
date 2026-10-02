@@ -1,122 +1,73 @@
-import {FileStack, Scan, Check, LineSquiggle, FingerprintPattern, Folders, ChevronUp} from 'lucide-react'
+import {FileStack, Scan, Check, LineSquiggle, FingerprintPattern, Folders} from 'lucide-react'
+import {useCallback, useReducer} from 'react'
+import {merge, arrowIcons, Heading, numbered} from '../components/helpers'
 import {Select} from 'react-animated-select'
-import {useMemo, useState} from 'react'
+import {Table} from '../components/section'
+import './multiple.css'
 
-const options = ['Option 1', 'Option 2', 'Option 3', 'Option 4', 'Option 5', 'Option 6', 'Option 7', 'Option 8', 'Option 9', 'Option 10', 'Option 11', 'Option 12', 'Option 13', 'Option 14', 'Option 15', 'Option 16', 'Option 17', 'Option 18', 'Option 19', 'Option 20']
+// demo data
+const options = numbered(20)
 
-const icons = {arrow: ChevronUp, check: <Check color='#c084fc'/>, checkbox: Scan}
+const icons = {...arrowIcons, check: <Check color='#c084fc'/>, checkbox: Scan}
+const rowStyle = {'--rac-row': '2.5rem'}
 
 const features = [{
     name: 'Multi-Selection with Chips',
-    icon: <Folders style={{minWidth: '1.5em'}}/>,
+    Icon: Folders,
     desc: 'Supports selecting multiple values, rendered as interactive Chips (Badges) for clear visual feedback.'
 }, {
     name: 'Gesture & Touch Controls',
-    icon: <LineSquiggle style={{minWidth: '1.5em'}}/>,
-    sub: [{
-        name: 'Long Press (Haptic Entry)',
-        desc: 'Long-pressing a chip activates "Deletion Mode", allowing for quick tap-to-remove actions.'
-    }, {
-        name: 'Swipe-to-Delete',
-        desc: 'Supports mobile-native swipe-left gestures on individual chips to reveal a hidden delete icon.'
-    }]
+    Icon: LineSquiggle,
+    sub: [
+        'Long-pressing a chip activates "Deletion Mode", allowing for quick tap-to-remove actions.',
+        'Supports mobile-native swipe-left gestures on individual chips to reveal a hidden delete icon.'
+    ]
 }, {
-    name: 'Optimized for Touch',
-    icon: <FingerprintPattern style={{minWidth: '1.5em'}}/>,
-    desc: 'Designed with high-precision hit targets for seamless interaction on mobile and tablet devices.'
+    name: 'Made for Fingers',
+    Icon: FingerprintPattern,
+    sub: [
+        'A chip takes only horizontal moves (touch-action: pan-y), so a vertical swipe that starts on a chip still scrolls the page.',
+        'A finger that trembles by a few pixels still gets its long press; only a real move (over 10px) cancels it.',
+        'Entering delete mode vibrates only where navigator.vibrate exists, which means Android browsers: iOS Safari has no web vibration.'
+    ]
 }]
 
-function Multiple() {
-    const [value, setValue] = useState()
-    const [inline, setInline] = useState(false)
-    const [show, setShow] = useState(false)
+const props = [
+    {prop: 'deleteAlways', type: 'boolean', default: 'false', text: 'Keep the delete button always visible instead of showing it on hover.', kind: 'tick'},
+    {prop: 'deleteInline', type: 'boolean', default: 'false', text: 'Place the delete button inside the chip, which widens, instead of over its text; no chip changes rows.', kind: 'tick'},
+    {prop: 'sortable', type: 'boolean', default: 'false', text: 'Drag chips to reorder the value: mouse drag, long press then drag on touch, modifier + arrows on keyboard.', kind: 'soon'}
+]
 
-    const props = useMemo(() => [{
-        name: 'deleteAlways',
-        desc: 'Keep the delete button always visible instead of showing it on hover.',
-        onChange: setShow,
-        value: show
-    }, {
-        name: 'deleteInline',
-        desc: 'Place the delete button inside the chip, which widens, instead of over its text; no chip changes rows.',
-        onChange: setInline,
-        value: inline
-    }], [inline, show])
+function Multiple() {
+    const [state, dispatch] = useReducer(merge, {value: undefined, deleteAlways: false, deleteInline: false})
+
+    const update = useCallback((prop, val) => dispatch({[prop]: val}), [])
+    const pick = useCallback(value => dispatch({value}), [])
 
     return (
-        <section
-            className='rac-multiple'
-            id='multiple'
-        >
-            <div className='rac-code-title-container'>
-                <div className='rac-code-icon'>
-                    <FileStack/>
-                </div>
-                <h3 className='rac-code-title'>
-                    Multiple Options
-                </h3>
-            </div>
+        <section className='rac-multiple' id='multiple' aria-labelledby='multiple-heading'>
+            <Heading icon={<FileStack/>} id='multiple-heading' title='Multiple Options'/>
             <div className='rac-multiple-desc'>
-                {features.map(feature =>
-                    <ul
-                        className='rac-multiple-feature'
-                        key={feature.name}
-                    >
-                        <li
-                            style={{paddingBottom: feature?.sub ? '0.5em' : ''}}
-                            className='rac-multiple-subtitle'
-                        >
-                            {feature.icon}
-                            <h4 className='rac-multiple-h4'>{feature.name}:</h4>
-                            <span style={{gridColumn: '1 / -1'}}>{feature.desc}</span>
+                {features.map(({name, Icon, desc, sub}) =>
+                    <ul className='rac-multiple-feature' key={name}>
+                        <li className='rac-multiple-subtitle'>
+                            <Icon aria-hidden/>
+                            <h4 className='rac-multiple-h4'>{name}:</h4>
+                            {desc && <span>{desc}</span>}
                         </li>
-                        {feature?.sub?.map(item =>
-                            <li className='rac-multiple-subfeature' key={item.name}>
-                                {item.desc}
-                            </li>
-                        )}
+                        {sub?.map(text => <li className='rac-multiple-subfeature' key={text}>{text}</li>)}
                     </ul>
                 )}
             </div>
-            <div
-                className='rac-group-checkbox'
-                style={{marginBottom: '1em'}}
-            >
-                {props.map(item =>
-                    <label
-                        className='rac-children-first'
-                        key={item.name}
-                    >
-                        <div className='rac-checkbox-container'>
-                            <input
-                                onChange={(e) => item.onChange(e.target.checked)}
-                                className='rac-demo-checkbox'
-                                checked={item.value}
-                                type='checkbox'
-                            />
-                            <Scan
-                                style={{left: 0, top: '-0.8em'}}
-                                className='rac-check-box'/>
-                            <Check
-                                className={`rac-check-mark ${item.value ? '--checked' : ''}`}
-                                style={{top: '-0.55em', left: '0.15em'}}
-                            />
-                        </div>
-                        <h4 className='rac-child-title'>{item.name}</h4>
-                        <span style={{textWrap: 'nowrap'}}>{item.desc}</span>
-                    </label>
-                )}
-            </div>
+            <Table id='multiple-props' title='Multiple props' rows={props} state={state} onChange={update}/>
             <Select
-                style={{'--rac-row': '2.5rem'}}
-                optionsClassName='rac-basic-options'
-                className='rac-basic-select'
-                deleteInline={inline}
-                onChange={setValue}
-                deleteAlways={show}
-                icons={icons}
+                deleteInline={state.deleteInline}
+                deleteAlways={state.deleteAlways}
+                value={state.value}
                 options={options}
-                value={value}
+                style={rowStyle}
+                onChange={pick}
+                icons={icons}
                 multiple
             />
         </section>

@@ -1,12 +1,24 @@
 import {MENU, ITEMS, groupOf} from './components'
-import {setStore, subscribe, getStore, useStore, PARTS, showAll} from '../components/store'
+import {pathOf, titleOf} from './seo'
+import {setStore, subscribe, getStore, PARTS, showAll} from '../components/store'
 import {useRef, useEffect, useState, useCallback, memo} from 'react'
 import './menu.css'
 import './nav.css'
 
 const EDITABLE = 'input:not([type=checkbox], [type=radio], [type=range], [type=button], [type=submit], [type=reset], [type=color], [type=file], [readonly]), textarea:not([readonly]), [contenteditable]:not([contenteditable=false])'
 
-const setTitle = item => {document.title = `${item.text} — react-animated-select`}
+const hrefOf = id => import.meta.env.BASE_URL + pathOf(id)
+
+// debounced url and title sync
+let routeTimer
+const setRoute = item => {
+    clearTimeout(routeTimer)
+    routeTimer = setTimeout(() => {
+        document.title = titleOf(item)
+        const url = hrefOf(item.id) + location.search
+        url !== location.pathname + location.search + location.hash && history.replaceState(history.state, '', url)
+    }, 300)
+}
 
 const Link = memo(function Link({item, selected, className = '', onPick}) {
     const Icon = item.icon
@@ -14,8 +26,8 @@ const Link = memo(function Link({item, selected, className = '', onPick}) {
         <a
             className={`${selected ? '--selected' : ''} rac-menu-element ${className}`}
             aria-current={selected ? 'location' : undefined}
-            onClick={e => {e.preventDefault(); onPick(item)}}
-            href={`#${item.id}`}
+            onClick={e => {if (e.button || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return; e.preventDefault(); onPick(item)}}
+            href={hrefOf(item.id)}
         >
             <Icon aria-hidden='true'/>
             <span className='rac-menu-text'>{item.text}</span>
@@ -29,18 +41,20 @@ function Menu() {
     const [keyboard, setKeyboard] = useState(false)
     const [entered, setEntered] = useState(false)
 
-    const mounted = useStore(state => state.mounted)
     const autoScroll = useRef(false)
     const release = useRef(null)
     const observer = useRef(null)
+    const current = useRef(null)
 
     const group = groupOf(active)
     const index = MENU.indexOf(group)
 
     const pick = useCallback(item => {
         autoScroll.current = true
-        setActive(item.id)
-        setTitle(item)
+        const shown = item.sub?.[0] ?? item
+        current.current = shown.id
+        setActive(shown.id)
+        setRoute(shown)
 
         // wait for parts to settle
         const waiting = PARTS.some(id => !document.getElementById(id))
@@ -75,7 +89,10 @@ function Menu() {
         scroll()
     }, [])
 
-    useEffect(() => () => release.current?.(), [])
+    useEffect(() => () => {
+        release.current?.()
+        clearTimeout(routeTimer)
+    }, [])
 
     // scroll requests
     useEffect(() => subscribe(() => {
@@ -88,17 +105,49 @@ function Menu() {
 
     // section tracking
     useEffect(() => {
-        observer.current = new IntersectionObserver(entries => entries.forEach(({isIntersecting, target, boundingClientRect}) => {
-            const item = isIntersecting && ITEMS.find(i => i.id === target.id)
-            if (!item) return
-            setTitle(item)
-            !autoScroll.current && setActive(item.id)
-            item.id === 'playground' && boundingClientRect.top > 0 && setStore({cat: 'show'})
-        }), {rootMargin: '-50% 0px -50% 0px'})
-        return () => observer.current.disconnect()
+        const visible = new Set()
+        let top = true
+        const sync = () => {
+            if (autoScroll.current || getStore().restoring) return
+            // deepest section wins, header means root
+            const item = top ? null : ITEMS.findLast(i => visible.has(i.id))
+            if (!item && !top) return
+            // gap between subs keeps current
+            const shown = item && (item.sub ? item.sub.find(s => s.id === current.current) ?? item.sub[0] : item)
+            current.current = shown?.id ?? null
+            setActive(shown?.id ?? null)
+            setRoute(shown ?? ITEMS[0])
+        }
+        observer.current = new IntersectionObserver(entries => {
+            entries.forEach(({isIntersecting, target, boundingClientRect}) => {
+                isIntersecting ? visible.add(target.id) : visible.delete(target.id)
+                isIntersecting && target.id === 'playground' && boundingClientRect.top > 0 && setStore({cat: 'show'})
+            })
+            sync()
+        }, {rootMargin: '-50% 0px -50% 0px'})
+        const header = new IntersectionObserver(([entry]) => {
+            top = entry.isIntersecting
+            sync()
+        }, {rootMargin: '-1px 0px 0px 0px'})
+        header.observe(document.querySelector('.rac-header'))
+        return () => {
+            observer.current.disconnect()
+            header.disconnect()
+        }
     }, [])
 
-    useEffect(() => {ITEMS.forEach(item => {const el = document.getElementById(item.id); el && observer.current.observe(el)})}, [mounted])
+    // observe mounted parts
+    useEffect(() => {
+        let last
+        const observe = () => {
+            const {mounted} = getStore()
+            if (mounted === last) return
+            last = mounted
+            ITEMS.forEach(item => {const el = document.getElementById(item.id); el && observer.current.observe(el)})
+        }
+        observe()
+        return subscribe(observe)
+    }, [])
 
     // keyboard guard
     useEffect(() => {

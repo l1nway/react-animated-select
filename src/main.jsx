@@ -3,6 +3,8 @@ import {createRoot} from 'react-dom/client'
 import {StrictMode, startTransition} from 'react'
 import App from './app'
 import './rac.css'
+// [DOC: site-theme]
+import './components/basic.css'
 
 boot()
 

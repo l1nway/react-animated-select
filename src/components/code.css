@@ -1,0 +1,172 @@
+.rac-code-container {
+  transition: border-color 0.3s ease;
+  border: 1px solid #1f293780;
+  background-color: #0e111a;
+  border-radius: 0.5rem;
+  position: relative;
+  overflow: hidden;
+  display: block;
+  outline: none;
+
+  &:hover, &:focus-within {
+    border-color: #8b5cf64d;
+
+    .rac-code-button {
+      opacity: 1;
+    }
+  }
+}
+
+:hover > .rac-code-button {
+  opacity: 1;
+}
+
+.rac-code-button {
+  background-color: transparent;
+  color: var(--rac-old-char);
+  transition:
+    300ms opacity,
+    300ms color;
+  position: absolute;
+  cursor: pointer;
+  outline: none;
+  display: grid;
+  border: none;
+  right: 1em;
+  opacity: 0;
+  top: 1em;
+
+  &:hover {
+    color: white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--rac-primary);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+    opacity: 1;
+  }
+}
+
+.rac-copy-icon {
+  transition: opacity 100ms 100ms, scale 100ms 100ms;
+  grid-area: 1 / 1;
+
+  .rac-code-button:not([data-copied]) &:last-child,
+  .rac-code-button[data-copied] &:first-child {
+    transition-delay: 0ms;
+    opacity: 0;
+    scale: 0.5;
+  }
+}
+
+@media (hover: none) {
+  .rac-code-button {
+    opacity: 1;
+  }
+}
+
+.rac-code-wrapper {
+  position: relative;
+  display: block;
+}
+
+.rac-code {
+  font-family: Menlo, Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', 'Courier New', monospace;
+  white-space: pre;
+  line-height: 1.425rem;
+  text-align: left;
+  font-size: 13px;
+  overflow: auto;
+  padding: 16px;
+  tab-size: 4;
+  margin: 0;
+}
+
+.rac-code[data-fade] .token {
+  animation: rac-code-fade 400ms ease backwards;
+}
+
+@keyframes rac-code-fade {
+  from {
+    color: #9CDCFE;
+  }
+}
+
+.rac-code-solid {
+  background-color: #1a1a24;
+}
+
+.rac-soon {
+  border: 1px dashed #8b5cf64d;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.rac-soon-badge {
+  min-height: calc(2em + 4px);
+  padding: 0.25em 0.75em;
+  align-items: center;
+  color: #c084fc;
+  display: flex;
+  gap: 0.5em;
+
+  & svg {
+    flex-shrink: 0;
+    height: 1.25em;
+    width: 1.25em;
+  }
+}
+
+.rac-soon-code {
+  border-top: 1px dashed #8b5cf64d;
+  background-color: #0e111a;
+}
+
+.rac-morph-row {
+  transition: height 300ms ease, visibility 0s;
+  overflow-y: clip;
+  height: 1lh;
+
+  &:not([data-on]) {
+    transition: height 300ms ease, visibility 0s 300ms;
+    visibility: hidden;
+    height: 0;
+  }
+}
+
+.rac-morph-seg {
+  transition: width 300ms steps(var(--n)), visibility 0s;
+  width: calc(var(--n) * 1ch);
+  vertical-align: top;
+  display: inline-block;
+  overflow: hidden;
+
+  &:not([data-on]) {
+    transition: width 300ms steps(var(--n)), visibility 0s 300ms;
+    visibility: hidden;
+    width: 0;
+  }
+}
+
+/* [DOC: code-morph] */
+@starting-style {
+  .rac-morph-row[data-on] {
+    height: 0;
+  }
+
+  .rac-morph-row:not([data-on]) {
+    visibility: visible;
+    height: 1lh;
+  }
+
+  .rac-morph-seg[data-on] {
+    width: 0;
+  }
+
+  .rac-morph-seg:not([data-on]) {
+    width: calc(var(--n) * 1ch);
+    visibility: visible;
+  }
+}
