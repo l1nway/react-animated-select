@@ -1,5 +1,5 @@
 import {normalizeOptions, resolveSelection, isPlain} from './model'
-import {useStableActions, useDeepStable} from './state'
+import {useStableActions, useDeepStable, deepEqual} from './state'
 import {stopEvent} from './utils'
 import {useMemo} from 'react'
 
@@ -95,7 +95,19 @@ export default function useSelectModel({props, jsxOptions, state, setState, setV
             stopEvent(e)
             commit(multiple ? [] : null, multiple ? [] : null, NO_PICK)
         },
-        removeOption: (id) => commitMultiple(selectedIDs.filter(item => item.id !== id))
+        removeOption: (id) => commitMultiple(selectedIDs.filter(item => item.id !== id)),
+        // [DOC: form-field]
+        reset: () => {
+            setState({deleting: false, invalid: false})
+            setVisibility(false)
+            const empty = multiple ? [] : null
+            const target = props.defaultValue ?? empty
+            const {selected: one, selectedIDs: many} = resolveSelection(target, normalizedOptions, multiple, NO_PICK)
+            const next = multiple ? many : one ? [one] : []
+            const now = multiple ? selectedIDs : selected ? [selected] : []
+            if (deepEqual(value ?? empty, target) && next.length === now.length && next.every((o, i) => o.id === now[i].id)) return
+            commit(target, multiple ? next.map(o => o.userId) : one?.userId ?? null, next.map(o => o.id))
+        }
     })
 
     return {normalizedOptions, expandedGroups, selected, selectedIDs, hasOptions, active, hasActualValue, title, valueOption, actions}

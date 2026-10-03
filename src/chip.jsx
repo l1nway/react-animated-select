@@ -1,6 +1,6 @@
 import {Fragment, memo, useCallback, useContext, useRef, useEffect, useSyncExternalStore} from 'react'
 import {SelectConfigContext, SelectActionsContext} from './state'
-import {renderIcon, stopEvent, optionContent, withClass} from './utils'
+import {renderIcon, stopEvent, refocus, optionContent, withClass} from './utils'
 import {Collapse} from './motion'
 
 const HOVERED = 1, SWIPED = 2
@@ -46,7 +46,13 @@ const SelectedItem = memo(function SelectedItem({element, deleting, locked, chip
         else if (diff < -SWIPE && swiped) chipStore.set({swipedId: null})
     }, [element.id, swiped, chipStore])
 
-    const onTouchEnd = useCallback(() => clearTimeout(refs.current.longPressTimer), [])
+    // [DOC: touch-delete]
+    const onTouchEnd = useCallback((e) => {
+        clearTimeout(refs.current.longPressTimer)
+        // swallow the release click
+        if (refs.current.longPress && e.cancelable) e.preventDefault()
+        refs.current.longPress = false
+    }, [])
 
     // [DOC: chip]
     const onHover = useCallback(() => chipStore.set({hoverId: element.id, swipedId: null}), [element.id, chipStore])
@@ -61,15 +67,15 @@ const SelectedItem = memo(function SelectedItem({element, deleting, locked, chip
 
     const removeAction = useCallback((e) => {
         chipStore.set({swipedId: null})
+        refocus(e, selectRef)
         removeOption(element.id)
         stopEvent(e)
-    }, [element.id, removeOption, chipStore])
+    }, [element.id, removeOption, chipStore, selectRef])
 
     // [DOC: touch-delete]
     const onClick = useCallback((e) => {
         stopEvent(e)
-        if (refs.current.longPress) refs.current.longPress = false
-        else if (deleting) removeAction(e)
+        if (deleting) removeAction(e)
     }, [deleting, removeAction])
 
     const showDel = removable && (deleteAlways || !locked && (hovered || swiped || deleting))

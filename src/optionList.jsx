@@ -22,9 +22,12 @@ const useHighlighted = (index) => {
     return [ref, mode !== NONE]
 }
 
+// [DOC: dom-ids]
+const groupLabelId = (selectId, option) => `${optionDomId(selectId, option.id)}_l`
+
 // [DOC: option-list]
 const GroupHeader = memo(function GroupHeader({option, index, open, hasChildren}) {
-    const {selectId, icons} = useContext(SelectConfigContext)
+    const {selectId, icons, texts} = useContext(SelectConfigContext)
     const {selectOption, highlight} = useContext(SelectActionsContext)
     const [ref, highlighted] = useHighlighted(index)
     const interactive = hasChildren && !option.disabled
@@ -34,14 +37,18 @@ const GroupHeader = memo(function GroupHeader({option, index, open, hasChildren}
             className={withClass('rac-group', option.className)}
             onMouseEnter={() => interactive && highlight(index)}
             onClick={(e) => selectOption(option, e)}
+            aria-label={interactive ? `${option.name}, ${open ? texts.groupOpen : texts.groupClosed}` : undefined}
+            aria-disabled={!interactive || undefined}
             data-highlighted={flag(highlighted)}
             data-disabled={flag(option.disabled)}
             id={optionDomId(selectId, option.id)}
             data-open={flag(open)}
+            aria-selected='false'
             style={option.style}
+            role='option'
             ref={ref}
         >
-            <span className='rac-group-text'>{option.name}</span>
+            <span className='rac-group-text' id={groupLabelId(selectId, option)}>{option.name}</span>
             <Collapse axis='x' in={hasChildren && !option.disabled} className='rac-group-arrow' aria-hidden='true'>
                 {renderIcon(icons.arrow)}
             </Collapse>
@@ -107,12 +114,12 @@ const OptionList = memo(function OptionList() {
         const nodes = []
         let groupChildren = []
         let groupName = null
-        let headerId = null
+        let labelId = null
 
         const flushGroup = () => {
             if (groupName !== null && groupChildren.length) {
                 nodes.push(
-                    <Collapse axis='y' in={expandedGroups.has(groupName)} className='rac-group-items' role='group' aria-labelledby={headerId} key={`slide-${groupName}`}>
+                    <Collapse axis='y' in={expandedGroups.has(groupName)} className='rac-group-items' role='group' aria-labelledby={labelId} key={`slide-${groupName}`}>
                         {groupChildren}
                     </Collapse>
                 )
@@ -123,7 +130,7 @@ const OptionList = memo(function OptionList() {
         const itemNode = (option, index) => (
             <OptionItem
                 isSelected={selectedIdSet.has(option.id) || selectedId === option.id}
-                showCheckbox={multiple && !option.disabled}
+                showCheckbox={multiple && !option.disabled && 'original' in option}
                 key={option.id}
                 option={option}
                 index={index}
@@ -134,7 +141,7 @@ const OptionList = memo(function OptionList() {
             if (option.groupHeader) {
                 flushGroup()
                 groupName = option.name
-                headerId = optionDomId(selectId, option.id)
+                labelId = groupLabelId(selectId, option)
                 nodes.push(
                     <GroupHeader
                         hasChildren={groupCounts[option.name] > 0}

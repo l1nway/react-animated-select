@@ -45,7 +45,7 @@ const match = (options, list, at, query) => {
 
 // [DOC: select-behavior]
 export default function useSelectBehavior({props, state, setState, normalizedOptions: options, expandedGroups, selected, selectedIDs, visibility: open, setVisibility: setOpen, modelActions, loadMoreOnce, highlightStore}) {
-    const {disabled, multiple, hasMore, loadButton, loadOffset, loadAhead, icons, onFocus, onBlur} = props
+    const {disabled, multiple, hasMore, loadButton, loadOffset, loadAhead, icons, onFocus, onBlur, onKeyDown} = props
     const {selectOption, clear, removeOption} = modelActions
     const {deleting} = state
     const {reach, list} = useReachable(options, expandedGroups)
@@ -118,9 +118,10 @@ export default function useSelectBehavior({props, state, setState, normalizedOpt
 
         // [DOC: select-behavior]
         handleFocus: (e) => {
-            if (!e.currentTarget.contains(e.relatedTarget)) onFocus?.(e)
-            if (disabled || deleting || document.hidden || Date.now() - refs.current.lastWindowFocusTime < 100) return
-            if (open) return
+            const inside = e.currentTarget.contains(e.relatedTarget)
+            if (!inside) onFocus?.(e)
+            // [DOC: nested-controls]
+            if (inside || e.target !== e.currentTarget || open || disabled || deleting || document.hidden || Date.now() - refs.current.lastWindowFocusTime < 100) return
             clearTimeout(refs.current.focusTimeout)
             refs.current.focusTimeout = setTimeout(() => refs.current.justFocused = false, 200)
             refs.current.justFocused = true
@@ -139,8 +140,12 @@ export default function useSelectBehavior({props, state, setState, normalizedOpt
         },
 
         handleKeyDown: (e) => {
-            if (disabled || e.nativeEvent?.isComposing) return
+            // [DOC: select-behavior]
+            onKeyDown?.(e)
+            if (e.defaultPrevented || disabled || e.nativeEvent?.isComposing) return
             const {key} = e
+            // [DOC: nested-controls]
+            if (e.target !== e.currentTarget && (key === 'Enter' || key.length === 1)) return
             const current = effectiveHighlight(highlightStore.get())
 
             // [DOC: typeahead]

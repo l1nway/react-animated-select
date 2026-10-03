@@ -97,3 +97,6 @@ export const stopEvent = (e) => {
     e?.stopPropagation()
     e?.preventDefault()
 }
+
+// [DOC: nested-controls]
+export const refocus = (e, ref) => {if (e?.currentTarget.contains(document.activeElement)) ref.current?.focus()}

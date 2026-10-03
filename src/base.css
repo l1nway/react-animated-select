@@ -13,17 +13,10 @@
 :root {--rac-row: 2em;}
 
 /* [DOC: styles-layer] */
-.rac-select,
-.rac-options {
-    --rac-duration-fast: calc(var(--rac-duration) * 0.5);
-}
+.rac-select, .rac-options {--rac-duration-fast: calc(var(--rac-duration) * 0.5);}
 
 @media (prefers-reduced-motion: reduce) {
-    .rac-select,
-    .rac-options {
-        --rac-duration: 1ms !important;
-    }
-
+    .rac-select, .rac-options {--rac-duration: 1ms !important;}
     .rac-dots i {animation: none;}
 }
 
@@ -40,6 +33,8 @@
     max-width: 100%;
     cursor: pointer;
 
+    /* [DOC: popup] */
+    &:not([aria-haspopup]) {cursor: default;}
     &[aria-busy='true'] {cursor: progress;}
     &[aria-disabled='true'] {cursor: not-allowed;}
     &[aria-disabled='true'][aria-busy='true'] {cursor: wait;}
@@ -56,7 +51,8 @@
 
 /* [DOC: trigger-width] */
 .rac-title {max-width: calc(100% - 0.25px); white-space: nowrap;}
-.rac-title, .rac-chip-text {min-width: 0; overflow-x: clip; text-overflow: ellipsis;}
+.rac-title, .rac-chip-text, .rac-chip > .rac-option-jsx {min-width: 0; overflow-x: clip;}
+.rac-title, .rac-chip-text {text-overflow: ellipsis;}
 
 .rac-dots {
     display: inline-flex;
@@ -77,26 +73,20 @@
 
 .rac-clear, .rac-arrow {display: grid; place-items: center; align-self: center;}
 
-.rac-clear,
-.rac-chip-del {
-    padding: 0;
-    border: 0;
-    background: none;
-    color: inherit;
-    font: inherit;
-    cursor: pointer;
-}
+.rac-clear, .rac-chip-del {padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;}
 
 .rac-arrow, .rac-group-arrow {transition: rotate var(--rac-duration) var(--rac-ease);}
 
-/* [DOC: state-attributes] */
-.rac-select[data-placement='bottom']:not([aria-expanded='true']) .rac-arrow,
+/* [DOC: dropdown-position] */
+.rac-select:not([data-placement='top'], [aria-expanded='true']) .rac-arrow,
 .rac-select[data-placement='top'][aria-expanded='true'] .rac-arrow {rotate: 180deg;}
 
 .rac-icon {height: 1em;}
 
 /* [DOC: form-field] */
 .rac-input {position: absolute; inset: 0; box-sizing: border-box; width: 100%; height: 100%; margin: 0; padding: 0; border: 0; opacity: 0; pointer-events: none;}
+/* [DOC: live-region] */
+.rac-live {position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;}
 
 /* chips */
 
@@ -133,12 +123,23 @@
 
 .rac-select:is([data-deleting], [data-inline-delete]) .rac-chip-del {position: relative;}
 
+/* [DOC: touch-target] */
+@media (any-pointer: coarse) {
+    .rac-clear {position: relative;}
+    .rac-arrow {pointer-events: none;}
+    .rac-clear::before, .rac-chip-del::before {content: ''; position: absolute; inset: min(0px, 50% - 12px);}
+}
+
 /* [DOC: chip-hold] */
 .rac-spacer {flex-basis: 100%; height: 0; margin-inline-end: 1px;}
 
 /* panel */
 
-.rac-options {box-sizing: border-box; z-index: 2147483647;}
+/* [DOC: options-panel] */
+.rac-options {box-sizing: border-box; z-index: 2147483647; overflow: clip;}
+/* [DOC: dropdown-position] */
+.rac-options {transition: opacity var(--rac-duration) var(--rac-ease), visibility 0s;}
+.rac-options[data-offscreen] {opacity: 0; visibility: hidden; transition-delay: 0s, var(--rac-duration);}
 
 .rac-list {
     max-height: var(--rac-list-max-height);

@@ -24,7 +24,8 @@ export function Collapse({
     const presence = useContext(PresenceContext)
     const byPresence = inProp === undefined && !!presence
     const shown = byPresence ? presence.present : !!inProp
-    const duration = durationProp ?? config?.duration ?? 300
+    // [DOC: presence]
+    const duration = durationProp ?? (config?.duration ?? 300) / (byPresence && presence.swap ? 2 : 1)
     const easing = easingProp ?? config?.easing ?? 'ease'
     const ownRef = useRef(null)
     const nodeRef = externalRef ?? ownRef
@@ -40,6 +41,7 @@ export function Collapse({
     const finish = useEffectEvent(() => {
         group?.delete(member.current)
         if (shown) {
+            anim.current?.cancel()
             anim.current = null
             onEntered?.()
             return
@@ -59,9 +61,14 @@ export function Collapse({
         // clip only while animating
         const still = {overflow: 'hidden', textOverflow: 'clip', ...LIMITS[axis]}
         const closed = {...Object.fromEntries(props.map(p => [p, p === 'opacity' ? 0 : '0px'])), ...still}
+        // [DOC: collapse]
         const frame = () => {
+            const {overflow} = el.style
+            el.style.overflow = 'hidden'
             const computed = getComputedStyle(el)
-            return {...Object.fromEntries(props.map(p => [p, computed[p]])), ...still}
+            const box = {...Object.fromEntries(props.map(p => [p, computed[p]])), ...still}
+            el.style.overflow = overflow
+            return box
         }
         const play = (from, to) => {
             const reduced = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -139,41 +146,53 @@ export function Collapse({
     return <Tag ref={nodeRef} {...rest}/>
 }
 
-const PresenceChild = ({id, present, appear, onExited, children}) => {
-    const value = useMemo(() => ({present, appear, onExited: () => onExited(id)}), [id, present, appear, onExited])
+const PresenceChild = ({id, present, appear, swap, onExited, children}) => {
+    const value = useMemo(() => ({present, appear, swap, onExited: () => onExited(id)}), [id, present, appear, swap, onExited])
     return <PresenceContext.Provider value={value}>{children}</PresenceContext.Provider>
 }
 
 // merge next with leaving items
-const sync = (list, children, appear = true) => {
+const sync = (list, children, wait, appear = true) => {
     const next = Children.toArray(children).filter(isValidElement)
     const keys = new Set(next.map(el => el.key))
     const known = new Map(list.map(item => [item.key, item]))
     const items = next.map(el => ({key: el.key, el, present: true, appear: known.get(el.key)?.appear ?? appear}))
     // leavers follow their old neighbour
     let at = 0
+    const left = new Set()
     list.forEach(item => {
-        if (!keys.has(item.key)) items.splice(at++, 0, item.present ? {...item, present: false} : item)
-        else if (item.present) at = items.findIndex(next => next.key === item.key) + 1
+        if (keys.has(item.key)) {
+            if (item.present) at = items.findIndex(next => next.key === item.key) + 1
+        } else if (!item.pending) {
+            const leaver = item.present ? {...item, present: false, swap: false} : item
+            if (item.present) left.add(leaver)
+            items.splice(at++, 0, leaver)
+        }
     })
-    return {children, list: items}
+    // [DOC: presence]
+    const fresh = item => item.present && (known.get(item.key)?.pending ?? !known.has(item.key))
+    const waiting = wait && (left.size > 0 || list.some(item => item.pending)) && items.some(item => !item.present) && items.some(fresh)
+    return {children, list: !waiting ? items : items.map(item => left.has(item) ? {...item, swap: true} : fresh(item) ? {...item, pending: true, swap: true} : item)}
 }
 
+// show waiting items
+const release = (list) => list.some(item => !item.present) ? list : list.map(item => item.pending ? {...item, pending: false} : item)
+
 // [DOC: presence]
-export function Presence({children, hold = false}) {
-    const [state, setState] = useState(() => ({...sync([], children, false), hold}))
+export function Presence({children, hold = false, wait = false}) {
+    const [state, setState] = useState(() => ({...sync([], children, wait, false), hold}))
     let next = state
-    if (next.children !== children) next = {...next, ...sync(next.list, children)}
+    if (next.children !== children) next = {...next, ...sync(next.list, children, wait)}
     // release held leavers
-    if (next.hold !== hold) next = {...next, hold, list: hold ? next.list : next.list.filter(item => item.present)}
+    if (next.hold !== hold) next = {...next, hold, list: hold ? next.list : release(next.list.filter(item => item.present))}
     if (next !== state) setState(next)
 
     const remove = useCallback(key => setState(prev => !prev.hold && prev.list.some(item => item.key === key && !item.present)
-        ? {...prev, list: prev.list.filter(item => item.key !== key)}
+        ? {...prev, list: release(prev.list.filter(item => item.key !== key))}
         : prev
     ), [])
 
-    return state.list.map(({key, el, present, appear}) =>
-        <PresenceChild key={key} id={key} present={present} appear={appear} onExited={remove}>{el}</PresenceChild>
+    return state.list.map(({key, el, present, appear, pending, swap = false}) => !pending &&
+        <PresenceChild key={key} id={key} present={present} appear={appear} swap={swap} onExited={remove}>{el}</PresenceChild>
     )
 }
