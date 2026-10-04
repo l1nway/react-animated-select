@@ -1,8 +1,5 @@
 .rac-debug {
-  border-bottom: 0.1px solid rgba(168, 85, 247, 0.3);
   flex-direction: column;
-  padding-bottom: 1.5em;
-  margin-bottom: 1.5em;
   display: flex;
   width: 100%;
   gap: 1em;
@@ -35,7 +32,7 @@
   }
 
   .rac-segmented-item {
-    font-family: Menlo, Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', 'Courier New', monospace;
+    font-family: var(--rac-mono);
     transition: color 0.3s ease, background-color 0.3s ease;
     align-content: center;
     border-radius: 0;
@@ -54,7 +51,9 @@
     }
   }
 
-  [data-tone='none'] {color: rgb(86, 156, 214);}
-  [data-tone='on'] {color: #3fb950;}
-  [data-tone='off'] {color: rgb(244, 71, 71);}
+  [data-tone='none'] {color: var(--rac-tok-blue);}
+  [data-tone='on'] {color: var(--rac-tok-on);}
+  [data-tone='off'] {color: var(--rac-tok-off);}
 }
+
+.rac-debug-call {display: flex;}

@@ -7,7 +7,7 @@
 }
 
 .rac-grouping-prop {
-  color: rgb(156, 220, 254);
+  color: var(--rac-tok-key);
 }
 
 .rac-track-card.rac-group-card {

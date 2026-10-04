@@ -1,16 +1,15 @@
 .rac-a11y {
   flex-direction: column;
-  padding-bottom: 1.5em;
   display: flex;
   width: 100%;
   gap: 1.5em;
 }
 
 .rac-a11y kbd {
-  font-family: Menlo, Monaco, Consolas, 'Courier New', monospace;
+  font-family: var(--rac-mono);
   border: 1px solid #1f2937;
   border-bottom-width: 2px;
-  background-color: #1a1a24;
+  background-color: var(--rac-surface-2);
   border-radius: 0.25em;
   padding: 0 0.4em;
   font-size: 1em;

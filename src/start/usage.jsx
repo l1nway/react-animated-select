@@ -23,10 +23,7 @@ const ICONS = {arrow: ChevronUp, clear: X}
 
 const CSS = `
 .rac-start-usage {
-  border-bottom: 0.1px solid rgba(168, 85, 247, 0.3);
   flex-direction: column;
-  padding-bottom: 2em;
-  margin-bottom: 1em;
   padding-top: 1em;
   display: flex;
   gap: 1em;
@@ -57,7 +54,7 @@ export default function Usage() {
                 <Segmented tabs id='usage' label='Options source' items={TABS} value={tab} onPick={pick} disabled={busy}/>
             </div>
             <p className='rac-code-desc'>Pass the options as an array or write them as <code>{'<Option/>'}</code> children: the rest of the code stays the same. JSX children can hold any content, such as icons. Note the value shape: an object from the array is reported as the whole object, an <code>{'<Option/>'}</code> as its <code>value</code>.</p>
-            <div className='rac-code-container' tabIndex={0}>
+            <div className='rac-panel rac-code-container' tabIndex={0}>
                 <div className='rac-usage-stage'>
                     <Select
                         options={tab === 0 ? plans : undefined}

@@ -12,7 +12,7 @@
   }
 
   .rac-animations-select {
-    --rac-bg: #0e111a;
+    --rac-bg: var(--rac-surface-3);
     border-radius: 0;
     position: absolute;
     padding: 0 1em;
@@ -32,9 +32,9 @@
 }
 
 .rac-animations-num {
-  font-family: Menlo, Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', 'Courier New', monospace;
+  font-family: var(--rac-mono);
   font-variant-numeric: tabular-nums;
   display: inline-block;
   min-width: 6ch;
-  color: #c084fc;
+  color: var(--rac-purple-text);
 }

@@ -83,7 +83,7 @@ export function CodeBlock({code, language = 'jsx', className = 'rac-code-solid'}
 // planned feature stub
 export const Soon = ({title, code}) =>
     <div className='rac-soon' role='note'>
-        <div className='rac-soon-badge'>
+        <div className='rac-soon-badge rac-iconed'>
             <Hammer aria-hidden='true'/>
             <span><b>In development</b>{title && <>: {title}</>}</span>
         </div>

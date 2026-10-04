@@ -1,34 +1,22 @@
 .rac-playground {
-  border-bottom: 0.1px solid rgba(168, 85, 247, 0.3);
   flex-direction: column;
-  padding-bottom: 1em;
-  margin-bottom: 1em;
   display: flex;
   gap: 1em;
 }
 
 .rac-playground-icon {
-  color: rgb(220, 220, 170);
+  color: var(--rac-tok-fn);
 }
 
 .rac-live-container {
-  transition:
-    border-color 0.3s ease,
-    height 0.3s ease;
-  border: 1px solid #1f293780;
-  background-color: #0e111a;
-  border-radius: 0.5rem;
+  transition: border-color 0.3s ease, height 0.3s ease;
   overflow: hidden;
-
-  &:hover {
-    border-color: #8b5cf64d;
-  }
 }
 
 .rac-live-code {
   overflow-wrap: break-word;
   white-space: pre-wrap;
-  color: #9cdcfe;
+  color: var(--rac-tok-key);
   padding: 10px;
   font: inherit;
   margin: 0;
@@ -57,7 +45,7 @@
 
 .rac-live-editor {
   font-family: 'Fira Code', monospace !important;
-  background-color: #1a1a24;
+  background-color: var(--rac-surface-2);
   font-size: 14px !important;
 }
 

@@ -72,14 +72,14 @@ function Ssr() {
             <section className='rac-states' id='ssr' ref={root}>
                 <div className='rac-code-title-container2 rac-ssr-head'>
                     <Title icon={<Server/>}>Server Rendering</Title>
-                    <button className='rac-button' type='button' onClick={busy ? undefined : replay} aria-disabled={busy}>
+                    <button className='rac-button rac-iconed' type='button' onClick={busy ? undefined : replay} aria-disabled={busy}>
                         <AnimatePresence mode='wait' initial={false}>
                             <m.span className='rac-button-icon' key={busy ? 'busy' : 'idle'} aria-hidden='true' {...popSlow}><Icon/></m.span>
                         </AnimatePresence>
                         Replay
                     </button>
                 </div>
-                <p className='rac-ssr-desc'>The Select renders to HTML in Next.js, Remix or renderToString and hydrates without a mismatch. The server HTML already shows the right title, chips and enabled state, for an options array and for {'<Option/>'} children alike, so nothing switches after hydration. DOM ids and ARIA references are deterministic, the same on the server and the client. Both bundles start with 'use client', so a Next.js App Router server component can import and render the Select directly.</p>
+                <p className='rac-desc rac-ssr-desc'>The Select renders to HTML in Next.js, Remix or renderToString and hydrates without a mismatch. The server HTML already shows the right title, chips and enabled state, for an options array and for {'<Option/>'} children alike, so nothing switches after hydration. DOM ids and ARIA references are deterministic, the same on the server and the client. Both bundles start with 'use client', so a Next.js App Router server component can import and render the Select directly.</p>
                 <div className='rac-ssr-demo'>
                     <div className='rac-ssr-lanes'>
                         {LANES.map(([title, shown, live, labels]) => <Lane key={title} title={title} shown={shown} live={live} labels={labels} phase={phase} run={run}/>)}

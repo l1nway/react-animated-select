@@ -1,6 +1,6 @@
 import {memo, useState, useEffect, useReducer, useMemo, useCallback} from 'react'
 import {XMarkIcon, ArrowUpIcon, CheckmarkIcon} from '../components/icons'
-import {merge, popSlow, arrowIcons, prevent, options} from '../components/helpers'
+import {merge, popSlow, arrowIcons, CHIPS, prevent, options} from '../components/helpers'
 import {Atom, ImageUp, ImageOff, Tag, FileText} from 'lucide-react'
 import {Table, Text} from '../components/section'
 import {AnimatePresence, m} from 'framer-motion'
@@ -84,7 +84,7 @@ function Icons() {
             <Table id='icons' icon={<Atom className='rac-icons-atom'/>} title='Icons' desc={desc} columns={columns} className='rac-icons-table' data-drag={drag || undefined}>
                 {items.map(item => <Row key={item.name} item={item} file={files[item.name]} onFile={setFile}/>)}
             </Table>
-            <Select onChange={setValue} style={selectStyle} options={options} icons={icons} value={value} multiple/>
+            <Select onChange={setValue} style={selectStyle} options={options} icons={icons} value={value} plugins={CHIPS} multiple/>
         </section>
     )
 }

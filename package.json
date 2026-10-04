@@ -13,13 +13,14 @@
     "perf": "vite build && node scripts/perf.mjs"
   },
   "dependencies": {
+    "@l1nway/collapse": "github:l1nway/collapse#semver:0.8.0",
     "framer-motion": "^12.38.0",
     "gsap": "^3.14.2",
     "lottie-react": "^2.4.1",
     "lucide-react": "^1.7.0",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.3",
-    "react-animated-select": "^0.7.5",
+    "react-animated-select": "^0.8.0",
     "react-dom": "^19.2.3",
     "react-live": "^4.1.8",
     "vite": "^7.3.1"
@@ -32,7 +33,7 @@
     "eslint": "^9.39.1",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.4.24",
-    "gh-pages": "^6.3.0",
+    "gh-pages": "^6.1.1",
     "globals": "^16.5.0"
   }
 }

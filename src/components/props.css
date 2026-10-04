@@ -1,28 +1,15 @@
-.rac-props-name {
-  min-width: max(10em, 15%);
-}
-
-.rac-props-state {
-  min-width: 7em;
-}
-
 .rac-props-soon {
-  color: #c084fc;
+  color: var(--rac-purple-text);
+  --rac-icon: 1.6em;
   cursor: wait;
 
   .rac-table-tick {
     cursor: inherit;
   }
-
-  svg {
-    flex-shrink: 0;
-    height: 1.6em;
-    width: 1.6em;
-  }
 }
 
 .rac-props-edit {
-  background-color: #1a1a24;
+  background-color: var(--rac-surface-2);
   position: relative;
   padding: 0;
 

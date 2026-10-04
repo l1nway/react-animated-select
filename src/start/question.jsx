@@ -3,13 +3,15 @@ import {Suspense, memo, useEffect, useRef} from 'react'
 import useRecorder, {HINT, LIMIT, WARN} from './useRecorder'
 import {LoadingLottie} from '../animations/catEyes'
 import {AnimatePresence, m} from 'framer-motion'
+import {Collapse} from '@l1nway/collapse'
 import {Motion} from '../components/motion'
 import {animIcon, submit} from './components'
 import useLLM, {MAX} from './useLLM'
 import gsap from 'gsap'
+import './question.css'
+import './recorder.css'
 
 const CHARS = '!@#$%^&*()_+-=[]{}|;:,.<>?/'
-const reveal = {initial: {height: 0, opacity: 0}, animate: {height: 'auto', opacity: 1}, exit: {height: 0, opacity: 0}, transition: {ease: [0, 0.55, 0.45, 1], duration: 0.6}}
 const fade = {initial: {opacity: 0}, animate: {opacity: 1}, exit: {opacity: 0}, transition: {duration: 0.2}}
 const grow = {initial: {width: 0, height: 0, opacity: 0}, animate: {width: '1.5em', height: '1.5em', opacity: 1}, exit: {width: 0, height: 0, opacity: 0}, transition: {duration: 0.3}}
 const clock = seconds => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, '0')}`
@@ -36,12 +38,10 @@ const Answer = memo(function Answer({text}) {
     }, [text])
 
     return (
-        <m.div className='rac-llm-reveal' {...reveal}>
-            <div className='rac-llm-answer' ref={boxRef}>
-                <p className='rac-llm-text'>{text}</p>
-                <p className='rac-llm-scramble' ref={scrambleRef} aria-hidden/>
-            </div>
-        </m.div>
+        <div className='rac-llm-answer' ref={boxRef}>
+            <p className='rac-llm-text'>{text}</p>
+            <p className='rac-llm-scramble' ref={scrambleRef} aria-hidden/>
+        </div>
     )
 })
 
@@ -74,9 +74,9 @@ function Question() {
                     If you are too lazy to dig through the documentation, you can ask a question about using the library directly and get a quick answer on the topic.
                 </p>
                 <div aria-live='polite'>
-                    <AnimatePresence>
-                        {answer && <Answer key='answer' text={answer}/>}
-                    </AnimatePresence>
+                    <Collapse in={!!answer} fade duration={600} easing='cubic-bezier(0, 0.55, 0.45, 1)'>
+                        {answer && <Answer text={answer}/>}
+                    </Collapse>
                 </div>
                 <div className='rac-llm-field' data-crash={crash ?? undefined}>
                     <textarea
@@ -102,64 +102,30 @@ function Question() {
                                 <span className='rac-llm-clock'>{clock(seconds)}</span>
                                 <span className='rac-llm-hint'>{hint}</span>
                                 {mode === 'lock' &&
-                                    <button className='rac-llm-cancel' onClick={cancel} type='button'>
-                                        <X aria-hidden/> Cancel
-                                    </button>
+                                    <button className='rac-btn-bare rac-llm-cancel rac-iconed' onClick={cancel} type='button'><X aria-hidden/> Cancel</button>
                                 }
                             </m.div>
                         }
                     </AnimatePresence>
                     <AnimatePresence mode='popLayout'>
                         {loading ?
-                            <m.div
-                                className='rac-llm-container'
-                                {...animIcon.container}
-                                key='container'
-                            >
-                                <m.div
-                                    className='rac-llm-thinking'
-                                    {...animIcon.blur}
-                                    key='text'
-                                >
+                            <m.div className='rac-llm-container' {...animIcon.container} key='container'>
+                                <m.div className='rac-llm-thinking' {...animIcon.blur} key='text'>
                                     <span className='rac-llm-loadholder'>AI is thinking</span>
-                                    <div className='rac-loading-inline' aria-hidden>
-                                        <i/><i/><i/>
-                                    </div>
+                                    <div className='rac-loading-inline' aria-hidden><i/><i/><i/></div>
                                 </m.div>
-                                <m.div
-                                    className='rac-llm-loading'
-                                    {...animIcon.twist}
-                                    key='loader'
-                                    aria-hidden
-                                >
-                                    <Suspense fallback={null}>
-                                        <LoadingLottie
-                                            className='rac-cat-loading'
-                                            loop={true}
-                                        />
-                                    </Suspense>
+                                <m.div className='rac-llm-loading' {...animIcon.twist} key='loader' aria-hidden>
+                                    <Suspense fallback={null}><LoadingLottie className='rac-cat-loading' loop/></Suspense>
                                 </m.div>
                             </m.div>
                         : value.trim()
-                            ? <m.button
-                                aria-label='Send question'
-                                className='rac-send-icon'
-                                {...animIcon.base}
-                                type='submit'
-                                key='send'
-                            >
+                            ? <m.button className='rac-btn-bare rac-send-icon' aria-label='Send question' {...animIcon.base} type='submit' key='send'>
                                 <SendHorizontal aria-hidden/>
                             </m.button>
                             : <m.button
                                 aria-label={mode === 'lock' ? 'Send voice question' : 'Record a voice question, hold to talk'}
-                                title={mode ? undefined : HINT}
-                                data-mode={mode ?? undefined}
-                                className='rac-mic-icon'
-                                {...animIcon.base}
-                                ref={micRef}
-                                type='button'
-                                key='mic'
-                                {...mic}
+                                className='rac-btn-bare rac-mic-icon' title={mode ? undefined : HINT} data-mode={mode ?? undefined}
+                                {...animIcon.base} ref={micRef} type='button' key='mic' {...mic}
                             >
                                 {mode === 'lock' ? <SendHorizontal aria-hidden/> : <Mic aria-hidden/>}
                             </m.button>
@@ -173,7 +139,7 @@ function Question() {
                         }
                     </AnimatePresence>
                     {mode === 'hold' &&
-                        <div className='rac-llm-lock' ref={pillRef} aria-hidden>
+                        <div className='rac-llm-lock rac-iconed'ref={pillRef} aria-hidden>
                             <Lock/>
                             <ChevronUp/>
                         </div>

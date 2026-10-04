@@ -6,7 +6,7 @@
 @media (max-width: 1024px) {
     .rac-menu {
         padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-        border-top: 0.1px solid rgba(168, 85, 247, 0.3);
+        border-top: 0.1px solid var(--rac-purple-line);
         transition: transform 200ms ease, visibility 200ms;
         background-color: var(--rac-surface);
         height: var(--rac-nav-h);

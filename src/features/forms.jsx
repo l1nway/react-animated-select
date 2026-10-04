@@ -1,10 +1,10 @@
 import {useCallback, useEffect, useId, useRef, useState} from 'react'
-import {ClipboardList, Send, X} from 'lucide-react'
+import {ClipboardList, RotateCcw, Send, X} from 'lucide-react'
 import {CopyButton, CodeBlock} from '../components/code'
 import {Select} from 'react-animated-select'
 import {Segmented} from '../components/segmented'
 import {snippet} from '../components/tokens'
-import {arrowIcons, Title} from '../components/helpers'
+import {arrowIcons, CHIPS, Title} from '../components/helpers'
 import '../components/button.css'
 import './forms.css'
 
@@ -12,7 +12,7 @@ import './forms.css'
 const plans = ['Free', 'Pro', 'Team']
 const topics = [{id: 'news', name: 'Product news'}, {id: 'tips', name: 'Tips'}, {id: 'events', name: 'Events'}, {id: 'jobs', name: 'Jobs'}]
 const TABS = [{id: 'demo', text: 'Demo'}, {id: 'code', text: 'Code'}]
-const desc = <>Give the Select a <code>name</code> and it submits with its <code>{'<form>'}</code> like a native select: real inputs hidden inside it carry the value, one field per value in multiple mode (read them with <code>FormData.getAll</code>), and objects are sent as JSON. <code>required</code> blocks the submit of an empty Select with the browser's own bubble, pointing at the Select. Submit the form below without a plan to see it.</>
+const desc = <>Give the Select a <code>name</code> and it submits with its <code>{'<form>'}</code> like a native select: real inputs hidden inside it carry the value, one field per value in multiple mode (read them with <code>FormData.getAll</code>), and objects are sent as JSON. <code>required</code> blocks the submit of an empty Select with the browser's own bubble, pointing at the Select, and marks it with <code>data-invalid</code> and <code>aria-invalid</code> until a pick. A reset button, <code>form.reset()</code>, a React 19 <code>{'<form action>'}</code> and <code>requestFormReset()</code> bring it back to its <code>defaultValue</code> or empty, through <code>onChange</code> when it is controlled. Submit the form below without a plan to see it, then reset it.</>
 
 const CODE = snippet`<form onSubmit={e => {
   e.preventDefault()
@@ -32,9 +32,11 @@ const CODE = snippet`<form onSubmit={e => {
     aria-labelledby='topics-label'
     name='topics'
     options={topics}
+    plugins={[chips]}
     multiple
   />
   <button>Submit</button>
+  <button type='reset'>Reset</button>
 </form>`
 
 function Forms() {
@@ -79,8 +81,8 @@ function Forms() {
                 <Segmented className='rac-forms-tabs' tabs id={id} label='Form demo view' items={TABS} value={tab} onPick={setTab}/>
             </div>
             <p className='rac-heading-desc'>{desc}</p>
-            <div className='rac-forms-demo' id={`${id}-panel`} role='tabpanel' aria-labelledby={`${id}-tab-${TABS[tab].id}`} data-tab={TABS[tab].id}>
-                <form className='rac-forms-form' onSubmit={submit}>
+            <div className='rac-split rac-forms-demo' id={`${id}-panel`} role='tabpanel' aria-labelledby={`${id}-tab-${TABS[tab].id}`} data-tab={TABS[tab].id}>
+                <form className='rac-panel rac-forms-form' onSubmit={submit}>
                     <div className='rac-forms-field'>
                         <span className='rac-forms-label' id={`${id}-plan`}>Plan</span>
                         <Select
@@ -100,16 +102,17 @@ function Forms() {
                             options={topics}
                             icons={arrowIcons}
                             name='topics'
+                            plugins={CHIPS}
                             multiple
                         />
                     </div>
                     <div className='rac-forms-foot'>
-                        <button className='rac-button' type='submit' disabled={busy}>
-                            <Send aria-hidden='true'/> Submit
-                        </button>
+                        <button className='rac-button rac-iconed' type='submit' disabled={busy}><Send aria-hidden='true'/> Submit</button>
+                        <button className='rac-button rac-iconed' type='reset'><RotateCcw aria-hidden='true'/> Reset</button>
                     </div>
                     <div className='rac-forms-result'>
-                        <output className='rac-forms-output' data-leaving={leaving || undefined} onAnimationEnd={erased}>
+                        {/* [DOC: forms-output] */}
+                        <output className='rac-forms-output' form='' data-leaving={leaving || undefined} onAnimationEnd={erased}>
                             {out
                             ? out.map(({id, key, value, i}) =>
                                 <span className='rac-forms-entry' key={id} style={{'--n': value.length, '--i': i}}>
@@ -122,12 +125,12 @@ function Forms() {
                         {out && !leaving && <button className='rac-code-button' type='button' aria-label='Clear output' onClick={clear}><X aria-hidden='true' className='rac-safety-x'/></button>}
                     </div>
                 </form>
-                <label className='rac-code-container rac-forms-code' tabIndex={0}>
+                <label className='rac-panel rac-code-container rac-forms-code' tabIndex={0}>
                     <CodeBlock code={CODE}/>
                     <CopyButton code={CODE.text}/>
                 </label>
             </div>
-            <p className='rac-group-desc'>Limits: <code>form.reset()</code> does not reset the Select (a <code>defaultValue</code> is not restored), so a reset button has to clear a controlled <code>value</code> itself. Like native controls, an empty single Select sends one empty field, an empty multiple Select sends nothing, and a <code>disabled</code> Select is neither sent nor validated.</p>
+            <p className='rac-group-desc'>Also native: a cancelled reset changes nothing; inside <code>{'<fieldset disabled>'}</code> the Select is disabled like with <code>disabled</code> (the first <code>{'<legend>'}</code> excepted); <code>form='id'</code> joins a form from outside it, like <code>{'<select form>'}</code>; <code>texts.required</code> replaces the bubble text; the hidden inputs are <code>autoComplete='off'</code>. Limits: the Select resets one task after the native fields. Like native controls, an empty single Select sends one empty field, an empty multiple Select sends nothing, and a <code>disabled</code> Select is neither sent nor validated.</p>
         </section>
     )
 }

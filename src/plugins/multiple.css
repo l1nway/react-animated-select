@@ -4,10 +4,8 @@
 }
 
 .rac-multiple-desc {
-  text-justify: inter-word;
   flex-direction: column;
   padding-bottom: 1em;
-  text-align: justify;
   padding-top: 0.5em;
   display: flex;
   gap: 1em;
@@ -16,7 +14,7 @@
 .rac-multiple-subtitle {
   grid-template-columns: min-content 1fr;
   align-items: center;
-  display: flex;
+  display: grid;
   gap: 0.5em;
 
   &:not(:only-child) {
@@ -30,14 +28,6 @@
   & > span {
     grid-column: 1 / -1;
   }
-
-  @media (max-width: 1350px) {
-    display: grid;
-  }
-}
-
-.rac-multiple-h4 {
-  margin: 0;
 }
 
 .rac-multiple-subfeature {

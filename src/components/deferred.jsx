@@ -3,18 +3,21 @@ import {startTransition, useEffect, useLayoutEffect, useState} from 'react'
 
 const LOAD = {
     question: () => import('../start/question'),
-    features: () => import('../features/features'),
+    features: () => import('./group'),
     a11y: () => import('../features/a11y'),
     forms: () => import('../features/forms'),
     safety: () => import('../features/safety'),
     states: () => import('../features/states'),
-    multiple: () => import('../features/multiple'),
     grouping: () => import('../features/grouping'),
-    loading: () => import('../features/loading'),
     layout: () => import('../features/layout'),
     performance: () => import('../features/performance'),
-    search: () => import('../features/search'),
-    custom: () => import('../customization/customization'),
+    plugins: () => import('./group'),
+    bundle: () => import('../plugins/bundle'),
+    multiple: () => import('../plugins/multiple'),
+    loading: () => import('../plugins/loading'),
+    search: () => import('../plugins/search'),
+    virtual: () => import('../plugins/virtual'),
+    custom: () => import('./group'),
     styling: () => import('../customization/styling'),
     content: () => import('../customization/content'),
     icons: () => import('../customization/icons'),
@@ -127,7 +130,7 @@ function Loaded({id}) {
         return () => {live = false}
     }, [id])
 
-    return Component && <><Component/><Mounted id={id}/></>
+    return Component && <><Component id={id}/><Mounted id={id}/></>
 }
 
 export function Part({id, children}) {

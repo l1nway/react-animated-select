@@ -47,7 +47,7 @@
 }
 
 .rac-track-card {
-  border: 1px solid #1f293780;
+  border: 1px solid var(--rac-line);
   transition: scale 0.2s ease, translate 0.45s cubic-bezier(0.34, 1.4, 0.64, 1);
   translate: var(--rac-track-pull, 0) 0;
   flex-direction: column;
@@ -62,8 +62,21 @@
     transition: scale 0.2s ease;
   }
 
+  [data-bounce] > & {
+    transition: none;
+  }
+
   &[data-grabbed] {
     scale: calc(0.97 + var(--rac-track-s, 0) * 0.02) calc(0.97 - var(--rac-track-s, 0) * 0.02);
+  }
+
+  &[data-hit] {
+    scale: calc(1 + var(--rac-track-s, 0) * 0.08) calc(1 - var(--rac-track-s, 0) * 0.04);
+    transform-origin: left;
+  }
+
+  &[data-hit='start'] {
+    transform-origin: right;
   }
 }
 
@@ -71,9 +84,4 @@
   align-items: center;
   display: flex;
   gap: 0.25em;
-}
-
-.rac-track-desc {
-  text-justify: inter-word;
-  text-align: justify;
 }

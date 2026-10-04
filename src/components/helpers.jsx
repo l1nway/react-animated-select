@@ -1,4 +1,5 @@
-import {ChevronUp} from 'lucide-react'
+import {ChevronUp, TriangleAlert} from 'lucide-react'
+import {chips, paging} from 'react-animated-select'
 
 export const merge = (prev, next) => Object.keys(next).some(key => !Object.is(prev[key], next[key])) ? {...prev, ...next} : prev
 
@@ -11,6 +12,9 @@ export const shake = (el) => {
 export const clearShake = (el) => el?.classList.remove('--null')
 
 export const arrowIcons = {arrow: ChevronUp}
+export const CHIPS = [chips]
+export const PAGING = [paging]
+export const NONE = []
 
 export const prevent = e => e.preventDefault()
 
@@ -57,3 +61,5 @@ const popIn = duration => ({
 
 export const pop = popIn(0.2)
 export const popSlow = popIn(0.5)
+
+export const Warn = ({title, children}) => <span className='rac-warn rac-iconed'><TriangleAlert aria-hidden='true'/><strong>{title}:</strong><span>{children}</span></span>

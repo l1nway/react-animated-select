@@ -1,4 +1,4 @@
-import {House, MousePointer2, Play, Sparkles, Group, Info, Eclipse, LineStyle, Atom, ListVideo, PersonStanding, Bug, FileStack, ShieldCogCorner, Cpu, PawPrint, BadgeQuestionMark, ClipboardList, PanelsTopLeft, Gauge, Search, LayoutList, Server} from 'lucide-react'
+import {House, MousePointer2, Play, Sparkles, Group, Info, Eclipse, LineStyle, Atom, ListVideo, PersonStanding, Bug, FileStack, ShieldCogCorner, Cpu, PawPrint, BadgeQuestionMark, ClipboardList, PanelsTopLeft, Gauge, Search, LayoutList, Server, Puzzle, Package, Rows3} from 'lucide-react'
 import {Spinner} from '../components/icons'
 
 // menu data
@@ -21,12 +21,21 @@ export const MENU = [{
         {id: 'forms', text: 'Native Forms', icon: ClipboardList},
         {id: 'safety', text: 'Safety', icon: ShieldCogCorner},
         {id: 'states', text: 'Component States', icon: Info},
-        {id: 'multiple', text: 'Multiple Options', icon: FileStack},
         {id: 'grouping', text: 'Grouping Options', icon: Group},
-        {id: 'loading', text: 'Infinite Loading', icon: Spinner},
         {id: 'layout', text: 'Layout & Portal', icon: PanelsTopLeft},
-        {id: 'performance', text: 'Performance', icon: Gauge},
-        {id: 'search', text: 'Search', icon: Search}
+        {id: 'performance', text: 'Performance', icon: Gauge}
+    ]
+}, {
+    text: 'Plugins',
+    short: 'Plugins',
+    icon: Puzzle,
+    id: 'plugins',
+    sub: [
+        {id: 'bundle', text: 'Bundle Size', icon: Package},
+        {id: 'multiple', text: 'Multiple Options', icon: FileStack},
+        {id: 'loading', text: 'Infinite Loading', icon: Spinner},
+        {id: 'search', text: 'Search', icon: Search},
+        {id: 'virtual', text: 'Virtualization', icon: Rows3}
     ]
 }, {
     text: 'Customization',

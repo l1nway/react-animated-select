@@ -36,9 +36,17 @@ Puts a reload, `#hash` or `/route/` visit back at its target while the lazy part
 - Measuring traps: `getBoundingClientRect` in a per-frame `requestAnimationFrame` logger forces layout before the frame's own anchoring, so jumps it logs may be corrected later in the same frame; count CLS with a plain `PerformanceObserver` run too. PowerShell drops empty-string arguments to native commands (`'' 'x'` arrives as `'x'`).
 - Numbers: see Mount above first (per path). Reload restores to 1–3 px of the saved `dy` on desktop and mobile.
 
+## Group part
+
+The shared container part of a menu group (`group.jsx`): an `article.rac-section` with the group id, `<Motion>`, and one `<Part id/>` per sub item of `groupOf(id)`, in menu order.
+
+- Used by `features`, `plugins` and `custom`: their `LOAD` entries all import `./group` (one chunk), and `Loaded` passes the part `id` as a prop. Other part components ignore that prop.
+- `dev` keeps its own `src/dev/dev.jsx` without `<Motion>`, so the `/dev/` container chunk does not wait for framer-motion on a deep link (Preload after restore). Do not move it to `Group` without measuring `/dev/` restore on mobile.
+- A new group: an entry in `MENU` (`src/menu/components.js`), `LOAD` entries for the group (`./group`) and each sub part, `SEO` texts (`src/menu/seo.js`, also used for the static pages and the sitemap in `vite.config.js`), and a `<Part id/>` in `app.jsx` in document order. `PARTS` and `PARENT` follow `MENU`.
+
 ## Part container box
 
-`.rac-section` (the four container articles `start`, `features`, `custom`, `dev`) is `display: block` (`src/rac.css`).
+`.rac-section` (the five container articles `start`, `features`, `plugins`, `custom`, `dev`) is `display: block` (`src/rac.css`).
 
 - It was `display: flex; flex-direction: column`. A flex container keeps the `margin-bottom` of its last child inside its box (no margin collapsing), so every article ended 16–24 px below its last section. With a target at `dy = 20` that strip of the previous article was in the viewport, Chrome's anchor search stopped at it (the first partially visible box ends the search, even with no visible child), and parts mounted inside that article (`styling`, `content`, `icons` into `custom` above `dev`) did not move the anchor: the target jumped by the inserted height.
 - In block layout the trailing margin collapses out of the article, so the strip is empty margin and the search reaches the target.
@@ -118,12 +126,12 @@ The title block of every section: icon + `h3`, optionally followed by the descri
 - `section.jsx` imports `framer-motion` (the animated value cell), so it is for lazy parts only; first-screen code takes `Title` from `helpers.jsx`.
 - `options` (ten colour objects `{id, label}`) and `numbered(count, name = 'Option')` (`['Option 1', …]`) are the shared demo option lists; never retype `Array.from({length})` in a section.
 - `helpers.jsx` mixes components and constants, so `eslint.config.js` turns `react-refresh/only-export-components` off for this one file (an edit there reloads the page instead of hot-swapping; accepted for a rarely edited file).
-- `Table` wraps itself in `<Motion>` (LazyMotion, `motion.jsx`): `m.*` without a LazyMotion above it renders but never animates. The `dev` part has no `<Motion>` of its own, so the Debug ticks were static before. Nested LazyMotion under `features`/`customization` is harmless. The value animation lives only in `State` (`m.span` + `slide`): change it there and every table follows.
+- `Table` wraps itself in `<Motion>` (LazyMotion, `motion.jsx`): `m.*` without a LazyMotion above it renders but never animates. The `dev` part has no `<Motion>` of its own, so the Debug ticks were static before. Nested LazyMotion under the `Group` containers (`features`, `plugins`, `custom`) is harmless. The value animation lives only in `State` (`m.span` + `slide`): change it there and every table follows.
 - The icon wrapper is `aria-hidden`; the heading text alone names the section.
 
 ## Semantic table
 
-The one table of the site: every table is `Table` from `section.jsx`, and its parts are switched on and off by props. A full table and a mini table are the same component with fewer props. Reference: `src/features/loading.jsx`.
+The one table of the site: every table is `Table` from `section.jsx`, and its parts are switched on and off by props. A full table and a mini table are the same component with fewer props. Reference: `src/plugins/loading.jsx`.
 
 **Files**
 - `section.jsx` (`Table`, the props rows, `Tick`) + `section.css` (shell: `.rac-table*`, `.rac-th`, `.rac-tick-*`) + `props.css` (value cells `.rac-props-*`); both CSS files are imported by `section.jsx`.
@@ -144,8 +152,8 @@ The one table of the site: every table is `Table` from `section.jsx`, and its pa
 
 **Borders and hover (the one hover approach)**
 - `border-collapse: separate`, `border-spacing: 0`. Lines live on cells only: bottom + left on every cell, right on the last column, top on the `thead th` row (or on the first body row with `head={false}`). Collapsed borders vanish while scrolling.
-- Colour is `--rac-line` on the table; `table:hover` recolours it to `#8b5cf64d`, so header and body lines highlight together. Every cell with a line has `transition: border-color`. No row hover backgrounds and no per-row highlights in any table: hover is this one mechanism.
-- Background `#0e111a` on `tbody` and `thead th`.
+- Colour is `--rac-line` on the table; `table:hover` recolours it to `--rac-line-hover` (`#8b5cf64d`), so header and body lines highlight together. Every cell with a line has `transition: border-color`. No row hover backgrounds and no per-row highlights in any table: hover is this one mechanism.
+- Background `--rac-surface-3` (`#0e111a`, as `.rac-panel`) on `tbody` and `thead th`.
 
 **Cells**
 - Generic cell: `padding: 0 1em`, `height: var(--rac-table-row)` (`3.2em`, a minimum). Never name it `--rac-row`: that is the library's public variable (row height of `.rac-value` and chips), it inherits into any Select inside the table and made it 3.2em tall.
@@ -160,7 +168,7 @@ The one table of the site: every table is `Table` from `section.jsx`, and its pa
 **Traps**
 - `.rac-sr-only` on a `<tr>` works through absolute positioning; do not give that row layout styles.
 - An invisible element that covers a clickable area (opacity 0, absolute) receives the pointer events: cursor and hover logic go on it, not on its parent.
-- Inside a clipping parent the wrapper's `outline-offset: 2px` focus ring is cut off: set `-2px` there. `SlideDown` no longer clips once its animation ends, so the Styling tables need no override.
+- Inside a clipping parent the wrapper's `outline-offset: 2px` focus ring is cut off: set `-2px` there. `Collapse` clips only while it animates, so the Styling tables need no override.
 - No rounded corners on any table (A11y hotkeys had them, removed for one look).
 
 ## Two-line text
@@ -205,7 +213,7 @@ One row per prop: name, type, value control, description. `Table` renders these 
 **Contract**
 - `<Table id title rows={props} state={state} onChange={change}/>` is a mini table; add `icon` and `desc` for a full one. Default columns: Prop, Type, Value, Description (`MousePointerClick` marks Value as interactive). A table without types passes its own `columns` and items without `type` (Debug).
 - Item (module-level data): `{prop, type?, kind?, field?, default?, text, show?, ...}`. `state[field ?? prop]` is the value; `onChange(field ?? prop, value)` is one stable callback for all rows. Rows are `memo`: keep `onChange` stable (`useCallback`) and declare `cells` at module level.
-- Row: `th.rac-props-name[scope=row]` (`min-width: max(10em, 15%)`) · `td[data-type]` (only when the item has `type`) · value cell · `td.rac-table-text`.
+- Row: `th.rac-props-name[scope=row]` · `td[data-type]` (only when the item has `type`) · value cell · `td.rac-table-text`.
 - Value cell by `kind`, looked up in `cells` first, then in the built-ins. Every cell component renders its own `<td>` and gets `{item, name, value, onChange}` (`name` = `field ?? prop`):
   - `edit`: `td.rac-props-edit[data-fill]` with `input.rac-props-input` (fills the cell, own `0 1em` padding) and the hover pencil.
   - `tick`: `td.rac-props-state[data-fill]` > `label.rac-table-tick` with the value and `Tick`.
@@ -213,9 +221,19 @@ One row per prop: name, type, value control, description. `Table` renders these 
   - `choices`: `td.rac-props-pick[data-fill]` (`--n` choices, `--len` longest text) > `Segmented` (radio mode, modifier `.rac-props-choices`) built from `item.choices` (`[{text, value, tone?}]`, any value incl. `undefined`), radio `name` `props-${prop}`. `item.keepFocus` puts `onMouseDown={prevent}` on the group (Debug `open`: the click must not blur the Select). The props table gives it no look of its own: the consumer styles `.rac-props-choices` (today only Debug, `src/dev/README.md`, Debug table). Without that it shows the default bordered `Segmented` flush with the cell edges.
   - `soon` (planned prop, no value): `td.rac-props-state.rac-props-soon[data-fill]` > `div.rac-table-tick[role=img]` with "Soon" and a Hammer in the Tick slot, `aria-label` `<prop>: in development`. The whole `td` carries `cursor: wait` (the inner `.rac-table-tick` inherits it), so the cursor covers the full row height, not just the fixed-height tick box. Used by Multiple (`sortable`) and Animations (`motion`); switch the row to `tick` when the prop ships.
   - Section kinds: Animations `range` (`Slider`, padded cell) and `select` (easing `Select`, `data-fill`).
-- Shown value of `tick` and `state`: `show(value)` when given (States `options`: a boolean shown as `[…]` / `[]`), else `String(value)`, or `default` for `undefined` and `''`. Animated by the `slide` preset. `data-tone`: `fn` yellow (type `function`), `on` green, `off` red.
-- `.rac-table-tick`: mono font, flex `space-between`, `position: relative`, `0 1em` padding, `height: var(--rac-table-row)`.
-- Widths (minimums): value `7em` (history: 11em → 9em → 7em, wider looked empty), description `40em`, prop `max(10em, 15%)`.
+- Shown value of `tick` and `state`: `show(value)` when given (States `options`: a boolean shown as `[…]` / `[]`), else `String(value)`, or `default` for `undefined` and `''`. The swap animates the width (Props value width below). `data-tone`: `fn` yellow (type `function`), `on` green, `off` red.
+- `.rac-table-tick`: mono font, flex, `position: relative`, no own padding, `height: var(--rac-table-row)`. Spacing lives on the children: the text `span` has `padding: 0 1em`, the trailing icon (`.rac-tick-box`, the `soon` Hammer `svg`) `margin: 0 1em 0 auto` (pushed right, 1em from the edge and at least 1em from the text). No `gap` and no `space-between`: see Props value width.
+- Widths: none are hard-coded. Every column is as wide as its content; the description column takes the free width and wraps (Two-line text). Do not add `min-width`/`max-width` to table columns.
+
+## Props value width
+
+The `tick`/`state` value cell (`State` in `section.jsx`) animates the column width when the shown text changes, so the table does not jump.
+
+- Each shown value is a `Collapse` (`@l1nway/collapse`) with `axis='x'`, `fade`, `as='span'`, keyed by the text, inside `Presence` **without** `wait`. The old span collapses to 0 while the new one grows from 0, same duration and easing, so their summed width moves from the old width to the new one smoothly and the auto-layout column follows it every frame. Reduced motion and mid-way reversal come from the package.
+- Rejected: framer `AnimatePresence mode='wait'` (the column snapped when the new text mounted); `Presence wait` (the width dips to 0 and back); `interpolate-size`/`calc-size` (not in every browser, and `max-content` → `max-content` does not start a transition anyway); framer `layout` (scale transform, distorts text, other columns do not reflow); a custom `ResizeObserver` + WAAPI wrapper (more code for the same result).
+- Cost: one table layout per frame for 300 ms. `.rac-table-scroll` has `container-type: inline-size`, so the page outside is not relaid out.
+- Invariant: nothing in `.rac-table-tick` may add space between siblings (`gap`, `justify-content: space-between`). During the swap two text spans exist at once, so a gap would add 1em for 300 ms and a `space-between` would push the two spans apart. All spacing is the span's own padding, which `Collapse` animates with the width.
+- Section cells (`cells`) with changing text can reuse the same `Presence` + `Collapse axis='x'` pair. The Animations `range` number does not need it (`min-width: 6ch` holds it).
 
 **Invariants**
 - Interactive cells carry `data-fill` (`padding: 0`) and the element inside fills the cell; a padded cell (range) leaves it off.
@@ -224,29 +242,14 @@ One row per prop: name, type, value control, description. `Table` renders these 
 - Cursors: label cell `pointer` (set on the invisible input), input cell text cursor, read-only cell `default`.
 - `PropTable`, `props.jsx` and `TickCell` are gone: the Debug and Animations ticks are the animated `tick` cell now. Do not add a second row component for props.
 
-## SlideDown
+## Collapse
 
-Height slide for a panel that mounts on open (`slideDown.jsx`). It is a trimmed port of the library's `Collapse` (`../src/motion.jsx`, doc-key `collapse`: y axis only, no group, no `Presence`, no config context). No framer-motion: it needs no `<Motion>` ancestor. Users: Styling (reference tables), Loading, Safety.
+Height slide for panels, rows and the menu sub-lists comes from the package `@l1nway/collapse` (`Collapse`, props in its README); the site has no copy of it. Users: Styling (reference tables), Loading, Safety, the menu sub-lists (`unmountOnExit={false}`, `fade`, `inert`), the Question answer and the props-table value width (`axis='x'` + `Presence`, see Props value width).
 
-**Contract**
-- Props: `visibility`, `duration` (ms, default 300), `easing` (any CSS easing string, default `'ease'`). Every other prop (`id`, `className`, `aria-*`, `role`) goes to the panel `div`, which also has `tabIndex={-1}`.
-- The panel unmounts while closed. An `aria-controls` pointing at it refers to a missing element until it opens; keep `aria-expanded` on the toggle.
-- Mounted open (`visibility` true on the first render): no animation.
-- Frozen while leaving: during the exit the panel renders the last children it got while visible (state `kept`). Safety relies on it: the editor Select keeps its last chip while the panel collapses (no "No options" flash).
-
-**How it works**
-- WAAPI `el.animate` between `CLOSED` (height, vertical paddings, margins and borders all `0px`) and the measured computed values, both with `overflow: hidden`, `min-height: 0`, `max-height: none` (`STILL`). The size is measured in `useLayoutEffect`, before paint.
-- `measure()` reads the box under a temporary inline `overflow: hidden`, the same box the animation renders. Reason: `overflow: hidden` makes the panel a block formatting context, and a BFC keeps the margins of its first and last child inside. At rest (no BFC) those margins collapse through the panel and are not part of its `height`. Measured at rest, the target was short by the child's margin. In Styling that is `.rac-table-scroll {margin-bottom: 1em}`: the animation ended 16 px short, then the margin popped out below and `Classes` jumped 16 px in the last frame (seen in Firefox, reproduced in Edge: 26.6 px moved in a frame where the panel grew 10.6 px). Measured clipped, the panel ends at `height + margin`. When the clip goes, the box loses the margin and the margin reappears outside it, so the content below stays put (checked per frame in Edge and Firefox, 640 and 430 px, with and without the table's horizontal scrollbar). The exit starts from the same clipped box, so it does not jump at the start either.
-- Clipping exists only while the animation runs. When an opening animation finishes it is cancelled, so the panel goes back to its natural layout with no inline style: no permanent `overflow: hidden`, and focus rings and shadows inside are not cut. An exit holds `CLOSED` (`fill: 'both'`) until the unmount.
-- Interrupted (toggle while running): `reverse()` in place, no jump. The finish handler reads the latest `visibility` (`useEffectEvent`), so a reversed exit ends open and is cancelled, and a reversed open ends closed and unmounts.
-- `prefers-reduced-motion: reduce` → duration 0 (the global CSS rule does not reach WAAPI).
-
-**Traps**
-- Do not add the permanent inline `overflow: hidden` back (the framer version had it). It clipped the focus ring of the Styling table scroll wrapper, which needed an `outline-offset: -2px` override; both are gone.
-- Do not measure without the clip, and do not swap the trick for a permanent `display: flow-root` on the panel: the inline display would override a user class (`.rac-loaded` is `display: grid`). Limit: when the element after the panel has its own `margin-top`, the collapsed margin at rest is `max(a, b)`, not `a + b`, and the end moves by the difference. No current user has that.
-- Prefer `'ease'` or `'ease-out'` for a reveal. `'ease-in'` ends at its top speed, so the panel stops with a visible jolt; Styling used `ease-in` 500 ms and now uses the default `ease`. Loading still passes `'ease-in'` (300 ms, a short grid panel).
-- The size is measured once per transition. Content that changes height mid-animation snaps at the end. Content that changes height while the panel is open is natural layout, so it is fine.
-- Not done here: the library's `Collapse` keeps the backwards fill of an exit that was reversed to open (`SYNC.md`, "`Collapse`: an exit reversed back to open keeps its fill"). The port cancels the animation instead; keep that cancel.
+- `in` replaces the old `visibility`. Extra props (`id`, `className`, `aria-*`) go to the element. Unmounted while closed unless `unmountOnExit={false}`: an `aria-controls` then points at a missing element until it opens; keep `aria-expanded` on the toggle.
+- While leaving it keeps rendering its last children (Safety relies on it: the editor Select keeps its last chip while the panel collapses).
+- No CSS `transition` on the animated sides, and no `gap` around a Collapse. A new height or fade animation of a block uses it, not a CSS or framer copy.
+- Library-side findings go to the package's `FUTURE.md`, not to a local patch.
 
 ## Segmented
 
@@ -287,15 +290,15 @@ Apple-style custom range, pointer-driven, no native `<input type=range>` (`slide
 
 **Contract**
 - `<Slider value min max step onChange aria-*/>`: `onChange` gets a Number, always clamped to `[min, max]` even mid-drag past the track edge; other props (`aria-label`, `aria-valuetext`) land on `.slider-thumb`, which carries `role='slider'`, `tabIndex`, `aria-valuemin/max/now`.
-- `--progress` (inline, runtime `(value-min)/(max-min)*100%`) drives `.slider-fill` width and, when idle or on a keyboard change, `.slider-thumb` `left` (via the plain CSS rule). While dragging or settling, `left` and `transform` on the thumb are written directly as inline styles by JS each frame and override the CSS var/rule; they are cleared back to `''` once the settle loop finishes, handing control back to CSS.
+- `--progress` (inline, runtime `(value-min)/(max-min)*100%`) drives `.slider-fill` width and, when idle or on a keyboard change, `.slider-thumb` `left` (via the plain CSS rule). While dragging or settling, JS pins inline `left: 0` once at pointerdown and moves the thumb only through inline `transform` each frame (position in px inside a `matrix()`, so no layout per frame; `will-change: transform` is on only under `[data-dragging]`/`[data-settling]`); both are cleared back to `''` once the settle loop finishes, handing control back to CSS.
 
 **How it works**
 - Pointer-down on `.slider-track` (bubbles from the thumb too) computes the value straight from a `getBoundingClientRect()` of the track cached once at pointerdown, plus the pointer's `clientX`, with no dependency on any native input's internal thumb-inset geometry: this is what fixed the old mismatch between the mouse and the visual thumb (the native `input[type=range]` thumb travels inset from the track edges by half its own width, but a decorative overlay positioned as a raw 0–100% percentage drifted apart from it near the ends).
-- Overdrag (rubber band): the raw pointer ratio is not clamped before computing the visual position — `pointAt()` takes the part of it past `[0, 100]%` and runs it through `rubber(d, max)` (`max * (1 - 1/(d/max + 1))`, `OVERDRAG = 16`), an asymptotic resistance curve (the iOS scroll-bounce formula) so the thumb keeps following the pointer past the end of the track but travels less and less. The *committed* value stays clamped the whole time (`onChange` never receives an out-of-range number); only the thumb's visual `left` and its `scaleX`/`scaleY` (squash, proportional to how far into the overdrag it is) go past the normal range.
-- Drag tracks the pointer 1:1 with no CSS transition at all (`[data-dragging]`/`[data-settling]` disable `transition` on `left`/`transform` for `.slider-fill`/`.slider-thumb`; only `box-shadow` still transitions in CSS): `applyThumb()` writes `left`/`transform` straight to `thumbRef.current.style` on every `pointermove`, so there is no lag and no fighting with a CSS transition mid-drag.
+- Overdrag (rubber band), 2D: `pointAt()` builds a pull vector in px — `dx` = the part of the pointer x past `[0, width]`, `dy` = pointer y minus the y at pointerdown (relative, so pressing off-centre on the thumb does not jump it). The vector's *length* goes through `rubber(d, max)` (`max * (1 - 1/(d/max + 1))`, `PULL = 15` px asymptote, the iOS scroll-bounce formula) and its direction is kept, so a diagonal pull stays on the pointer's angle and both axes resist the same. The thumb follows past the track end and up/down off the track, travelling less and less. The *committed* value stays clamped the whole time (`onChange` never receives an out-of-range number) and depends on x only.
+- Drag tracks the pointer 1:1 with no CSS transition at all (`[data-dragging]`/`[data-settling]` disable `transition` on `left`/`transform` for `.slider-fill`/`.slider-thumb`; only `box-shadow` still transitions in CSS): `render()` writes `transform` straight to `thumbRef.current.style` on every `pointermove`, so there is no lag and no fighting with a CSS transition mid-drag.
 - On `pointerdown`, the press-scale itself is animated, not snapped: `grow()` runs its own `requestAnimationFrame` loop easing `visualRef.current.scale` from whatever it currently is toward `1.3` (`scale += (1.3 − scale) × min(1, dt×20)`), while `move()` keeps writing the live pointer position into the same `visualRef` every `pointermove` so the thumb still tracks the cursor 1:1 with no positional lag — only the scale ramps in, over about half the time the release settle takes (`dt×20` vs. the settle's `dt×10` decay back to 1).
-- On `pointerup`, inertia is a real spring simulation, not a CSS easing curve: `settle()` runs a `requestAnimationFrame` loop integrating `accel = -STIFFNESS·(pos − target) − DAMPING·vel` (semi-implicit Euler, `dt` capped at 32 ms), seeded with the velocity measured from the last two `pointermove` samples (`percent`/`ms`, kept in `lastRef`) and the current squash/press-scale (read from `visualRef`, whatever `grow()` reached by release), decaying both back to 1/0 over the same loop. This is what gives the release its inertia (it can overshoot and settle, not just ease once) and what un-deforms an overdragged thumb the same way a rubber band snaps back. The loop writes directly to `thumbRef.current.style` every frame (not React state) to avoid a re-render per frame; it resets the inline styles and flips `data-settling` off once `|pos − target|` and `|vel|` drop under `SETTLE_POS`/`SETTLE_VEL`. Both `grow()` and `settle()` share `rafRef`/`stop()`: only one of them ever runs at a time, and a fresh `pointerdown` cancels whichever is active, picking up its last `visualRef` value (position, scale, stretch) for continuity instead of popping.
-- The overdrag squash (`scaleX`/`scaleY` in `applyThumb()`) is deliberately subtle — `stretchRatio × 0.25` / `× 0.175` — tuned down from an earlier, more obvious pass that read as rubbery rather than a tasteful Apple-style give.
+- On `pointerup`, inertia is a real spring simulation, not a CSS easing curve: `settle()` runs a `requestAnimationFrame` loop integrating `accel = -STIFFNESS·(pos − target) − DAMPING·vel` per axis (x to the snapped value in px, y to 0; semi-implicit Euler, `dt` capped at 32 ms), seeded with the velocity measured from the last two `pointermove` samples (px/s, kept in `lastRef`) and the current press-scale (read from `visualRef`, whatever `grow()` reached by release), decaying it back to 1 over the same loop. This is what gives the release its inertia (it can overshoot and settle, not just ease once) and what un-deforms an overdragged thumb the same way a rubber band snaps back. The loop writes directly to `thumbRef.current.style` every frame (not React state) to avoid a re-render per frame; it resets the inline styles and flips `data-settling` off once `|pos − target|` and `|vel|` of both axes drop under `SETTLE_POS`/`SETTLE_VEL` (px, px/s). Both `grow()` and `settle()` share `rafRef`/`stop()`: only one of them ever runs at a time, and a fresh `pointerdown` cancels whichever is active, picking up its last `visualRef` value (x, scale) for continuity instead of popping.
+- The overdrag squash (the `a`/`b` factors in `render()`) is deliberately subtle — `s × 0.25` / `× 0.175` — tuned down from an earlier, more obvious pass that read as rubbery rather than a tasteful Apple-style give.
 - Keyboard-driven changes (arrow keys ± step, shift ± step×10, Home/End) never touch the inline styles, so they fall through to the plain CSS `left`/`transform` transition (`cubic-bezier(0.34, 1.56, 0.64, 1)`, the Apple-slider "boing"). `prefers-reduced-motion: reduce` turns that CSS transition off; it does not touch the JS spring (a reduced-motion user who drags still gets the thumb snapping to a valid position, just without the bounce — the spring itself is short and could be gated too if this turns out to read as motion, see SYNC-worthy follow-up).
 - No focus ring on the thumb itself (`outline: none` is the site-wide default on `*`/`::before`/`::after` in `rac.css`; the old `.slider-thumb:focus-visible` rule was removed as redundant). Inside a table, focusing the thumb would normally light up the cell outline (`tbody :is(th, td):has(:focus-visible)` in `section.css`, the `rac-tick` convention) — Animations opts its value cell out of that with `.rac-animations-value:has(:focus-visible) { outline-color: transparent }` (`animations.css`) because a slider cell lighting up like a focused input read as wrong for this control. A future table that wants the default cell-outline behavior for a Slider cell should not copy that override.
 
@@ -305,9 +308,17 @@ Apple-style custom range, pointer-driven, no native `<input type=range>` (`slide
 - `onChange` is always clamped; only the thumb's visual position/scale go past the track during an overdrag. Do not relax the clamp on the committed value to "simplify" the overdrag — that would let `value` leave `[min, max]` and break every consumer.
 - The settle loop and the drag's `AbortController` both get cancelled on unmount and on a fresh `pointerdown` (`stop()`): a stray `requestAnimationFrame` left running after unmount would write to a detached `thumbRef.current`.
 
+## Slider 2d stretch
+
+- `render()` derives the deformation from `visualRef` `{x, y, scale}` (px): overflow `ox = x − clamp(x, 0, width)`, `oy = y`, `s = min(1, |o| / PULL)`. The thumb stretches along the pull direction (`a = 1 + 0.25s`) and squashes across it (`b = 1 − 0.175s`), i.e. `R(θ)·diag(a, b)·R(−θ)` written straight as `matrix(a c² + b n², (a−b) c n, (a−b) c n, a n² + b c², x, y)` (`c`/`n` = cos/sin of the pull), times the press scale. One `transform` string per frame, no trig calls, no layout: hundreds of thumbs would still be compositor work only.
+- Up, down, left past 0, right past the end and any mix are the same code path; there are no per-direction branches. Do not split it back into `scaleX`/`scaleY`: that only stretches along the axes and a diagonal pull looks wrong.
+- The settle spring runs on x and y separately (same `STIFFNESS`/`DAMPING`, px/s), seeded with the velocity of the last two pointer samples in both axes; the deformation is not a separate decaying value any more, it shrinks because the offset springs back (and a fast release past an end can overshoot and stretch briefly, by design). A re-grab mid-settle restarts `y` from the new pointer (small jump if the old offset was not yet zero; accepted).
+- Vertical pull can stick out of the 2em `.slider-container`; inside a table region (`overflow-x: auto` clips y too) the thumb of a row at the very bottom edge may be cut by a few px at full pull.
+
 ## Code button
 
 - `.rac-code-container`, `.rac-code-button` and `.rac-copy-icon` live in `code.css` (imported by `code.jsx`). The button is hidden until its parent is hovered or focused; under `@media (hover: none)` (touch) it is always visible. Reused by the Forms clear button.
+- `.rac-code-container` carries only the box mechanics (`relative`, `overflow: hidden`, `block`, no outline). Its look (border, fill, radius, hover border) is the shared `.rac-panel` from `src/rac.css`, so the markup is always `className='rac-panel rac-code-container'` (Start install, Usage, Forms code, Showcase). Without `rac-panel` the block has no frame.
 - `code.css` also holds every other code style: `.rac-code`, `.rac-code-solid`, `.rac-code-wrapper`, the `rac-code-fade` keyframes, `.rac-soon*` and `.rac-morph-*`, all moved from `src/rac.css`.
 
 ## Button
@@ -317,7 +328,7 @@ The site's action button (submit, replay). Reference: the Forms Submit (`src/fea
 **Files**: `button.css` (`.rac-button`, `.rac-button-icon`), imported by every consumer (`import '../components/button.css'`). It was `.rac-forms-submit` in `forms.css`; do not copy its rules back into a section file.
 
 **Contract**
-- `<button className='rac-button' type='button|submit'>` + an icon (lucide, sized to `1em`) + a text label. Dark fill, purple `0.3` border, `0.5rem` radius, `0.5em 1.25em` padding; hover and `:focus-visible` turn border and text `#c084fc`; focus ring `2px #a78bfa`, offset 2px.
+- `<button className='rac-button rac-iconed' type='button|submit'>` + an icon + a text label. The icon size (`1em`, no shrink) comes from the shared `.rac-iconed` (`src/rac.css`), not from `button.css`: without `rac-iconed` the lucide icon is 24 px. Dark fill, purple `0.3` border, `0.5rem` radius, `0.5em 1.25em` padding; hover and `:focus-visible` turn border and text `#c084fc`; focus ring `2px #a78bfa`, offset 2px.
 - Unavailable: `disabled` or `aria-disabled='true'`, both styled the same (opacity 0.5, `cursor: progress`, no hover). Use `disabled` when the button cannot hold focus at that moment anyway (Submit while the output types); use `aria-disabled` plus an `onClick` guard when the visitor just pressed it and it locks itself (Replay): a real `disabled` on the focused button drops focus to `body`, and a keyboard user loses their place.
 - An icon that changes (idle ↔ busy) goes into `span.rac-button-icon` (fixed `1em` box), swapped with `AnimatePresence mode='wait' initial={false}` + `m.span` keyed by state + `popSlow` (the same swap as `rac-icons-title-container` in `icons.jsx`). The fixed box keeps the label from shifting while one icon has left and the next has not arrived. Needs a `<Motion>` ancestor. The busy icon is `Spinner` (`icons.jsx`): `steps(30)` per second (30 fps), paused while off screen.
 
@@ -353,9 +364,9 @@ Code shown to visitors is tokenized at build time by the `snippets` plugin in `v
 The one look of every Select on the site: `basic.css`, imported once in `main.jsx` after `rac.css`.
 
 **Contract**
-- Global selectors, no class on the Select: `.rac-select, .rac-options {--rac-bg; --rac-fg; border-radius}` and `.rac-options {border}`. The panel is a portal, so it is themed by its own class `.rac-options`, not by inheritance from the trigger. Never add a theme class (`className` / `optionsClassName`) to a Select again; the old `rac-basic-select` / `rac-basic-options` pair on ~25 Selects is gone.
+- Global selectors, no class on the Select: `.rac-select, .rac-options {--rac-bg; --rac-fg; --rac-radius}` and `.rac-options {border}`. The panel is a portal, so it is themed by its own class `.rac-options`, not by inheritance from the trigger. Never add a theme class (`className` / `optionsClassName`) to a Select again; the old `rac-basic-select` / `rac-basic-options` pair on ~25 Selects is gone.
 - Variables first: colours go through `--rac-bg` / `--rac-fg` only, so every tint, hover, highlight, chip and scrollbar of the library follows them (`--rac-tint-*`, `--rac-muted` are derived on the same two elements). `--rac-fg` is explicit (`#fff`): without it the text is `CanvasText`, white only because the site is `color-scheme: dark`; a visitor who copies the file into a light page would get black on `#0a0a0f`.
-- Plain properties only where the library has no variable: the corner radius and the panel border (`SYNC.md`, "No variables for the corner radius and the panel border").
+- Corners through `--rac-radius` (0.5rem): it rounds the trigger and the panel, chips at half (0.25rem), and the chip delete overlay follows the chip's end corners. Set it on `.rac-options` too: the panel is a portal and inherits nothing from the trigger. The panel border stays a plain property: the library has no variable for it.
 - The file is shown verbatim as the Styling "As styled" CSS (Snippets above), so it holds no comments, no doc-keys and nothing site-only. Layout is not theme: a width a container needs belongs to that container (Usage makes its stage `display: block`, so the Select stretches without `width: 100%`).
 - A section that needs another look overrides on its own class, with the Select's `style` (`--*` keys reach the panel too) or with a section rule of equal or higher specificity: `basic.css` is in the entry CSS, so every lazy chunk comes after it and wins a (0,1,0) tie (`.rac-animations-select`, `.rac-perf-options`).
 
@@ -368,7 +379,7 @@ The one look of every Select on the site: `basic.css`, imported once in `main.js
 Horizontal row of the cards that becomes draggable only when it overflows (`Track` and `Card` in `track.jsx`, `.rac-track` / `.rac-track-card` in `track.css`; used by the a11y feature cards and the grouping code cards).
 
 **Contract**
-- `<Track label className>` wraps any children (the cards must be direct children: the first and last are observed, the pressed one gets `data-grabbed`); `label` is the region name. `<Card icon title desc className>` is the shared card (icon, `h3`, optional description, `children` below, e.g. a code block); pass a `className` to override the look, with a selector of (0,2,0) because chunk load order is not fixed. Markup: `.rac-track-head` (flex row: `.rac-track-icon` + `h3.rac-code-title`), then `p.rac-track-desc` (own class, justified; never reuse `rac-states-desc` from another block). The grouping cards override it with `text-wrap: nowrap` and `flex: 1 0 max-content; min-width: 16em`, so a card is as wide as its longest content (description or code) and never scrolls inside.
+- `<Track label className>` wraps any children (the cards must be direct children: the first and last are observed, the pressed one gets `data-grabbed`); `label` is the region name. `<Card icon title desc className>` is the shared card (icon, `h3`, optional description, `children` below, e.g. a code block); pass a `className` to override the look, with a selector of (0,2,0) because chunk load order is not fixed. Markup: `.rac-track-head` (flex row: `.rac-track-icon` + `h3.rac-code-title`), then `p.rac-track-desc.rac-desc` (own class plus shared justified `.rac-desc`; never reuse `rac-states-desc` from another block). The grouping cards override it with `text-wrap: nowrap` and `flex: 1 0 max-content; min-width: 16em`, so a card is as wide as its longest content (description or code) and never scrolls inside.
 - Native horizontal scroller (`overflow-x: auto`, hidden scrollbar, `overscroll-behavior-x: contain` against the trackpad back gesture). Touch, pen, trackpad swipe, Shift+wheel and keyboard scroll natively; JS only adds mouse drag.
 - `data-drag`: set by a `ResizeObserver` when `scrollWidth > clientWidth`. No breakpoints: overflow comes from `flex: 1 0 16em` on the cards (they stretch while 4 fit). Only with `data-drag` the track gets `tabindex='0'` (keyboard reaches off-screen cards with arrows) and `cursor: grab`; mouse drag is ignored without it.
 - `data-start` / `data-end`: an `IntersectionObserver` (root = track, threshold 0.99) on the first and last card; set while that card is cut off. They animate `--rac-track-l/-r` (registered via `@property` so the mask gradient transitions) to fade that edge.
@@ -379,7 +390,13 @@ Horizontal row of the cards that becomes draggable only when it overflows (`Trac
 - Drag is `pointerType === 'mouse'` only: touch already scrolls natively with momentum, and handling it in JS would fight the browser and block vertical page scroll.
 - The drag origin is rebased to the pointer position where the 4px dead zone ends, so the track does not jump by 4px when dragging starts (a micro move used to snap). Velocity samples are taken at most every 8 ms (`dt < 8` is skipped, `x`/`t` not advanced), so high-rate mice do not produce noisy spikes.
 - Position is computed from the origin (`from + origin - clientX`) and kept as a float in `pos`, never read back from `scrollLeft`: it rounds to device pixels, and a slow glide would stall on the rounding.
-- Release glide: velocity (px/ms, smoothed 0.8/0.2) decays by `0.95` per 16 ms, frame-rate independent via `dt`; skipped when the pointer rested > 80 ms before release or under reduced motion; stops at either edge (the glide does not bounce; only a pull with the mouse held stretches). A wheel event or a new pointerdown cancels it.
+- Release glide: velocity (px/ms, smoothed 0.8/0.2) decays by `0.95` per 16 ms, frame-rate independent via `dt`; skipped when the pointer rested > 80 ms before release or under reduced motion. A wheel event or a new pointerdown cancels it (and a running impact bounce).
 - No scroll listeners (project rule): edges use `IntersectionObserver`, overflow uses `ResizeObserver`. Window listeners of a drag share one `AbortController`; `stop` (ref) aborts them and cancels the rAF, also on unmount.
 - Do not add `scroll-snap`: programmatic `scrollLeft` each frame fights mandatory snapping in Chrome.
 - The mask also fades the focus outline at a faded edge; accepted.
+
+## Track impact
+
+- When the glide reaches an edge with speed left (`|v| ≥ 0.05` px/ms) it does not stop dead: `bounce()` takes over the same rAF and `v`, running a damped spring on an overshoot `o` (px, scroll direction): `v += (−STIFF·o − DAMP·v)·dt`, `o += v·dt`, `STIFF = 0.0005`, `DAMP = 0.033` (ω ≈ 0.022/ms, ζ ≈ 0.75: peak ≈ 50 ms after impact, settled in ≈ 250 ms, ~3 % undershoot). Each frame feeds `o` into the same `pull()` as the mouse rubber band, so the displayed offset is `rubber(|o|)` and never exceeds `PULL`; raw peak ≈ `20·v`, so a hard flick (3 px/ms) shows ≈ 24 px, a soft one (0.3) ≈ 5 px.
+- The edge card gets `data-hit='end'|'start'` and stretches with `--rac-track-s`: `scale: 1+0.08s 1−0.04s`, `transform-origin` on the side away from the wall, so its outer edge lags toward the wall while the row overshoots (jelly). `data-bounce` on the track turns the card transitions off (the JS writes every frame). Both attributes and the inline properties go away in `release()` when `|o| < 0.3` and `|v| < 0.01`, at values ≈ 0, so nothing jumps.
+- Only a glide that started the frame inside the range bounces. A release while already at the edge (after a mouse pull) is left to the CSS translate spring-back; otherwise two springs would fight.

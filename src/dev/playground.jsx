@@ -21,7 +21,7 @@ render(<App/>)`
 
 // [DOC: playground-holder]
 const holder =
-    <div className='rac-live-container'>
+    <div className='rac-panel rac-live-container'>
         <div className='rac-live-preview-box'/>
         <div className='rac-live-editor-box'>
             <div className='rac-editor-header'>Editable Source</div>

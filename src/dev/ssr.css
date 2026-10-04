@@ -4,8 +4,6 @@
 }
 
 .rac-ssr-desc {
-  text-justify: inter-word;
-  text-align: justify;
   margin: 0;
 }
 
@@ -61,7 +59,7 @@
     visibility: hidden;
   }
 
-  [data-tone='none'] {color: rgb(244, 71, 71);}
+  [data-tone='none'] {color: var(--rac-tok-off);}
   [data-tone='static'] {color: #a3e635;}
   [data-tone='live'] {color: #4ade80;}
 }
@@ -74,7 +72,7 @@
 
   & i {
     transform-origin: left;
-    background: #c084fc;
+    background: var(--rac-purple-text);
     position: absolute;
     inset: 0;
     transform: scaleX(0);
@@ -88,19 +86,19 @@
     transform: translateX(-50%);
     transition: color 0.3s;
     white-space: nowrap;
-    color: #9ca3af;
+    color: var(--rac-muted);
     font-size: 0.8em;
     position: absolute;
     top: 0.9em;
 
     &[data-passed='true'] {
-      color: #c084fc;
+      color: var(--rac-purple-text);
     }
   }
 }
 
 .rac-ssr-note {
-  color: #9ca3af;
+  color: var(--rac-muted);
   font-size: 0.85em;
   margin: 0;
 }
@@ -108,12 +106,5 @@
 @keyframes rac-ssr-fill {
   to {
     transform: scaleX(1);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .rac-ssr-timeline i[data-play='true'] {
-    animation: none;
-    transform: none;
   }
 }

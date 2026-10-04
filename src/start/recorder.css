@@ -1,0 +1,122 @@
+.rac-mic-icon {
+  -webkit-touch-callout: none;
+  touch-action: none;
+  user-select: none;
+
+  &[data-mode] {
+    color: var(--rac-color-5);
+
+    &::before, &::after {
+      background: currentColor;
+      pointer-events: none;
+      position: absolute;
+      border-radius: 50%;
+      content: '';
+      opacity: 0;
+      inset: 0;
+    }
+
+    &::before {
+      animation: pulse 3s infinite cubic-bezier(0.25, 1, 0.5, 1);
+    }
+
+    &::after {
+      animation: pulse 3s infinite cubic-bezier(0.25, 1, 0.5, 1) 1.5s;
+    }
+  }
+
+  &[data-mode='hold'] {
+    cursor: grabbing;
+  }
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(1);
+    opacity: 0.4;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+
+.rac-llm-rec {
+  border: 1px solid var(--rac-line-hover);
+  background-color: var(--rac-surface-2);
+  padding: 0 3.5em 0 1em;
+  align-items: center;
+  position: absolute;
+  user-select: none;
+  display: flex;
+  gap: 0.75em;
+  z-index: 1;
+  inset: 0;
+
+  &[data-warn] :is(.rac-llm-clock, .rac-llm-hint) {
+    color: #f59e0b;
+  }
+}
+
+.rac-llm-dot {
+  animation: blink 1.2s infinite both;
+  background: var(--rac-color-5);
+  border-radius: 50%;
+  flex-shrink: 0;
+  height: 0.6em;
+  width: 0.6em;
+}
+
+.rac-llm-clock {
+  font-variant-numeric: tabular-nums;
+}
+
+.rac-llm-hint {
+  color: var(--rac-color-4);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.875em;
+  overflow: hidden;
+  min-width: 0;
+  flex: 1;
+}
+
+.rac-llm-cancel {
+  padding: 0.25em 0.5em;
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25em;
+}
+
+.rac-llm-lock {
+  transform: translateY(calc(var(--rac-lock, 0) * -1.5em));
+  animation: rac-lock-in 200ms ease-out;
+  bottom: calc(100% + 0.5em);
+  border: 1px solid var(--rac-line-hover);
+  background-color: var(--rac-surface-2);
+  color: var(--rac-color-4);
+  flex-direction: column;
+  pointer-events: none;
+  border-radius: 999px;
+  align-items: center;
+  position: absolute;
+  padding: 0.5em 0;
+  right: 0.25em;
+  display: flex;
+  --rac-icon: 1.1em;
+  width: 2.5em;
+  gap: 0.25em;
+  z-index: 2;
+
+  svg:last-child {
+    animation: rac-lock-bob 1.2s ease-in-out infinite;
+  }
+}
+
+@keyframes rac-lock-in {
+  from {opacity: 0}
+}
+
+@keyframes rac-lock-bob {
+  50% {transform: translateY(-0.2em)}
+}

@@ -1,0 +1,195 @@
+.rac-llm-head {
+  justify-content: space-between;
+  padding: 0em 0em 0.5em 0em;
+  width: fit-content;
+  display: flex;
+  gap: 0.25em;
+}
+
+.rac-llm-desc {
+  padding: 0em 0em 1em 0em;
+}
+
+.rac-llm-field {
+  align-items: center;
+  position: relative;
+  display: flex;
+}
+
+.rac-llm-input {
+  transition:
+    border-color 300ms ease,
+    height 300ms;
+  border: 1px solid var(--rac-line);
+  background-color: var(--rac-surface-2);
+  padding: 1em 3em 1em 1em;
+  color: var(--rac-text);
+  field-sizing: content;
+  min-height: 3.75em;
+  max-height: 12em;
+  overflow-y: auto;
+  font: inherit;
+  outline: none;
+  resize: none;
+  width: 100%;
+  margin: 0;
+
+  &:hover, &:focus {
+    border-color: var(--rac-line-hover);
+  }
+
+  .rac-llm-form[aria-busy='true'] & {
+    border-color: transparent;
+    filter: blur(1.5px);
+    cursor: wait;
+  }
+
+  [data-crash] > & {
+    padding-right: 4.5em;
+  }
+}
+
+.rac-send-icon, .rac-mic-icon {
+  border-radius: 50%;
+  position: absolute;
+  padding: 0.5em;
+  right: 0.25em;
+  display: flex;
+  z-index: 2;
+}
+
+.rac-llm-crash {
+  transition: translate 300ms ease;
+  color: var(--rac-error);
+  pointer-events: none;
+  position: absolute;
+  translate: 0 -50%;
+  right: 2.75em;
+  display: flex;
+  z-index: 2;
+  top: 50%;
+
+  .rac-llm-form[aria-busy='true'] & {
+    translate: -1.5em -50%;
+  }
+
+  [data-crash='slow'] > & svg {
+    animation: server-overload 1.5s ease-in-out infinite;
+  }
+
+  svg {
+    height: 100%;
+    width: 100%;
+  }
+}
+
+@keyframes server-overload {
+  50% {opacity: 0.3}
+}
+
+.rac-llm-answer {
+  background-color: var(--rac-surface-2);
+  margin-bottom: 1.5em;
+  border-radius: 0.5em;
+  position: relative;
+  padding: 1em;
+
+  &:not([data-done]) .rac-llm-text {
+    color: transparent;
+  }
+
+  &[data-done] .rac-llm-scramble {
+    display: none;
+  }
+}
+
+.rac-llm-text, .rac-llm-scramble {
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.rac-llm-scramble {
+  pointer-events: none;
+  position: absolute;
+  inset: 1em;
+}
+
+.rac-llm-foot {
+  justify-content: space-between;
+  padding-top: 0.375em;
+  font-size: 0.875em;
+  min-height: 1.875em;
+  display: flex;
+  gap: 1em;
+}
+
+.rac-llm-status {
+  color: var(--rac-color-4);
+
+  &[data-error] {
+    color: var(--rac-error);
+  }
+}
+
+.rac-llm-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--rac-color-4);
+  white-space: nowrap;
+  margin-left: auto;
+
+  &[data-full] {
+    color: var(--rac-error);
+  }
+}
+
+.rac-llm-loading {
+  position: absolute;
+  right: 0.5em;
+  width: 3.5em;
+  cursor: wait;
+}
+
+.rac-cat-loading {
+  transform: rotate(95deg);
+}
+.rac-llm-thinking {
+  position: absolute;
+  padding: 1em;
+  cursor: wait;
+}
+
+.rac-loading-inline {
+  display: inline-flex;
+  gap: 0.25em;
+}
+
+.rac-loading-inline i {
+  animation: blink var(--rac-dots-animation-duration) infinite both;
+  background: var(--rac-dots-color, currentColor);
+  border-radius: 50%;
+  height: 0.25em;
+  width: 0.25em;
+}
+
+.rac-loading-inline i:nth-child(1) {animation-delay: var(--rac-dots-animation-delay-1);}
+.rac-loading-inline i:nth-child(2) {animation-delay: var(--rac-dots-animation-delay-2);}
+.rac-loading-inline i:nth-child(3) {animation-delay: var(--rac-dots-animation-delay-3);}
+
+@keyframes blink {
+  0%   {opacity: .2;}
+  20%  {opacity: 1;}
+  100% {opacity: .2;}
+}
+
+.rac-llm-loadholder {
+  padding-right: 0.25em;
+  text-wrap: nowrap;
+}
+
+.rac-llm-container {
+  position: absolute;
+  overflow: hidden;
+  cursor: wait;
+  height: 100%;
+  width: 100%;
+}

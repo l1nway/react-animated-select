@@ -1,5 +1,5 @@
 .rac-header {
-    border-bottom: 0.1px solid rgba(168, 85, 247, 0.3);
+    border-bottom: 0.1px solid var(--rac-purple-line);
     background-color: var(--rac-surface);
     justify-content: space-between;
     padding: 0em 2.5em 1em;
@@ -33,27 +33,7 @@
     }
 }
 
-.rac-header-link {
-    background: linear-gradient(135deg, rgba(139, 92, 246, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
-    border: 1px solid rgba(139, 92, 246, 0.3);
-    justify-content: center;
-    border-radius: 0.5rem;
-    align-items: center;
-    font-size: 1.25em;
-    cursor: pointer;
-    padding: 0.25em;
-    flex-shrink: 0;
-    display: flex;
-
-    &:focus-visible {
-        outline: 2px solid var(--rac-primary);
-        outline-offset: 2px;
-    }
-}
-
 .rac-header-icon {
-    color: #a78bfa;
-
     @media (max-width: 1024px) {
         height: 2em;
         width: 2em;
@@ -62,19 +42,9 @@
 
 .rac-button-container {
     --rac-enter-delay: calc(250ms + var(--i) * 80ms);
-    transition: background-color 0.3s ease;
     --rac-enter-scale: 0.6;
-    box-sizing: border-box;
-    align-items: center;
-    cursor: pointer;
     flex-shrink: 0;
-    outline: none;
     display: flex;
-    gap: 0.25em;
-
-    &:hover, &:focus-within {
-        background-color: rgba(255, 255, 255, 0.05);
-    }
 }
 
 .rac-lib-temp {

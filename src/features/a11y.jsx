@@ -1,7 +1,7 @@
 import {PersonStanding, Keyboard, Glasses, Smartphone, Zap} from 'lucide-react'
 import {Select} from 'react-animated-select'
 import {Table} from '../components/section'
-import {arrowIcons, numbered} from '../components/helpers'
+import {arrowIcons, CHIPS, numbered} from '../components/helpers'
 import {Track, Card} from '../components/track'
 import './a11y.css'
 
@@ -37,7 +37,7 @@ const keys = (
 const features = [{
     title: 'Accessibility',
     icon: <PersonStanding/>,
-    desc: <>Built on the <b>WAI-ARIA</b> select-only combobox pattern. Focus never leaves the combobox: <code>aria-activedescendant</code> points at the highlighted option, so a screen reader follows the highlight, while the list lives in a portal linked by <code>aria-controls</code>. Changes outside the list, like removing a chip, are not announced yet: there is no live region.</>
+    desc: <>Built on the <b>WAI-ARIA</b> select-only combobox pattern. Focus never leaves the combobox: <code>aria-activedescendant</code> points at the highlighted option, so a screen reader follows the highlight, while the list lives in a portal linked by <code>aria-controls</code>. A polite live region announces what the list cannot: a removed chip, a cleared value, <i>3 selected</i> while the list stays open, newly loaded options and the error, which the combobox also points at with <code>aria-describedby</code>. A burst reads as one message, only changes made while focus is in the Select are announced, and the words come from <code>texts</code>.</>
 }, {
     title: 'Screen Reader Support',
     icon: <Glasses/>,
@@ -49,7 +49,7 @@ const features = [{
 }, {
     title: 'Keyboard Navigation',
     icon: <Keyboard/>,
-    desc: <>Every action has a key, like in a native select. Tab into the Select under the shortcut table and try them: the arrows move the highlight, <kbd>PgDn</kbd> and <kbd>PgUp</kbd> jump ten options, <kbd>Enter</kbd> picks one and <kbd>Backspace</kbd> removes the last chip. Focus opens the list and Tab closes it, so the page never needs a mouse.</>
+    desc: <>Every action has a key, like in a native select. Tab into the Select under the shortcut table and try them: the arrows move the highlight, <kbd>PgDn</kbd> and <kbd>PgUp</kbd> jump ten options, <kbd>Enter</kbd> picks one and <kbd>Backspace</kbd> removes the last chip. Focus opens the list and Tab closes it, so the page never needs a mouse. The clear and chip delete buttons stay out of the Tab order; a screen reader that presses one keeps the list closed and gets focus back on the combobox. Your <code>onKeyDown</code> runs first: <code>event.preventDefault()</code> makes the Select skip that key.</>
 }]
 
 function A11y() {
@@ -59,7 +59,7 @@ function A11y() {
                 {features.map(item => <Card key={item.title} {...item}/>)}
             </Track>
             {keys}
-            <Select placeholder='Pick options' aria-label='Keyboard demo' options={options} icons={arrowIcons} multiple/>
+            <Select placeholder='Pick options' aria-label='Keyboard demo' options={options} icons={arrowIcons} plugins={CHIPS} multiple/>
         </section>
     )
 }

@@ -3,16 +3,11 @@
 }
 
 .rac-content-currency {
-  align-items: center;
   display: inline-flex;
+  align-items: center;
+  --rac-icon: 1.1em;
   min-width: 0;
   gap: 0.5em;
-}
-
-.rac-content-icon {
-  flex-shrink: 0;
-  height: 1.1em;
-  width: 1.1em;
 }
 
 .rac-content-name {
@@ -24,7 +19,7 @@
 .rac-content-code {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
-  color: #9ca3af;
+  color: var(--rac-muted);
 }
 
 .rac-content-select .rac-chip {

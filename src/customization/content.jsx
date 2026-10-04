@@ -2,7 +2,7 @@ import {LayoutList, DollarSign, Euro, PoundSterling, JapaneseYen, SwissFranc, In
 import {Select, Option, defineOption} from 'react-animated-select'
 import {useCallback, useReducer} from 'react'
 import {snippet} from '../components/tokens'
-import {merge, arrowIcons, Title} from '../components/helpers'
+import {merge, arrowIcons, CHIPS, Title} from '../components/helpers'
 import {Showcase, Toggle} from './showcase'
 import './content.css'
 
@@ -18,8 +18,8 @@ const currencies = [
 ]
 
 const Currency = ({c, disabled}) =>
-    <span className='rac-content-currency'>
-        <c.icon className='rac-content-icon' color={c.color} aria-hidden='true'/>
+    <span className='rac-content-currency rac-iconed'>
+        <c.icon color={c.color} aria-hidden='true'/>
         <span className='rac-content-name'>{c.name}</span>
         <small className='rac-content-code'>{disabled ? 'soon' : c.id.toUpperCase()}</small>
     </span>
@@ -95,6 +95,7 @@ function Content() {
                         options={array ? currencies : undefined}
                         valueAsOption={state.valueAsOption}
                         placeholder='Choose currency'
+                        plugins={CHIPS}
                         multiple={state.multiple}
                         value={state.value}
                         onChange={setValue}

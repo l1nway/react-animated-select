@@ -1,14 +1,13 @@
 import {useState} from 'react'
-import {Scan, Check} from 'lucide-react'
 import {CodeMorph, CopyButton} from '../components/code'
 import {Segmented} from '../components/segmented'
+import {Tick} from '../components/section'
 import './showcase.css'
 
 export function Toggle({name, note, checked, onChange}) {
     return (
         <label className='rac-showcase-toggle'>
-            <input className='rac-showcase-input' type='checkbox' checked={checked} onChange={e => onChange(name, e.target.checked)}/>
-            <span className='rac-showcase-box' aria-hidden='true'><Scan/><Check/></span>
+            <Tick checked={checked} onChange={e => onChange(name, e.target.checked)}/>
             <code className='rac-showcase-name'>{name}</code>
             {note && <span className='rac-showcase-note'>{note}</span>}
         </label>
@@ -23,7 +22,7 @@ export function Showcase({id, label, tabs, active, onPick, codes, title, desc, c
         <div className='rac-showcase' data-head={!!title || undefined}>
             {title ? <div className='rac-code-title-container2 rac-showcase-head'>{title}{switcher}</div> : switcher}
             {desc && <p className='rac-heading-desc'>{desc}</p>}
-            <div className='rac-code-container' id={`${id}-panel`} role='tabpanel' aria-labelledby={`${id}-tab-${tabs[active].id}`}>
+            <div className='rac-panel rac-code-container' id={`${id}-panel`} role='tabpanel' aria-labelledby={`${id}-tab-${tabs[active].id}`}>
                 {children}
                 {codes.map((code, i) =>
                     <div className='rac-code-wrapper rac-showcase-code' key={i}>

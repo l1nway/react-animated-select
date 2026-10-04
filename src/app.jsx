@@ -17,6 +17,7 @@ function App() {
         <main className='rac-sections'>
           <Part id='start'><Start/></Part>
           <Part id='features'/>
+          <Part id='plugins'/>
           <Part id='custom'/>
           <Part id='dev'/>
         </main>

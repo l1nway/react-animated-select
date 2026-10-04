@@ -1,23 +1,11 @@
 .rac-code-container {
-  transition: border-color 0.3s ease;
-  border: 1px solid #1f293780;
-  background-color: #0e111a;
-  border-radius: 0.5rem;
   position: relative;
   overflow: hidden;
   display: block;
   outline: none;
-
-  &:hover, &:focus-within {
-    border-color: #8b5cf64d;
-
-    .rac-code-button {
-      opacity: 1;
-    }
-  }
 }
 
-:hover > .rac-code-button {
+.rac-code-container:is(:hover, :focus-within) .rac-code-button, :hover > .rac-code-button {
   opacity: 1;
 }
 
@@ -72,7 +60,7 @@
 }
 
 .rac-code {
-  font-family: Menlo, Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', 'Courier New', monospace;
+  font-family: var(--rac-mono);
   white-space: pre;
   line-height: 1.425rem;
   text-align: left;
@@ -89,16 +77,16 @@
 
 @keyframes rac-code-fade {
   from {
-    color: #9CDCFE;
+    color: var(--rac-tok-key);
   }
 }
 
 .rac-code-solid {
-  background-color: #1a1a24;
+  background-color: var(--rac-surface-2);
 }
 
 .rac-soon {
-  border: 1px dashed #8b5cf64d;
+  border: 1px dashed var(--rac-line-hover);
   border-radius: 0.5rem;
   overflow: hidden;
   width: 100%;
@@ -107,21 +95,16 @@
 .rac-soon-badge {
   min-height: calc(2em + 4px);
   padding: 0.25em 0.75em;
+  color: var(--rac-purple-text);
   align-items: center;
-  color: #c084fc;
+  --rac-icon: 1.25em;
   display: flex;
   gap: 0.5em;
-
-  & svg {
-    flex-shrink: 0;
-    height: 1.25em;
-    width: 1.25em;
-  }
 }
 
 .rac-soon-code {
-  border-top: 1px dashed #8b5cf64d;
-  background-color: #0e111a;
+  border-top: 1px dashed var(--rac-line-hover);
+  background-color: var(--rac-surface-3);
 }
 
 .rac-morph-row {

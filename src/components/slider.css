@@ -11,7 +11,7 @@
 }
 
 .slider-track {
-  background-color: #1a1a24;
+  background-color: var(--rac-surface-2);
   position: relative;
   border-radius: 999px;
   touch-action: none;
@@ -21,7 +21,7 @@
 }
 
 .slider-fill {
-  background-color: #c084fc;
+  background-color: var(--rac-purple-text);
   position: absolute;
   border-radius: inherit;
   pointer-events: none;
@@ -51,15 +51,10 @@
 
 .slider-container[data-dragging] .slider-thumb, .slider-container[data-settling] .slider-thumb {
   transition: box-shadow 150ms ease;
+  will-change: transform;
 }
 
 .slider-container[data-dragging] .slider-thumb {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 0 6px rgba(192, 132, 252, 0.15);
   cursor: grabbing;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .slider-fill, .slider-thumb {
-    transition: none;
-  }
 }

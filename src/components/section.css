@@ -5,13 +5,11 @@
   width: 100%;
 
   &:focus-visible {
-    outline: 2px solid #c084fc;
-    outline-offset: 2px;
+    outline-color: var(--rac-purple-text);
   }
 }
 
 .rac-table {
-  --rac-line: #1f293780;
   --rac-table-row: 3.2em;
   --rac-hover: rgba(0, 0, 0, 0.3);
   border-collapse: separate;
@@ -23,11 +21,11 @@
   }
 
   &:hover {
-    --rac-line: #8b5cf64d;
+    --rac-line: var(--rac-line-hover);
   }
 
   tbody {
-    background-color: #0e111a;
+    background-color: var(--rac-surface-3);
   }
 
   tbody th, tbody td {
@@ -45,7 +43,7 @@
   }
 
   tbody :is(th, td):has(:focus-visible) {
-    outline-color: #c084fc;
+    outline-color: var(--rac-purple-text);
   }
 
   tbody td {
@@ -68,17 +66,16 @@
   }
 
   thead th {
-    border-bottom: 1px solid var(--rac-line);
-    border-left: 1px solid var(--rac-line);
-    border-top: 1px solid var(--rac-line);
+    border: 1px solid var(--rac-line);
     transition: border-color 0.3s ease;
-    background-color: #0e111a;
+    border-right: 0;
+    background-color: var(--rac-surface-3);
     padding: 0.7em 1em;
     white-space: nowrap;
     font-size: inherit;
     text-align: left;
     font-weight: 500;
-    color: #9ca3af;
+    color: var(--rac-muted);
   }
 
   thead th:last-child {
@@ -93,10 +90,10 @@
     padding: 0;
   }
 
-  td[data-type='function'] {color: rgb(220, 220, 170);}
+  td[data-type='function'] {color: var(--rac-tok-fn);}
   td[data-type='string'] {color: rgb(206, 145, 120);}
   td[data-type='number'] {color: rgb(181, 206, 168);}
-  td[data-type='boolean'] {color: rgb(86, 156, 214);}
+  td[data-type='boolean'] {color: var(--rac-tok-blue);}
 }
 
 .rac-table .rac-table-text {
@@ -119,20 +116,20 @@
 }
 
 .rac-table-tick {
-  font-family: Menlo, Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', 'Courier New', monospace;
-  justify-content: space-between;
+  font-family: var(--rac-mono);
   height: var(--rac-table-row);
-  cursor: not-allowed;
   align-items: center;
   position: relative;
-  padding: 0 1em;
   cursor: default;
   display: flex;
-  gap: 1em;
 
-  [data-tone='fn'] {color: rgb(220, 220, 170);}
-  [data-tone='on'] {color: #3fb950;}
-  [data-tone='off'] {color: rgb(244, 71, 71);}
+  > span:not(.rac-tick-box) {padding: 0 1em;}
+  > :is(svg, .rac-tick-box) {margin: 0 1em 0 auto;}
+
+  [data-tone='fn'] {color: var(--rac-tok-fn);}
+  [data-tone='none'] {color: var(--rac-tok-blue);}
+  [data-tone='on'] {color: var(--rac-tok-on);}
+  [data-tone='off'] {color: var(--rac-tok-off);}
 }
 
 label.rac-table-tick {
@@ -146,21 +143,17 @@ label.rac-table-tick {
 }
 
 .rac-table-desc {
-  text-justify: inter-word;
   padding-bottom: 1em;
-  text-align: justify;
 }
 
 .rac-th {
+  --rac-icon: 1.1em;
   align-items: center;
   display: flex;
   gap: 0.6em;
 
   svg {
-    flex-shrink: 0;
-    color: #c084fc;
-    height: 1.1em;
-    width: 1.1em;
+    color: var(--rac-purple-text);
   }
 }
 
@@ -175,7 +168,7 @@ label.rac-table-tick {
 .rac-tick-box {
   place-items: center;
   flex-shrink: 0;
-  color: #c084fc;
+  color: var(--rac-purple-text);
   display: grid;
   height: 1.6em;
   width: 1.6em;
@@ -206,7 +199,7 @@ label.rac-table-tick {
 }
 
 .rac-tick-input:focus-visible + .rac-tick-box {
-  outline: 2px solid #c084fc;
+  outline: 2px solid var(--rac-purple-text);
   outline-offset: 2px;
   border-radius: 0.25em;
 }

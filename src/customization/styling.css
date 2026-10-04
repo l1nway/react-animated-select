@@ -1,7 +1,3 @@
-.rac-states.rac-styling-section {
-  margin: 0;
-}
-
 .rac-styling-table {
   .rac-styling-title, .rac-styling-value {
     white-space: nowrap;
@@ -15,14 +11,13 @@
 
 .rac-styling-maintitle {
   font-weight: bold;
-  margin: 0;
 }
 
 .rac-styling-label {
   transition:
     300ms padding-bottom,
     300ms border-color;
-  border-bottom: 1px solid #1f293780;
+  border-bottom: 1px solid var(--rac-line);
   justify-content: space-between;
   background-color: transparent;
   padding: 0 0 1em 0;
@@ -41,11 +36,6 @@
   &[aria-expanded='true'] {
     border-color: transparent;
     padding-bottom: 0;
-  }
-
-  &:focus-visible {
-    outline: 2px solid #a78bfa;
-    outline-offset: 2px;
   }
 }
 

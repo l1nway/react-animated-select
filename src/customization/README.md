@@ -47,7 +47,7 @@ Live Select + tabbed code below it (`showcase.jsx`, `showcase.css`). Users: Cont
 
 The site theme (`basic.css`) is global, so without a guard it would sit under every preset: Aurora would get the site's purple panel border and 0.5rem panel corners, which a visitor who copies the Aurora snippet never has.
 
-- `rac-preset` (`showcase.css`) goes on both the trigger and the panel of every preset except `site`: `all: revert-layer` plus `--rac-bg` / `--rac-fg: revert-layer`. On those two elements every unlayered site rule (the theme, the global `*` reset) rolls back to the library's layers; the custom properties then inherit from `:root`, where only the library sets them.
+- `rac-preset` (`showcase.css`) goes on both the trigger and the panel of every preset except `site`: `all: revert-layer` plus `--rac-bg` / `--rac-fg` / `--rac-radius: revert-layer`. On those two elements every unlayered site rule (the theme, the global `*` reset) rolls back to the library's layers; the custom properties then inherit from `:root`, where only the library sets them.
 - `all` does not cover custom properties. Every variable `basic.css` sets must be listed here too.
 - Specificity is (0,1,0), the same as the theme. It wins by order (`showcase.css` is a lazy chunk, after the entry CSS) and loses to the preset's own rules: the stage `<style>` is in `body`, after every stylesheet in `head`, and Aurora's element rules are (0,2,0) anyway. `.rac-showcase-stage > .rac-select {contain: inline-size}` (0,2,0) survives.
 - Descendants (`.rac-list`, options, chips) keep the site context on purpose: for Aurora the page is the site page (dark scheme, site font), as it would be the visitor's own page. Only Default also strips that (Bare preset).
@@ -73,13 +73,13 @@ Collapsible reference tables (variables, classes, state attributes) under the St
 
 **Contract**
 - Each `Reference` is `memo` and owns its open state (`useReducer(flip, false)`); the section, the Showcase and its Select never re-render on toggle.
-- Disclosure: `button.rac-styling-label[aria-expanded]` always carries `aria-controls='styling-ref-<id>'`; that id sits on the `SlideDown` panel (`.rac-styling-container`; SlideDown forwards extra props). While closed the panel is unmounted; a missing target with `aria-expanded='false'` is accepted for the disclosure pattern.
+- Disclosure: `button.rac-styling-label[aria-expanded]` always carries `aria-controls='styling-ref-<id>'`; that id sits on the `Collapse` panel (`.rac-styling-container`; Collapse forwards extra props). While closed the panel is unmounted; a missing target with `aria-expanded='false'` is accepted for the disclosure pattern.
 - Panel → shared `Table` (`id='styling-<id>'`, `title` = table name as the sr-only caption, visible header from `columns`, `className='rac-styling-table'`). The button's text is not the table's name source, so its span has no id.
-- Row: `th.rac-styling-title[scope=row][data-depth]` (indent: `1em` base + `1em` per depth, rules `tbody th[data-depth='N']`, specificity above the shell) · `td.rac-styling-value` (inline `style={{color: item.value}}`: valid colours tint themselves, other values are ignored) · `Text`. Name and value are `nowrap`.
+- Row: `th.rac-styling-title[scope=row][data-depth]` (indent: `1em` base + `1em` per depth, rules `tbody th[data-depth='N']`, specificity above the shell) · `td.rac-styling-value` (inline `style={{color}}` only when `item.value` matches the `COLOR` regex in `styling.jsx` (`#`, `color-mix(`, `rgb(`, `hsl(`, `oklch(`); other values set no style, so the browser logs no parse errors. A new colour notation must be added to that regex) · `Text`. Name and value are `nowrap`.
 - Lines and hover are the shared ones; the panel has no borders of its own.
 
 **Traps**
-- Horizontal scroll lives on the table's scroll wrapper, not on the `SlideDown` div. `SlideDown` clips only while it animates, so the wrapper keeps its normal focus ring. The old `outline-offset: -2px` override is gone; do not bring it back.
+- Horizontal scroll lives on the table's scroll wrapper, not on the `Collapse` div. `Collapse` clips only while it animates, so the wrapper keeps its normal focus ring. The old `outline-offset: -2px` override is gone; do not bring it back.
 - History: flex rows with explicit roles, lines drawn by row `::before`/`::after` and an sr-only header; replaced by the shared table.
 
 ## Animations table

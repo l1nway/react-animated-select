@@ -2,6 +2,8 @@ import {useEffect, useRef} from 'react'
 import './track.css'
 
 const PULL = 40
+const STIFF = 0.0005
+const DAMP = 0.033
 
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches
 const rubber = d => PULL * (1 - 1 / (d / PULL + 1))
@@ -62,17 +64,36 @@ export function Track({label, className, children}) {
             x = m.clientX
             t = m.timeStamp
         }
+        let hit = null, o = 0
+        // [DOC: track-impact]
+        const bounce = now => {
+            const dt = Math.min(now - prev, 32)
+            prev = now
+            v += (-STIFF * o - DAMP * v) * dt
+            o += v * dt
+            if (Math.abs(o) < 0.3 && Math.abs(v) < 0.01) return release()
+            pull(o)
+            raf = requestAnimationFrame(bounce)
+        }
         const glide = now => {
             const dt = prev ? now - prev : 16
             prev = now
             v *= 0.95 ** (dt / 16)
+            const inside = pos > 0 && pos < max
             set(pos + v * dt)
-            raf = Math.abs(v) > 0.02 && pos > 0 && pos < max ? requestAnimationFrame(glide) : 0
+            if (pos > 0 && pos < max) return raf = Math.abs(v) > 0.02 ? requestAnimationFrame(glide) : 0
+            if (!inside || Math.abs(v) < 0.05) return raf = 0
+            hit = v > 0 ? el.lastElementChild : el.firstElementChild
+            hit.setAttribute('data-hit', v > 0 ? 'end' : 'start')
+            el.setAttribute('data-bounce', '')
+            raf = requestAnimationFrame(bounce)
         }
         const release = () => {
             ac.abort()
             card?.removeAttribute('data-grabbed')
+            hit?.removeAttribute('data-hit')
             el.removeAttribute('data-dragging')
+            el.removeAttribute('data-bounce')
             el.style.removeProperty('--rac-track-pull')
             el.style.removeProperty('--rac-track-s')
         }
@@ -99,7 +120,7 @@ export const Card = ({icon, title, desc, className, children}) => (
             <div className='rac-track-icon'>{icon}</div>
             <h3 className='rac-code-title'>{title}</h3>
         </div>
-        {desc && <p className='rac-track-desc'>{desc}</p>}
+        {desc && <p className='rac-track-desc rac-desc'>{desc}</p>}
         {children}
     </div>
 )

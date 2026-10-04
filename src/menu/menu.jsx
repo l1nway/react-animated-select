@@ -1,10 +1,12 @@
 import {MENU, ITEMS, groupOf} from './components'
 import {pathOf, titleOf} from './seo'
 import {setStore, subscribe, getStore, PARTS, showAll} from '../components/store'
+import {Collapse} from '@l1nway/collapse'
 import {useRef, useEffect, useState, useCallback, memo} from 'react'
 import './menu.css'
 import './nav.css'
 
+const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)'
 const EDITABLE = 'input:not([type=checkbox], [type=radio], [type=range], [type=button], [type=submit], [type=reset], [type=color], [type=file], [readonly]), textarea:not([readonly]), [contenteditable]:not([contenteditable=false])'
 
 const hrefOf = id => import.meta.env.BASE_URL + pathOf(id)
@@ -177,7 +179,7 @@ function Menu() {
                     {MENU.map((item, i) => (
                         <li className='rac-enter' style={{'--i': i}} key={item.id}>
                             <Link item={item} selected={item === group} className='rac-menu-group' onPick={pick}/>
-                            <div className='rac-menu-sub-container' data-open={item === group || undefined} inert={item !== group}>
+                            <Collapse in={item === group} unmountOnExit={false} fade easing={EASE} className='rac-menu-sub-container' data-open={item === group || undefined} inert={item !== group}>
                                 <ul>
                                     {item.sub.map((sub, i) => (
                                         <li key={sub.id} style={{'--i': i}}>
@@ -185,7 +187,7 @@ function Menu() {
                                         </li>
                                     ))}
                                 </ul>
-                            </div>
+                            </Collapse>
                         </li>
                     ))}
                 </ul>

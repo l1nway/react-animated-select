@@ -1,7 +1,7 @@
 import {Scan, Check, Pencil, Tag, Braces, MousePointerClick, FileText, Hammer} from 'lucide-react'
-import {AnimatePresence, m} from 'framer-motion'
+import {Collapse, Presence} from '@l1nway/collapse'
 import {Motion} from './motion'
-import {Title, slide, prevent} from './helpers'
+import {Title, prevent} from './helpers'
 import {Segmented} from './segmented'
 import {Children, memo} from 'react'
 import './section.css'
@@ -11,7 +11,7 @@ const PROPS = [[Tag, 'Prop'], [Braces, 'Type'], [MousePointerClick, 'Value'], [F
 
 const tone = (item, value) => item.type === 'function' ? 'fn' : value ? 'on' : 'off'
 
-const Columns =({columns}) => columns.map(([Icon, label]) => <th scope='col' key={label}><span className='rac-th'><Icon aria-hidden/>{label}</span></th>)
+const Columns = ({columns}) => columns.map(([Icon, label]) => <th scope='col' key={label}><span className='rac-th rac-iconed'><Icon aria-hidden/>{label}</span></th>)
 
 // [DOC: rac-tick]
 export const Tick = props => (
@@ -26,22 +26,23 @@ const size = node => typeof node === 'string' ? node.length : Children.toArray(n
 // [DOC: two-line-text]
 export const Text = ({children}) => <td className='rac-table-text' style={{'--len': size(children)}}><p>{children}</p></td>
 
-const Edit =({item, name, value, onChange}) => (
+const Edit = ({item, name, value, onChange}) => (
     <td className='rac-props-edit' data-type={item.type} data-fill>
         <input className='rac-props-input' onChange={e => onChange(name, e.target.value)} aria-label={item.prop} value={value} type='text'/>
         <Pencil className='rac-props-pencil' aria-hidden/>
     </td>
 )
 
+// [DOC: props-value-width]
 const State = ({item, name, value, onChange}) => {
     const shown = item.show ? item.show(value) : value === undefined || value === '' ? item.default : String(value)
     const Cell = item.kind === 'tick' ? 'label' : 'div'
     return (
         <td className='rac-props-state' data-fill>
             <Cell className='rac-table-tick'>
-                <AnimatePresence mode='wait' initial={false}>
-                    <m.span key={shown} data-tone={tone(item, value)} {...slide}>{shown}</m.span>
-                </AnimatePresence>
+                <Presence>
+                    <Collapse key={shown} as='span' axis='x' fade data-tone={tone(item, value)}>{shown}</Collapse>
+                </Presence>
                 {Cell === 'label' && <Tick onChange={e => onChange(name, e.target.checked)} aria-label={item.prop} checked={value}/>}
             </Cell>
         </td>
@@ -49,7 +50,7 @@ const State = ({item, name, value, onChange}) => {
 }
 
 const Planned = ({item}) => (
-    <td className='rac-props-state rac-props-soon' data-fill>
+    <td className='rac-props-state rac-props-soon rac-iconed' data-fill>
         <div className='rac-table-tick' role='img' aria-label={`${item.prop}: in development`}>
             <span>Soon</span>
             <Hammer aria-hidden/>
@@ -88,7 +89,7 @@ export function Table({id, icon, title, desc, columns = PROPS, head = true, regi
             <thead>
                 {desc &&
                     <tr>
-                        <td colSpan={columns.length}><p className='rac-table-sticky rac-table-desc'>{desc}</p></td>
+                        <td colSpan={columns.length}><p className='rac-table-sticky rac-table-desc rac-desc'>{desc}</p></td>
                     </tr>
                 }
                 <tr className={head ? undefined : 'rac-sr-only'}><Columns columns={columns}/></tr>

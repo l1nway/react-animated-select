@@ -3,8 +3,8 @@ import {memo, useLayoutEffect, useRef} from 'react'
 const CSS = `
 .rac-segmented {
   --rac-pill-inset: 0.25em;
-  border: 1px solid #1f293780;
-  background-color: #0e111a;
+  border: 1px solid var(--rac-line);
+  background-color: var(--rac-surface-3);
   grid-auto-columns: 1fr;
   grid-auto-flow: column;
   border-radius: 0.5rem;
@@ -30,11 +30,11 @@ const CSS = `
   position: relative;
   font-size: 0.9em;
   cursor: pointer;
-  color: #9ca3af;
+  color: var(--rac-muted);
   border: none;
 
   &:hover:not(:disabled, :has(:disabled)) {
-    color: #f3f4f6;
+    color: var(--rac-text);
   }
 
   &:disabled, &:has(:disabled) {
@@ -43,11 +43,11 @@ const CSS = `
   }
 
   &[aria-selected='true'], &:has(:checked) {
-    color: #c084fc;
+    color: var(--rac-purple-text);
   }
 
   &:focus-visible, &:has(:focus-visible) {
-    outline: 2px solid #a78bfa;
+    outline: 2px solid var(--rac-focus);
     outline-offset: -2px;
   }
 }

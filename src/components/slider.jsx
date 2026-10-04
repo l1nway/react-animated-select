@@ -1,11 +1,11 @@
 import {useEffect, useRef, useState} from 'react'
 import './slider.css'
 
-const OVERDRAG = 16
+const PULL = 15
 const STIFFNESS = 320
 const DAMPING = 18
-const SETTLE_POS = 0.05
-const SETTLE_VEL = 0.4
+const SETTLE_POS = 0.1
+const SETTLE_VEL = 1
 
 const clamp = (v, lo, hi) => Math.min(hi, Math.max(lo, v))
 const snap = (v, step, min) => Math.round((v - min) / step) * step + min
@@ -20,7 +20,7 @@ const Slider = ({value, min = 0, max = 100, step = 1, onChange, ...props}) => {
     const rectRef = useRef(null)
     const rafRef = useRef(null)
     const lastRef = useRef(null)
-    const visualRef = useRef({percent: 0, scale: 1, stretch: 0})
+    const visualRef = useRef({x: 0, y: 0, scale: 1})
     const [interacting, setInteracting] = useState(false)
     const [settling, setSettling] = useState(false)
     const progress = percentOf(value, min, max)
@@ -35,11 +35,16 @@ const Slider = ({value, min = 0, max = 100, step = 1, onChange, ...props}) => {
         stop()
     }, [])
 
-    const applyThumb = (percent, scale, stretchRatio) => {
-        const squashX = 1 + stretchRatio * 0.25
-        const squashY = 1 - stretchRatio * 0.175
-        thumbRef.current.style.left = `${percent}%`
-        thumbRef.current.style.transform = `translate(-50%, -50%) scale(${scale}) scaleX(${squashX}) scaleY(${squashY})`
+    // [DOC: slider-2d-stretch]
+    const render = () => {
+        const {x, y, scale} = visualRef.current
+        const ox = x - clamp(x, 0, rectRef.current.width)
+        const len = Math.hypot(ox, y)
+        const s = Math.min(1, len / PULL)
+        const c = len ? ox / len : 1, n = len ? y / len : 0
+        const a = scale * (1 + s * 0.25), b = scale * (1 - s * 0.175)
+        const k = (a - b) * c * n
+        thumbRef.current.style.transform = `translate(-50%, -50%) matrix(${a * c * c + b * n * n}, ${k}, ${k}, ${a * n * n + b * c * c}, ${x}, ${y})`
     }
 
     const resetThumb = () => {
@@ -47,23 +52,17 @@ const Slider = ({value, min = 0, max = 100, step = 1, onChange, ...props}) => {
         thumbRef.current.style.transform = ''
     }
 
-    const pointAt = clientX => {
-        const rect = rectRef.current
-        const rawPercent = (clientX - rect.left) / rect.width * 100
-        const clampedPercent = clamp(rawPercent, 0, 100)
-        const overflow = rawPercent - clampedPercent
-        const stretch = Math.sign(overflow) * rubber(Math.abs(overflow), OVERDRAG)
-        return {
-            clampedPercent,
-            visualPercent: clampedPercent + stretch,
-            stretchRatio: Math.abs(stretch) / OVERDRAG,
-        }
+    const pointAt = (clientX, clientY) => {
+        const {left, width, startY} = rectRef.current
+        const raw = clientX - left
+        const clamped = clamp(raw, 0, width)
+        const dx = raw - clamped, dy = clientY - startY
+        const len = Math.hypot(dx, dy)
+        const f = len ? rubber(len, PULL) / len : 0
+        return {percent: clamped / width * 100, x: clamped + dx * f, y: dy * f}
     }
 
-    const render = () => {
-        const {percent, scale, stretch} = visualRef.current
-        applyThumb(percent, scale, stretch)
-    }
+    const valueAt = percent => clamp(snap(min + percent / 100 * (max - min), step, min), min, max)
 
     const grow = () => {
         let last = performance.now()
@@ -72,46 +71,42 @@ const Slider = ({value, min = 0, max = 100, step = 1, onChange, ...props}) => {
             last = now
             const v = visualRef.current
             v.scale += (1.3 - v.scale) * Math.min(1, dt * 20)
-            render()
             if (Math.abs(v.scale - 1.3) < 0.01) {
                 v.scale = 1.3
                 render()
                 rafRef.current = null
                 return
             }
+            render()
             rafRef.current = requestAnimationFrame(tick)
         }
         rafRef.current = requestAnimationFrame(tick)
     }
 
-    const settle = (startPercent, startVelocity, startScale, startStretch, targetPercent) => {
-        let pos = startPercent
-        let vel = startVelocity
-        let scale = startScale
-        let stretch = startStretch
+    const settle = (vx, vy, tx) => {
+        const v = visualRef.current
         let last = performance.now()
         setSettling(true)
 
         const tick = now => {
             const dt = Math.min((now - last) / 1000, 0.032)
             last = now
-            const accel = -STIFFNESS * (pos - targetPercent) - DAMPING * vel
-            vel += accel * dt
-            pos += vel * dt
-            scale += (1 - scale) * Math.min(1, dt * 10)
-            stretch += (0 - stretch) * Math.min(1, dt * 10)
-            visualRef.current = {percent: pos, scale, stretch}
+            vx += (-STIFFNESS * (v.x - tx) - DAMPING * vx) * dt
+            vy += (-STIFFNESS * v.y - DAMPING * vy) * dt
+            v.x += vx * dt
+            v.y += vy * dt
+            v.scale += (1 - v.scale) * Math.min(1, dt * 10)
 
-            const done = Math.abs(pos - targetPercent) < SETTLE_POS && Math.abs(vel) < SETTLE_VEL
-                && Math.abs(scale - 1) < 0.01 && stretch < 0.01
+            const done = Math.abs(v.x - tx) < SETTLE_POS && Math.abs(v.y) < SETTLE_POS
+                && Math.abs(vx) < SETTLE_VEL && Math.abs(vy) < SETTLE_VEL && Math.abs(v.scale - 1) < 0.01
             if (done) {
-                visualRef.current = {percent: targetPercent, scale: 1, stretch: 0}
+                visualRef.current = {x: tx, y: 0, scale: 1}
                 resetThumb()
                 setSettling(false)
                 rafRef.current = null
                 return
             }
-            applyThumb(pos, scale, stretch)
+            render()
             rafRef.current = requestAnimationFrame(tick)
         }
         rafRef.current = requestAnimationFrame(tick)
@@ -121,38 +116,35 @@ const Slider = ({value, min = 0, max = 100, step = 1, onChange, ...props}) => {
         e.preventDefault()
         stop()
         thumbRef.current.focus()
-        rectRef.current = trackRef.current.getBoundingClientRect()
+        const {left, width} = trackRef.current.getBoundingClientRect()
+        rectRef.current = {left, width, startY: e.clientY}
+        thumbRef.current.style.left = '0'
+        lastRef.current = null
         setInteracting(true)
         setSettling(false)
 
-        const move = clientX => {
-            const {clampedPercent, visualPercent, stretchRatio} = pointAt(clientX)
-            const next = clamp(snap(min + clampedPercent / 100 * (max - min), step, min), min, max)
-            onChange(next)
-            visualRef.current.percent = visualPercent
-            visualRef.current.stretch = stretchRatio
+        const move = (clientX, clientY) => {
+            const {percent, x, y} = pointAt(clientX, clientY)
+            onChange(valueAt(percent))
+            Object.assign(visualRef.current, {x, y})
             render()
-            const now = performance.now()
-            lastRef.current = {prev: lastRef.current?.curr, curr: {percent: visualPercent, t: now, stretchRatio}}
+            lastRef.current = {prev: lastRef.current?.curr, curr: {x, y, t: performance.now()}}
         }
-        move(e.clientX)
+        move(e.clientX, e.clientY)
         grow()
 
         const controller = new AbortController()
         abortRef.current = controller
         const {signal} = controller
-        document.addEventListener('pointermove', e => move(e.clientX), {signal})
+        document.addEventListener('pointermove', e => move(e.clientX, e.clientY), {signal})
         document.addEventListener('pointerup', e => {
             controller.abort()
             setInteracting(false)
             stop()
-            const {clampedPercent} = pointAt(e.clientX)
-            const target = percentOf(clamp(snap(min + clampedPercent / 100 * (max - min), step, min), min, max), min, max)
+            const target = percentOf(valueAt(pointAt(e.clientX, e.clientY).percent), min, max) / 100 * width
             const {prev, curr} = lastRef.current ?? {}
-            const velocity = prev && curr && curr.t > prev.t
-                ? (curr.percent - prev.percent) / (curr.t - prev.t) * 1000
-                : 0
-            settle(curr?.percent ?? target, velocity, visualRef.current.scale, curr?.stretchRatio ?? 0, target)
+            const dt = prev && curr && curr.t > prev.t ? (curr.t - prev.t) / 1000 : 0
+            settle(dt && (curr.x - prev.x) / dt, dt && (curr.y - prev.y) / dt, target)
         }, {signal})
     }
 

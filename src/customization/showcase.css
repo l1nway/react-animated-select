@@ -47,6 +47,7 @@
 .rac-preset {
   --rac-bg: revert-layer;
   --rac-fg: revert-layer;
+  --rac-radius: revert-layer;
   all: revert-layer;
 }
 
@@ -75,56 +76,20 @@
   gap: 0.5em;
 }
 
-.rac-showcase-input {
-  pointer-events: none;
-  position: absolute;
-  opacity: 0;
-  height: 1px;
-  width: 1px;
-  margin: 0;
-}
-
-.rac-showcase-box {
-  color: #c084fc;
-  display: grid;
-
-  & svg {
-    grid-area: 1 / 1;
-    height: 1.4em;
-    width: 1.4em;
-  }
-
-  & svg:last-child {
-    transition:
-      scale 500ms cubic-bezier(0.34, 2.8, 0.64, 1),
-      opacity 200ms ease;
-    box-sizing: border-box;
-    padding: 0.25em;
-    opacity: 0;
-    scale: 0.5;
-  }
-
-  .rac-showcase-input:checked + & svg:last-child {
-    opacity: 1;
-    scale: 1;
-  }
-
-  .rac-showcase-input:focus-visible + & {
-    outline: 2px solid #a78bfa;
-    border-radius: 0.25em;
-    outline-offset: 2px;
-  }
+.rac-showcase-toggle .rac-tick-box {
+  height: 1.4em;
+  width: 1.4em;
 }
 
 .rac-showcase-name {
-  color: rgb(156, 220, 254);
+  color: var(--rac-tok-key);
 }
 
 .rac-showcase-note {
   font-size: 0.85em;
-  color: #9ca3af;
+  color: var(--rac-muted);
 }
 
 .rac-showcase-code {
-  border-top: 1px solid #1f293780;
+  border-top: 1px solid var(--rac-line);
 }

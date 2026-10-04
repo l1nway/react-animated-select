@@ -1,8 +1,8 @@
 import {useCallback, useReducer, memo} from 'react'
 import {LineStyle, SquareArrowDown} from 'lucide-react'
-import SlideDown from '../components/slideDown'
+import {Collapse} from '@l1nway/collapse'
 import {Select} from 'react-animated-select'
-import {merge, Title} from '../components/helpers'
+import {merge, CHIPS, Title} from '../components/helpers'
 import {Table, Text} from '../components/section'
 import {PRESETS, TABLES} from './reference'
 import {Showcase, Toggle} from './showcase'
@@ -22,6 +22,8 @@ const FLAGS = [
     {name: 'disabled', note: '[aria-disabled]'}
 ]
 
+const COLOR = /^(#|color-mix\(|rgba?\(|hsla?\(|oklch\()/
+
 const flip = open => !open
 
 // [DOC: styling-tables]
@@ -35,17 +37,17 @@ const Reference = memo(({table}) => {
                 <span className='rac-styling-maintitle'>{name}</span>
                 <SquareArrowDown className='rac-styling-icon' aria-hidden='true'/>
             </button>
-            <SlideDown visibility={open} className='rac-styling-container' id={panel} duration={500}>
+            <Collapse in={open} className='rac-styling-container' id={panel} duration={500}>
                 <Table id={`styling-${id}`} title={name} columns={columns} className='rac-styling-table'>
                     {element.map(item =>
                         <tr key={item.name + item.value}>
                             <th className='rac-styling-title' scope='row' data-depth={item.depth}>{item.name}</th>
-                            <td className='rac-styling-value' style={{color: item.value}}>{item.value}</td>
+                            <td className='rac-styling-value' style={COLOR.test(item.value) ? {color: item.value} : undefined}>{item.value}</td>
                             <Text>{item.desc}</Text>
                         </tr>
                     )}
                 </Table>
-            </SlideDown>
+            </Collapse>
         </>
     )
 })
@@ -66,6 +68,7 @@ function Styling() {
                     <Select
                         placeholder='Choose a city'
                         disabled={state.disabled}
+                        plugins={CHIPS}
                         multiple={state.multiple}
                         loading={state.loading}
                         error={state.error}
