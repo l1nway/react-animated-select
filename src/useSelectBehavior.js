@@ -44,8 +44,8 @@ const match = (options, list, at, query) => {
 }
 
 // [DOC: select-behavior]
-export default function useSelectBehavior({props, state, setState, normalizedOptions: options, expandedGroups, selected, selectedIDs, visibility: open, setVisibility: setOpen, modelActions, loadMoreOnce, highlightStore}) {
-    const {disabled, multiple, hasMore, loadButton, loadOffset, loadAhead, icons, onFocus, onBlur, onKeyDown} = props
+export default function useSelectBehavior({props, state, setState, normalizedOptions: options, expandedGroups, selected, selectedIDs, visibility: open, setVisibility: setOpen, modelActions, highlightStore}) {
+    const {disabled, multiple, hasMore, loadButton, icons, onFocus, onBlur, onKeyDown} = props
     const {selectOption, clear, removeOption} = modelActions
     const {deleting} = state
     const {reach, list} = useReachable(options, expandedGroups)
@@ -59,16 +59,10 @@ export default function useSelectBehavior({props, state, setState, normalizedOpt
         return index !== -1 ? index : list.find(i => !options[i].groupHeader) ?? list[0] ?? -1
     }, [options, selected, selectedIDs, multiple, reach, list])
 
-    // [DOC: select-behavior]
-    const loadAheadCheck = (index) => {
-        if (!loadButton && open && hasMore && index >= options.length - loadAhead) loadMoreOnce()
-    }
-
     // [DOC: highlight]
     useLayoutEffect(() => {
         const {index} = highlightStore.get()
         highlightStore.set({fallback: fallbackHighlight, index: index !== -1 && reach(options[index]) ? index : -1})
-        loadAheadCheck(effectiveHighlight(highlightStore.get()))
     })
 
     // [DOC: select-behavior]
@@ -83,10 +77,7 @@ export default function useSelectBehavior({props, state, setState, normalizedOpt
         }
     }, [])
 
-    const highlight = (index) => {
-        highlightStore.set({index})
-        loadAheadCheck(index)
-    }
+    const highlight = (index) => highlightStore.set({index})
 
     // [DOC: typeahead]
     const typeahead = (char, current) => {
@@ -101,12 +92,6 @@ export default function useSelectBehavior({props, state, setState, normalizedOpt
 
     return useStableActions({
         highlight,
-
-        handleListScroll: (e) => {
-            if (loadButton) return
-            const {scrollTop, scrollHeight, clientHeight} = e.currentTarget
-            if (scrollHeight - scrollTop <= clientHeight + loadOffset) loadMoreOnce()
-        },
 
         handleBlur: (e) => {
             const clickedInsidePortal = e.relatedTarget?.closest('.rac-options')

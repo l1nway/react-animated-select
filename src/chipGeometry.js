@@ -6,13 +6,6 @@ export const NONE = []
 // [DOC: chip-resize]
 const STILL = {overflow: 'hidden', textOverflow: 'clip', boxSizing: 'border-box', minWidth: '0px', maxWidth: 'none', minHeight: '0px', maxHeight: 'none'}
 
-const REDUCED = '(prefers-reduced-motion: reduce)'
-export const reducedMotion = () => !!window.matchMedia?.(REDUCED).matches
-export const watchMotion = (callback) => {
-    const query = window.matchMedia?.(REDUCED)
-    query?.addEventListener('change', callback)
-    return () => query?.removeEventListener('change', callback)
-}
 export const slotsOf = (parent) => Array.from(parent.children).filter(el => el.classList.contains(SLOT))
 const labelOf = (slot) => slot.firstElementChild?.firstElementChild
 const scripted = (el, test) => !!el?.getAnimations?.().some(a => a.constructor === Animation && test(a))
@@ -132,22 +125,3 @@ export const resizesOf = (snap) => {
 export const resize = (runs, duration, easing, onfinish) => runs.forEach(({el, from, to}) => {
     el.animate([{...STILL, ...from}, {...STILL, ...to}], {id: RESIZE, duration, easing}).onfinish = onfinish
 })
-
-// [DOC: value-height]
-export const followHeight = (root, memo, value, duration, easing, pin) => {
-    if (!root || value === memo.value) return
-    const style = getComputedStyle(root)
-    const from = memo.anim ? style.height : memo.root
-    memo.anim?.cancel()
-    // [DOC: chip-resize]
-    if (pin) Object.assign(pin.style, {height: `${value}px`, boxSizing: 'border-box'})
-    memo.root = style.height
-    if (pin) Object.assign(pin.style, {height: '', boxSizing: ''})
-    const skip = !memo.value || from === memo.root || !root.animate || reducedMotion()
-    memo.value = value
-    memo.anim = null
-    if (skip) return
-    const frame = {overflow: 'hidden', alignItems: 'flex-start'}
-    const anim = memo.anim = root.animate([{...frame, height: from}, {...frame, height: memo.root}], {duration, easing})
-    anim.onfinish = () => {if (memo.anim === anim) memo.anim = null}
-}

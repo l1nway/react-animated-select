@@ -6,9 +6,9 @@ import {useMemo} from 'react'
 export const NO_PICK = []
 
 // [DOC: option-model]
-export default function useSelectModel({props, jsxOptions, state, setState, setVisibility, loadMoreOnce}) {
+export default function useSelectModel({props, jsxOptions, state, setState, ext, setVisibility, loadMoreOnce}) {
     const {onChange, disabled, loading, error, multiple, childrenFirst, groupsClosed, hasMore, loadButton, placeholder, selectedText, texts} = props
-    const {disabledOption, emptyOption, invalidOption, emptyGroup} = texts
+    const {disabledOption, emptyOption, invalidOption, emptyGroup, loadMore: moreText, loadingMore: pendingText} = texts
     const {loadPending, internalValue, toggledGroups, picked} = state
 
     // stabilize inline literals
@@ -18,13 +18,13 @@ export default function useSelectModel({props, jsxOptions, state, setState, setV
     const isControlled = controlledValue !== undefined
     const value = isControlled ? controlledValue : internalValue
 
-    const loadingTitle = loadPending ? texts.loadingMore : texts.loadMore
+    // [DOC: paging]
+    const tail = useMemo(() => ext.row?.({hasMore, loadButton, loadPending, moreText, pendingText}) ?? null, [ext, hasMore, loadButton, loadPending, moreText, pendingText])
 
     const normalizedOptions = useMemo(() => normalizeOptions({
-        options, jsxOptions, childrenFirst,
-        hasMore, loadButton, loadPending, loadingTitle,
+        options, jsxOptions, childrenFirst, tail,
         emptyOption, invalidOption, disabledOption, emptyGroup
-    }), [options, jsxOptions, childrenFirst, hasMore, loadButton, loadPending, loadingTitle, emptyOption, invalidOption, disabledOption, emptyGroup])
+    }), [options, jsxOptions, childrenFirst, tail, emptyOption, invalidOption, disabledOption, emptyGroup])
 
     // [DOC: option-model]
     const expandedGroups = useMemo(() => new Set(normalizedOptions

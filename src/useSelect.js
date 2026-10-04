@@ -1,8 +1,19 @@
 import {useMemo, useReducer, useEffect, useLayoutEffect, useId, useRef, useState, useImperativeHandle} from 'react'
-import {useStableActions, compactReducer, createStore} from './state'
+import {useStableActions, useShallowStable, compactReducer, createStore} from './state'
 import {warnOnce} from './utils'
 import useSelectBehavior, {initialHighlight} from './useSelectBehavior'
 import useSelectModel, {NO_PICK} from './useSelectModel'
+
+const NO_PLUGINS = []
+
+// [DOC: plugins]
+const usePlugins = (plugins) => {
+    const stable = useShallowStable(Array.isArray(plugins) ? plugins : NO_PLUGINS)
+    return useMemo(() => stable.reduce((ext, plugin) => {
+        for (const key in plugin) if (key in ext) warnOnce(`plugin ${key}`, `Two plugins provide \`${key}\`; the last one wins. Pass each plugin once.`)
+        return Object.assign(ext, plugin)
+    }, {}), [stable])
+}
 
 // [DOC: select-store]
 const initSelectState = (props) => ({
@@ -22,7 +33,7 @@ export default function useSelect(ownProps, jsxOptions) {
     const {internalVisibility, deleting, loadPending, fieldsetDisabled} = state
     // [DOC: fieldset-disabled]
     const props = useMemo(() => fieldsetDisabled && !ownProps.disabled ? {...ownProps, disabled: true} : ownProps, [ownProps, fieldsetDisabled])
-    const {ref, open: externalOpen, onOpenChange, popup, hasMore, loadMore, loadButton, error, disabled, loading, required, texts} = props
+    const {ref, open: externalOpen, onOpenChange, popup, hasMore, loadButton, error, disabled, loading, required, texts} = props
 
     const reactId = useId()
     const selectId = useMemo(() => reactId.replace(/:/g, ''), [reactId])
@@ -42,6 +53,10 @@ export default function useSelect(ownProps, jsxOptions) {
     }, [ownProps.disabled])
 
     const [highlightStore] = useState(() => createStore(initialHighlight))
+    const ext = usePlugins(ownProps.plugins)
+    // [DOC: plugins]
+    if (ownProps.multiple && (ownProps.deleteInline || ownProps.deleteAlways) && !ext.Value) warnOnce('no chips', '`deleteInline` and `deleteAlways` act on chips, which need the `chips` plugin: `plugins={[chips]}`.')
+    if ((ownProps.hasMore || ownProps.loadButton || ownProps.loadMore) && !ext.request) warnOnce('no paging', '`hasMore`, `loadMore` and `loadButton` need the `paging` plugin: `plugins={[paging]}`.')
 
     const isControlled = externalOpen !== undefined
     const requested = isControlled ? !!externalOpen : internalVisibility
@@ -58,37 +73,22 @@ export default function useSelect(ownProps, jsxOptions) {
             if (!isControlled) setState({internalVisibility: next})
             onOpenChange?.(next)
         },
-        // [DOC: select-store]
-        loadMoreOnce: () => {
-            if (!hasMore || loadLock.current) return
-            if (!loadMore) return warnOnce('no loadMore', '`hasMore` is set, but there is no `loadMore` to call.')
-            loadLock.current = true
-            setState({loadPending: true})
-            const settle = () => setState({loadPending: false})
-            try {
-                loadMore()?.then?.(settle, settle)
-            } catch (error) {
-                // sync throw
-                loadLock.current = false
-                settle()
-                const report = globalThis.reportError ?? console.error
-                report(error)
-            }
-        },
+        // [DOC: paging]
+        loadMoreOnce: () => ext.request?.({props, lock: loadLock, setPending: (loadPending) => setState({loadPending})}),
         setListReady: (ready) => highlightStore.set({ready}),
         setDeleting: (bool) => setState({deleting: bool}),
         // [DOC: form-field]
         markInvalid: () => setState({invalid: true})
     })
 
-    const model = useSelectModel({props, jsxOptions, state, setState, setVisibility: core.setVisibility, loadMoreOnce: core.loadMoreOnce})
+    const model = useSelectModel({props, jsxOptions, state, setState, ext, setVisibility: core.setVisibility, loadMoreOnce: core.loadMoreOnce})
     const {normalizedOptions, expandedGroups, selected, selectedIDs, hasOptions, active, hasActualValue, title, valueOption, actions: modelActions} = model
     // [DOC: state-semantics]
     const visibility = active && requested && popup
 
     const behavior = useSelectBehavior({
         props, state, setState, normalizedOptions, expandedGroups, selected, selectedIDs, visibility, highlightStore,
-        setVisibility: core.setVisibility, loadMoreOnce: core.loadMoreOnce, modelActions
+        setVisibility: core.setVisibility, modelActions
     })
 
     // release pending load
@@ -128,5 +128,5 @@ export default function useSelect(ownProps, jsxOptions) {
         disabled, fieldsetDisabled, invalid, loading, error
     }), [visibility, deleting, loadPending, expandedGroups, selectedIDs, normalizedOptions, selected, hasOptions, active, hasActualValue, title, valueOption, disabled, fieldsetDisabled, invalid, loading, error])
 
-    return {selectId, selectRef, highlightStore, state: selectState, actions}
+    return {selectId, selectRef, highlightStore, ext, state: selectState, actions}
 }

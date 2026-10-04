@@ -1,6 +1,6 @@
 {
   "name": "react-animated-select",
-  "version": "0.7.7",
+  "version": "0.8.0",
   "type": "module",
   "author": {
     "name": "l1nway",
@@ -39,20 +39,20 @@
     "prepublishOnly": "npm run build"
   },
   "main": "./dist/index.cjs",
-  "module": "./dist/index.es.js",
+  "module": "./dist/index.js",
   "types": "./index.d.ts",
   "exports": {
     ".": {
       "import": {
         "types": "./index.d.ts",
-        "default": "./dist/index.es.js"
+        "default": "./dist/index.js"
       },
       "require": {
         "types": "./dist/index.d.cts",
         "default": "./dist/index.cjs"
       }
     },
-    "./style.css": "./dist/index.css",
+    "./style.css": "./dist/style.css",
     "./package.json": "./package.json"
   },
   "sideEffects": [

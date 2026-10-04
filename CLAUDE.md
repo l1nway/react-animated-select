@@ -17,6 +17,7 @@ Rules:
 
 ## Build
 
-- `npm run build` runs `vite build` (library mode, `vite.config.js`) and outputs ESM (`dist/index.es.js`), CJS (`dist/index.cjs`), CSS and `dist/index.d.cts`.
+- `npm run build` runs `vite build` (library mode, `vite.config.js`, `preserveModules`) and outputs per-module ESM (`dist/*.js`, entry `dist/index.js`) and CJS (`dist/*.cjs`, entry `dist/index.cjs`), plus `dist/index.d.cts`.
+- CSS is split per module and imported by the ES files. The CJS files have the CSS imports stripped. The single combined `dist/style.css` (starts with `@layer rac.base, rac.theme;`, then base, theme, chip) is exported as `react-animated-select/style.css`.
 - `react` and `react-dom` are externals and peer dependencies. They are never bundled.
 - Publishing runs from `.github/workflows/publish.yml`.

@@ -100,3 +100,30 @@ export const stopEvent = (e) => {
 
 // [DOC: nested-controls]
 export const refocus = (e, ref) => {if (e?.currentTarget.contains(document.activeElement)) ref.current?.focus()}
+
+const REDUCED = '(prefers-reduced-motion: reduce)'
+export const reducedMotion = () => !!window.matchMedia?.(REDUCED).matches
+export const watchMotion = (callback) => {
+    const query = window.matchMedia?.(REDUCED)
+    query?.addEventListener('change', callback)
+    return () => query?.removeEventListener('change', callback)
+}
+
+// [DOC: value-height]
+export const followHeight = (root, memo, value, duration, easing, pin) => {
+    if (!root || value === memo.value) return
+    const style = getComputedStyle(root)
+    const from = memo.anim ? style.height : memo.root
+    memo.anim?.cancel()
+    // [DOC: chip-resize]
+    if (pin) Object.assign(pin.style, {height: `${value}px`, boxSizing: 'border-box'})
+    memo.root = style.height
+    if (pin) Object.assign(pin.style, {height: '', boxSizing: ''})
+    const skip = !memo.value || from === memo.root || !root.animate || reducedMotion()
+    memo.value = value
+    memo.anim = null
+    if (skip) return
+    const frame = {overflow: 'hidden', alignItems: 'flex-start'}
+    const anim = memo.anim = root.animate([{...frame, height: from}, {...frame, height: memo.root}], {duration, easing})
+    anim.onfinish = () => {if (memo.anim === anim) memo.anim = null}
+}

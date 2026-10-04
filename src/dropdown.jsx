@@ -1,6 +1,6 @@
 import {memo, useCallback, useContext, useRef, useState, useSyncExternalStore} from 'react'
 import {SelectConfigContext, SelectActionsContext, SelectStateContext} from './state'
-import {dots, withClass} from './utils'
+import {dots, flag, withClass} from './utils'
 import {createPortal} from 'react-dom'
 import {Collapse} from './motion'
 import OptionList from './optionList'
@@ -14,11 +14,25 @@ const portalTarget = (container) => (typeof container === 'function' ? container
 
 const noSubscribe = () => () => {}
 
+// [DOC: state-semantics]
+export function StatusRow({more, ref}) {
+    const {texts} = useContext(SelectConfigContext)
+    const {loading, error} = useContext(SelectStateContext)
+    if (!error && !loading && !more) return null
+    // one node for every status
+    return (
+        <div ref={ref} className='rac-option' data-error={flag(error)} data-loading={flag(!error)}>
+            <span className='rac-option-text'>{error ? texts.error : loading ? texts.loading : texts.loadingMore}</span>
+            {!error && dots}
+        </div>
+    )
+}
+
 // [DOC: options-panel]
-const Dropdown = memo(function Dropdown() {
-    const {selectRef, selectId, multiple, offset, duration, easing, animateOpacity, keepMounted, optionsClassName, style, container, hasMore, loadButton, texts, popup} = useContext(SelectConfigContext)
-    const {visibility, normalizedOptions, loading, error} = useContext(SelectStateContext)
-    const {handleListScroll, setListReady} = useContext(SelectActionsContext)
+const Dropdown = /* @__PURE__ */ memo(function Dropdown() {
+    const {selectRef, selectId, multiple, offset, duration, easing, animateOpacity, keepMounted, optionsClassName, style, container, texts, popup, ext} = useContext(SelectConfigContext)
+    const {visibility, normalizedOptions} = useContext(SelectStateContext)
+    const {setListReady} = useContext(SelectActionsContext)
     const open = visibility && normalizedOptions.length > 0
 
     // [DOC: server-render]
@@ -66,7 +80,6 @@ const Dropdown = memo(function Dropdown() {
             style={{...toVars(style), '--rac-duration': `${duration}ms`, '--rac-ease': easing, pointerEvents: open ? 'auto' : 'none', position: 'absolute'}}
         >
             <div
-                onScroll={handleListScroll}
                 className='rac-list'
                 aria-multiselectable={multiple}
                 id={`${selectId}-listbox`}
@@ -76,15 +89,8 @@ const Dropdown = memo(function Dropdown() {
                 ref={listRef}
             >
                 <OptionList/>
-                {/* [DOC: state-semantics] */}
-                {error
-                    ? <div className='rac-option' data-error=''><span className='rac-option-text'>{texts.error}</span></div>
-                    : (loading || (!loadButton && hasMore)) &&
-                        <div className='rac-option' data-loading=''>
-                            <span className='rac-option-text'>{loading ? texts.loading : texts.loadingMore}</span>
-                            {dots}
-                        </div>
-                }
+                {/* [DOC: plugins] */}
+                {ext.Footer ? <ext.Footer/> : <StatusRow/>}
             </div>
         </Collapse>,
         portalTarget(container)

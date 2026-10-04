@@ -50,9 +50,7 @@
 }
 
 /* [DOC: trigger-width] */
-.rac-title {max-width: calc(100% - 0.25px); white-space: nowrap;}
-.rac-title, .rac-chip-text, .rac-chip > .rac-option-jsx {min-width: 0; overflow-x: clip;}
-.rac-title, .rac-chip-text {text-overflow: ellipsis;}
+.rac-title {min-width: 0; max-width: calc(100% - 0.25px); overflow-x: clip; white-space: nowrap; text-overflow: ellipsis;}
 
 .rac-dots {
     display: inline-flex;
@@ -73,7 +71,7 @@
 
 .rac-clear, .rac-arrow {display: grid; place-items: center; align-self: center;}
 
-.rac-clear, .rac-chip-del {padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;}
+.rac-clear {padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;}
 
 .rac-arrow, .rac-group-arrow {transition: rotate var(--rac-duration) var(--rac-ease);}
 
@@ -88,50 +86,12 @@
 /* [DOC: live-region] */
 .rac-live {position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;}
 
-/* chips */
-
-/* [DOC: trigger-width] */
-.rac-chip-slot {display: flex; align-items: center; max-width: 100%;}
-
-/* [DOC: touch-delete] */
-.rac-chip {
-    position: relative;
-    display: inline-flex;
-    flex-shrink: 0;
-    align-items: center;
-    box-sizing: border-box;
-    /* [DOC: trigger-width] */
-    max-width: inherit;
-    white-space: nowrap;
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-touch-callout: none;
-    -webkit-tap-highlight-color: transparent;
-    touch-action: pan-y;
-}
-
-.rac-chip-del {
-    position: absolute;
-    flex-shrink: 0;
-    inset-inline-end: 0;
-    height: 100%;
-    display: grid;
-    align-items: center;
-
-    &:disabled {cursor: inherit;}
-}
-
-.rac-select:is([data-deleting], [data-inline-delete]) .rac-chip-del {position: relative;}
-
 /* [DOC: touch-target] */
 @media (any-pointer: coarse) {
     .rac-clear {position: relative;}
     .rac-arrow {pointer-events: none;}
-    .rac-clear::before, .rac-chip-del::before {content: ''; position: absolute; inset: min(0px, 50% - 12px);}
+    .rac-clear::before {content: ''; position: absolute; inset: min(0px, 50% - 12px);}
 }
-
-/* [DOC: chip-hold] */
-.rac-spacer {flex-basis: 100%; height: 0; margin-inline-end: 1px;}
 
 /* panel */
 

@@ -1,14 +1,19 @@
-import {Fragment, memo, useCallback, useContext, useRef, useEffect, useSyncExternalStore} from 'react'
-import {SelectConfigContext, SelectActionsContext} from './state'
+import {Component, Fragment, memo, useCallback, useContext, useRef, useEffect, useSyncExternalStore} from 'react'
+import {SelectConfigContext, SelectActionsContext, SelectStateContext} from './state'
 import {renderIcon, stopEvent, refocus, optionContent, withClass} from './utils'
-import {Collapse} from './motion'
+import {Collapse, Presence} from './motion'
+import {Title} from './trigger'
+import {NONE} from './chipGeometry'
+import useChipLayout, {useChipKeys} from './useChipLayout'
+import './chip.css'
 
+const PROBE_STYLE = {position: 'absolute', visibility: 'hidden', pointerEvents: 'none'}
 const HOVERED = 1, SWIPED = 2
 // [DOC: touch-delete]
 const LONG_PRESS_MS = 600, JITTER = 10, SWIPE = 30
 
 // [DOC: chip]
-const SelectedItem = memo(function SelectedItem({element, deleting, locked, chipStore, delGroup}) {
+const SelectedItem = /* @__PURE__ */ memo(function SelectedItem({element, deleting, locked, chipStore, delGroup}) {
     const {selectRef, deleteInline, deleteAlways, icons, texts, valueAsOption, renderOption} = useContext(SelectConfigContext)
     const removable = !!icons.remove
     const {setVisibility, setDeleting, removeOption} = useContext(SelectActionsContext)
@@ -107,7 +112,7 @@ const SelectedItem = memo(function SelectedItem({element, deleting, locked, chip
 })
 
 // [DOC: chip]
-const Chip = memo(function Chip({element, chipStore, settle, ...chipProps}) {
+const Chip = /* @__PURE__ */ memo(function Chip({element, chipStore, settle, ...chipProps}) {
     // [DOC: chip-hold]
     const breakAfter = useSyncExternalStore(chipStore.subscribe, () => chipStore.get().breaks.includes(element.id), () => false)
     return (
@@ -120,4 +125,40 @@ const Chip = memo(function Chip({element, chipStore, settle, ...chipProps}) {
     )
 })
 
-export default Chip
+// [DOC: chip-hold]
+class Snapshot extends Component {
+    getSnapshotBeforeUpdate(prev) {
+        // [DOC: chip-resize]
+        const sized = prev.look !== this.props.look
+        if (sized || prev.chips !== this.props.chips) this.props.take(sized)
+        return null
+    }
+    componentDidUpdate() {}
+    render() {return null}
+}
+
+// [DOC: value]
+export const ChipsValue = /* @__PURE__ */ memo(function ChipsValue() {
+    const {selectedText, icons} = useContext(SelectConfigContext)
+    const {selectedIDs, deleting, active} = useContext(SelectStateContext)
+    const showChips = selectedIDs.length > 0 && !selectedText
+    const chips = showChips ? selectedIDs : NONE
+    const {chipStore, delGroup, valueRef, delIconRef, probe, settle, held, snapshot, look, wait} = useChipLayout(chips)
+    const keyed = useChipKeys(chips)
+
+    return (
+        <div className='rac-value' ref={valueRef}>
+            <Snapshot chips={chips} look={look} take={snapshot}/>
+            <Title hidden={showChips} settle={settle}/>
+            <Presence hold={held} wait={wait}>
+                {keyed.map(([key, element]) =>
+                    <Chip key={key} element={element} deleting={deleting} locked={!active} chipStore={chipStore} delGroup={delGroup} settle={settle}/>
+                )}
+            </Presence>
+            {probe && <button type='button' className='rac-chip-del' tabIndex={-1} aria-hidden='true' ref={delIconRef} style={PROBE_STYLE}>{renderIcon(icons.remove)}</button>}
+        </div>
+    )
+})
+
+// [DOC: plugins]
+export const chips = {Value: ChipsValue}

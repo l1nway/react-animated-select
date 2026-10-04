@@ -1,4 +1,7 @@
-import {FC, FunctionComponent, ReactNode, CSSProperties, ElementType, Ref, FocusEvent, AriaAttributes} from 'react'
+import {FC, FunctionComponent, ReactNode, CSSProperties, ElementType, Ref, FocusEvent, KeyboardEvent, AriaAttributes} from 'react'
+
+/** Live region message: a template with {label} / {n}, or a function for plural forms. */
+export type LiveText = string | ((value: string | number) => string)
 
 export interface SelectTexts {
     empty: string
@@ -13,7 +16,21 @@ export interface SelectTexts {
     invalidOption: string
     disabledOption: string
     emptyGroup: string
+    /** State word in a group header's accessible name. Default `'expanded'`. */
+    groupOpen: string
+    /** State word in a group header's accessible name. Default `'collapsed'`. */
+    groupClosed: string
     list: string
+    /** Validation bubble text of an empty required Select; default: the browser's own. */
+    required?: string
+    /** Default `'Removed {label}'`. */
+    removed?: LiveText
+    /** Default `'Selection cleared'`. */
+    cleared?: LiveText
+    /** Default `'{n} selected'`. */
+    selected?: LiveText
+    /** Default `'{n} more options loaded'`. */
+    loaded?: LiveText
 }
 
 export type SelectIcon = ElementType | string | ReactNode | null | false
@@ -32,9 +49,13 @@ export interface SelectProps extends AriaAttributes {
     ref?: Ref<HTMLDivElement>
     children?: ReactNode
 
+    /** A dictionary's values are the options, keys ignored; a key named name/label/id/value makes it one option, options/group a group. Array items take no className/style (use <Option/>). */
     options?: any[] | Record<string, any>
+    /** undefined = uncontrolled; keep one mode, clear a controlled Select with null / [] (a switch warns in dev). */
     value?: any
+    /** Initial value of an uncontrolled Select; also the target of form.reset(), in both modes, with or without name. */
     defaultValue?: any
+    /** value: an array item as given (an object stays the whole object), an <Option/> as its `value`; a controlled value must have the shape of its source. */
     onChange?: (value: any, ids: any) => void
     multiple?: boolean
     childrenFirst?: boolean
@@ -46,11 +67,17 @@ export interface SelectProps extends AriaAttributes {
 
     open?: boolean
     onOpenChange?: (open: boolean) => void
+    /** false: no panel, a tag list: role="group" without the combobox ARIA, never opens, no arrow; chip deletion and clear keep working. Default true. */
+    popup?: boolean
     onFocus?: (e: FocusEvent<HTMLDivElement>) => void
     onBlur?: (e: FocusEvent<HTMLDivElement>) => void
+    /** Runs before the Select handles a key; event.preventDefault() makes the Select skip it. */
+    onKeyDown?: (event: KeyboardEvent<HTMLDivElement>) => void
 
     id?: string
     name?: string
+    /** Id of the owner <form>, like <select form="id">: submits and resets with it even when placed outside. */
+    form?: string
     required?: boolean
 
     hasMore?: boolean

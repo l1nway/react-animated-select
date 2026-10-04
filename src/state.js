@@ -1,9 +1,9 @@
 import {createContext, useInsertionEffect, useRef, useState} from 'react'
 
 // [DOC: contexts]
-export const SelectConfigContext = createContext(null)
-export const SelectActionsContext = createContext(null)
-export const SelectStateContext = createContext(null)
+export const SelectConfigContext = /* @__PURE__ */ createContext(null)
+export const SelectActionsContext = /* @__PURE__ */ createContext(null)
+export const SelectStateContext = /* @__PURE__ */ createContext(null)
 
 // [DOC: compact-reducer]
 export const compactReducer = (state, next) => {

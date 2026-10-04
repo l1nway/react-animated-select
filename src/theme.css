@@ -65,48 +65,6 @@
     color: var(--rac-danger);
 }
 
-/* chips */
-
-.rac-chip {
-    min-height: calc(var(--rac-row) - 0.5em);
-    margin-block: 0.25em;
-    margin-inline-end: 0.5em;
-    padding-inline: 0.25em;
-    border-radius: calc(var(--rac-radius) / 2);
-    line-height: normal;
-    background-color: var(--rac-tint-2);
-    transition: background-color var(--rac-duration-fast) var(--rac-ease);
-
-    @media (hover: hover) {
-        &:hover {background-color: var(--rac-tint-3);}
-    }
-}
-
-.rac-select[data-deleting] .rac-chip {
-    background-color: color-mix(in srgb, var(--rac-danger) 15%, var(--rac-bg));
-    animation: rac-shake 0.3s infinite;
-
-    @media (prefers-reduced-motion: reduce) {
-        animation: none;
-    }
-}
-
-/* [DOC: corner-radius] */
-.rac-chip-del {
-    border-start-end-radius: inherit;
-    border-end-end-radius: inherit;
-    background-color: color-mix(in srgb, var(--rac-danger) 30%, var(--rac-bg));
-    transition:
-        color var(--rac-duration) var(--rac-ease),
-        background-color var(--rac-duration) var(--rac-ease);
-
-    &:hover {color: var(--rac-danger);}
-}
-
-.rac-select:is([data-deleting], [data-inline-delete]) .rac-chip-del {
-    background-color: transparent;
-}
-
 /* panel */
 
 .rac-list {
@@ -154,13 +112,6 @@
 @keyframes rac-busy {
     from {background-position-x: -100%;}
     to {background-position-x: 200%;}
-}
-
-@keyframes rac-shake {
-    0% {transform: rotate(0deg);}
-    25% {transform: rotate(-1deg);}
-    75% {transform: rotate(1deg);}
-    100% {transform: rotate(0deg);}
 }
 
 }

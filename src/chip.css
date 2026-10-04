@@ -1,0 +1,106 @@
+/* [DOC: styles-layer] */
+@layer rac.base, rac.theme;
+
+@layer rac.base {
+
+/* [DOC: trigger-width] */
+.rac-chip-slot {display: flex; align-items: center; max-width: 100%;}
+.rac-chip-text, .rac-chip > .rac-option-jsx {min-width: 0; overflow-x: clip;}
+.rac-chip-text {text-overflow: ellipsis;}
+
+/* [DOC: touch-delete] */
+.rac-chip {
+    position: relative;
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    box-sizing: border-box;
+    /* [DOC: trigger-width] */
+    max-width: inherit;
+    white-space: nowrap;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
+    touch-action: pan-y;
+}
+
+.rac-chip-del {
+    position: absolute;
+    flex-shrink: 0;
+    inset-inline-end: 0;
+    height: 100%;
+    display: grid;
+    align-items: center;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:disabled {cursor: inherit;}
+}
+
+.rac-select:is([data-deleting], [data-inline-delete]) .rac-chip-del {position: relative;}
+
+/* [DOC: touch-target] */
+@media (any-pointer: coarse) {
+    .rac-chip-del::before {content: ''; position: absolute; inset: min(0px, 50% - 12px);}
+}
+
+/* [DOC: chip-hold] */
+.rac-spacer {flex-basis: 100%; height: 0; margin-inline-end: 1px;}
+
+}
+
+@layer rac.theme {
+
+.rac-chip {
+    min-height: calc(var(--rac-row) - 0.5em);
+    margin-block: 0.25em;
+    margin-inline-end: 0.5em;
+    padding-inline: 0.25em;
+    border-radius: calc(var(--rac-radius) / 2);
+    line-height: normal;
+    background-color: var(--rac-tint-2);
+    transition: background-color var(--rac-duration-fast) var(--rac-ease);
+
+    @media (hover: hover) {
+        &:hover {background-color: var(--rac-tint-3);}
+    }
+}
+
+.rac-select[data-deleting] .rac-chip {
+    background-color: color-mix(in srgb, var(--rac-danger) 15%, var(--rac-bg));
+    animation: rac-shake 0.3s infinite;
+
+    @media (prefers-reduced-motion: reduce) {
+        animation: none;
+    }
+}
+
+/* [DOC: corner-radius] */
+.rac-chip-del {
+    border-start-end-radius: inherit;
+    border-end-end-radius: inherit;
+    background-color: color-mix(in srgb, var(--rac-danger) 30%, var(--rac-bg));
+    transition:
+        color var(--rac-duration) var(--rac-ease),
+        background-color var(--rac-duration) var(--rac-ease);
+
+    &:hover {color: var(--rac-danger);}
+}
+
+.rac-select:is([data-deleting], [data-inline-delete]) .rac-chip-del {
+    background-color: transparent;
+}
+
+@keyframes rac-shake {
+    0% {transform: rotate(0deg);}
+    25% {transform: rotate(-1deg);}
+    75% {transform: rotate(1deg);}
+    100% {transform: rotate(0deg);}
+}
+
+}

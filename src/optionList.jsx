@@ -26,7 +26,7 @@ const useHighlighted = (index) => {
 const groupLabelId = (selectId, option) => `${optionDomId(selectId, option.id)}_l`
 
 // [DOC: option-list]
-const GroupHeader = memo(function GroupHeader({option, index, open, hasChildren}) {
+const GroupHeader = /* @__PURE__ */ memo(function GroupHeader({option, index, open, hasChildren}) {
     const {selectId, icons, texts} = useContext(SelectConfigContext)
     const {selectOption, highlight} = useContext(SelectActionsContext)
     const [ref, highlighted] = useHighlighted(index)
@@ -57,7 +57,7 @@ const GroupHeader = memo(function GroupHeader({option, index, open, hasChildren}
 })
 
 // [DOC: option-list]
-const OptionItem = memo(function OptionItem({option, index, isSelected, showCheckbox}) {
+const OptionItem = /* @__PURE__ */ memo(function OptionItem({option, index, isSelected, showCheckbox}) {
     const {selectId, icons, renderOption} = useContext(SelectConfigContext)
     const {selectOption, highlight} = useContext(SelectActionsContext)
     const [ref, highlighted] = useHighlighted(index)
@@ -99,7 +99,7 @@ const OptionItem = memo(function OptionItem({option, index, isSelected, showChec
 })
 
 // [DOC: option-list]
-const OptionList = memo(function OptionList() {
+const OptionList = /* @__PURE__ */ memo(function OptionList() {
     const {selectId, multiple} = useContext(SelectConfigContext)
     const {normalizedOptions, selected, selectedIDs, expandedGroups} = useContext(SelectStateContext)
     const selectedId = selected?.id

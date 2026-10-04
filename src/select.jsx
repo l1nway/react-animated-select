@@ -5,6 +5,8 @@ import Dropdown from './dropdown'
 import LiveRegion from './liveRegion'
 import {icons, warnOnce} from './utils'
 import useSelect from './useSelect'
+import './base.css'
+import './theme.css'
 
 const EMPTY_STYLE = {}
 const filled = (v) => v !== undefined && v !== null && v !== ''
@@ -66,7 +68,7 @@ const collectOptions = (children, emptyGroup, parentGroup = null, prefix = 'o', 
 }
 
 // [DOC: public-api]
-const MODEL_KEYS = new Set(['ref', 'options', 'value', 'defaultValue', 'onChange', 'children', 'loadMore', 'open', 'onOpenChange', 'onFocus', 'onBlur', 'onKeyDown', 'childrenFirst', 'groupsClosed', 'disabled', 'loading', 'error'])
+const MODEL_KEYS = new Set(['ref', 'options', 'value', 'defaultValue', 'onChange', 'children', 'loadMore', 'open', 'onOpenChange', 'onFocus', 'onBlur', 'onKeyDown', 'childrenFirst', 'groupsClosed', 'disabled', 'loading', 'error', 'plugins'])
 // [DOC: public-api]
 const ATTR = /^(aria|data)-/
 
@@ -79,6 +81,7 @@ const DEFAULT_PROPS = {
     multiple: false,
     childrenFirst: false,
     groupsClosed: false,
+    plugins: [],
 
     disabled: false,
     loading: false,
@@ -166,11 +169,11 @@ export function Select(userProps) {
     const emptyGroup = props.texts.emptyGroup
     const jsxOptions = useDeepStable(useMemo(() => collectOptions(props.children, emptyGroup), [props.children, emptyGroup]))
 
-    const {selectId, selectRef, highlightStore, state, actions} = useSelect(props, jsxOptions)
+    const {selectId, selectRef, highlightStore, ext, state, actions} = useSelect(props, jsxOptions)
 
     const uiProps = {}, attrs = {}
     for (const key in props) if (!MODEL_KEYS.has(key)) (ATTR.test(key) ? attrs : uiProps)[key] = props[key]
-    const config = useShallowStable({...uiProps, attrs, selectId, selectRef, highlightStore})
+    const config = useShallowStable({...uiProps, attrs, selectId, selectRef, highlightStore, ext})
 
     return (
         <SelectConfigContext.Provider value={config}>

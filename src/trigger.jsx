@@ -1,13 +1,10 @@
 import {SelectConfigContext, SelectActionsContext, SelectStateContext} from './state'
-import {renderIcon, stopEvent, refocus, optionDomId, optionContent, flag, dots, withClass} from './utils'
-import {Component, memo, useContext, useEffect, useRef, useState, useSyncExternalStore} from 'react'
+import {renderIcon, stopEvent, refocus, optionDomId, optionContent, flag, dots, withClass, followHeight} from './utils'
+import {memo, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react'
 import {effectiveHighlight} from './useSelectBehavior'
-import {sameValue, toJSON} from './model'
+import {toJSON} from './model'
 import {Presence, Collapse} from './motion'
-import useChipLayout from './useChipLayout'
-import Chip from './chip'
 
-const PROBE_STYLE = {position: 'absolute', visibility: 'hidden', pointerEvents: 'none'}
 const NO_CHIPS = []
 const noop = () => {}
 
@@ -15,7 +12,7 @@ const noop = () => {}
 const formValue = (v) => v == null ? '' : typeof v === 'object' ? toJSON(v) ?? '' : String(v)
 
 // [DOC: form-field]
-const FormField = memo(function FormField() {
+const FormField = /* @__PURE__ */ memo(function FormField() {
     const {selectRef, multiple, name, form, required} = useContext(SelectConfigContext)
     const {selected, selectedIDs, disabled, fieldsetDisabled} = useContext(SelectStateContext)
     const {reset, markInvalid} = useContext(SelectActionsContext)
@@ -42,91 +39,56 @@ const FormField = memo(function FormField() {
     )
 })
 
-// [DOC: chip-hold]
-class Snapshot extends Component {
-    getSnapshotBeforeUpdate(prev) {
-        // [DOC: chip-resize]
-        const sized = prev.look !== this.props.look
-        if (sized || prev.chips !== this.props.chips) this.props.take(sized)
-        return null
-    }
-    componentDidUpdate() {}
-    render() {return null}
-}
-
-// [DOC: chip-keys]
-const rekey = (chips, prev) => {
-    const ids = new Set(chips.map(chip => chip.id))
-    const byId = new Map(prev.map(([key, chip]) => [chip.id, key]))
-    const free = prev.filter(([, chip]) => !ids.has(chip.id))
-    const taken = new Set(prev.map(([key]) => key))
-    return chips.map(chip => {
-        if (byId.has(chip.id)) return [byId.get(chip.id), chip]
-        const at = free.findIndex(([, old]) => sameValue(old.original, chip.original))
-        if (at >= 0) return [free.splice(at, 1)[0][0], chip]
-        let key = chip.id
-        while (taken.has(key)) key += '~'
-        taken.add(key)
-        return [key, chip]
-    })
-}
-
-const useChipKeys = (chips) => {
-    const [last, setLast] = useState(() => ({chips, keyed: rekey(chips, [])}))
-    if (last.chips === chips) return last.keyed
-    const keyed = rekey(chips, last.keyed)
-    setLast({chips, keyed})
-    return keyed
-}
-
 // [DOC: value]
-const Value = memo(function Value() {
-    const {selectedText, icons, valueAsOption, renderOption} = useContext(SelectConfigContext)
-    const {selectedIDs, title, valueOption, hasActualValue, loading, error, deleting, active} = useContext(SelectStateContext)
-    const showChips = selectedIDs.length > 0 && !selectedText
-    const chips = showChips ? selectedIDs : NO_CHIPS
-    const {chipStore, delGroup, valueRef, delIconRef, probe, settle, held, snapshot, look, wait} = useChipLayout(chips)
-    const keyed = useChipKeys(chips)
+export const Title = /* @__PURE__ */ memo(function Title({hidden, settle}) {
+    const {multiple, selectedText, valueAsOption, renderOption, texts} = useContext(SelectConfigContext)
+    const {selectedIDs, title, valueOption, hasActualValue, loading, error} = useContext(SelectStateContext)
     // [DOC: trigger-width]
     const [titleGroup] = useState(() => new Set())
 
     // [DOC: value]
     const rich = valueAsOption && valueOption ? optionContent(valueOption, renderOption, true) : null
     const busy = loading && !error && !hasActualValue
-    const titleKey = `${rich ? valueOption.id : title}${busy ? '-loading' : ''}`
+    const picked = multiple && selectedIDs.length > 0 && !selectedText
+    const titleKey = `${picked ? 'picked' : rich ? valueOption.id : title}${busy ? '-loading' : ''}`
     const bool = valueOption?.type === 'boolean' ? String(valueOption.raw) : undefined
 
     return (
-        <div className='rac-value' ref={valueRef}>
-            <Snapshot chips={chips} look={look} take={snapshot}/>
-            <Presence>
-                {!showChips &&
-                    <Collapse axis='x' fade group={titleGroup} className={withClass('rac-title', rich && valueOption.className)} style={rich ? valueOption.style : undefined} data-bool={bool} onEntered={settle} onExited={settle} key={titleKey}>
-                        {rich ? <div className='rac-option-jsx'>{rich}</div> : title}
-                        {busy && dots}
-                    </Collapse>
-                }
-            </Presence>
-            <Presence hold={held} wait={wait}>
-                {keyed.map(([key, element]) =>
-                    <Chip
-                        key={key}
-                        element={element}
-                        deleting={deleting}
-                        locked={!active}
-                        chipStore={chipStore}
-                        delGroup={delGroup}
-                        settle={settle}
-                    />
-                )}
-            </Presence>
-            {probe && <button type='button' className='rac-chip-del' tabIndex={-1} aria-hidden='true' ref={delIconRef} style={PROBE_STYLE}>{renderIcon(icons.remove)}</button>}
-        </div>
+        <Presence>
+            {!hidden &&
+                <Collapse axis='x' fade group={titleGroup} className={withClass('rac-title', rich && valueOption.className)} style={rich ? valueOption.style : undefined} data-bool={bool} onEntered={settle} onExited={settle} key={titleKey}>
+                    {rich ? <div className='rac-option-jsx'>{rich}</div> : picked ? selectedIDs.map(o => o.name || texts.emptyOption).join(', ') : title}
+                    {busy && dots}
+                </Collapse>
+            }
+        </Presence>
     )
 })
 
+// [DOC: value]
+const Value = /* @__PURE__ */ memo(function Value() {
+    const {selectRef, multiple, valueAsOption, duration, easing, ext} = useContext(SelectConfigContext)
+    const Plugin = multiple ? ext.Value : undefined
+    const valueRef = useRef(null)
+    // [DOC: value-height]
+    const [follow, setFollow] = useState(valueAsOption)
+    if (valueAsOption && !follow) setFollow(true)
+    const timing = useRef({duration, easing})
+    useLayoutEffect(() => {timing.current = {duration, easing}}, [duration, easing])
+    useLayoutEffect(() => {
+        const value = valueRef.current
+        if (!follow || multiple || !value || typeof ResizeObserver === 'undefined') return
+        const height = {value: 0, root: '', anim: null}
+        const observer = new ResizeObserver(() => followHeight(selectRef.current, height, value.offsetHeight, timing.current.duration, timing.current.easing))
+        observer.observe(value)
+        return () => {observer.disconnect(); height.anim?.cancel()}
+    }, [follow, multiple, selectRef])
+
+    return Plugin ? <Plugin/> : <div className='rac-value' ref={valueRef}><Title/></div>
+})
+
 // [DOC: trigger]
-const Trigger = memo(function Trigger() {
+const Trigger = /* @__PURE__ */ memo(function Trigger() {
     const {selectRef, selectId, highlightStore, className, style, duration, easing, deleteInline, icons, texts, placeholder, id, required, popup, attrs} = useContext(SelectConfigContext)
     const {visibility, active, hasActualValue, deleting, loading, loadPending, error, invalid, normalizedOptions} = useContext(SelectStateContext)
     const {handleBlur, handleFocus, handleKeyDown, toggleVisibility, clear} = useContext(SelectActionsContext)

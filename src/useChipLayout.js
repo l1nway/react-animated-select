@@ -1,7 +1,9 @@
 import {useCallback, useContext, useEffect, useEffectEvent, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react'
 import {flushSync} from 'react-dom'
 import {SelectConfigContext, SelectActionsContext, SelectStateContext, createStore} from './state'
-import {NONE, reducedMotion, watchMotion, slotsOf, isBusy, isResizing, restBreaks, freeze, snapOf, flip, resizesOf, resize, followHeight} from './chipGeometry'
+import {reducedMotion, watchMotion, followHeight} from './utils'
+import {sameValue} from './model'
+import {NONE, slotsOf, isBusy, isResizing, restBreaks, freeze, snapOf, flip, resizesOf, resize} from './chipGeometry'
 
 // [DOC: delete-reserve]
 const SLACK = 0.25
@@ -9,9 +11,35 @@ const SLACK = 0.25
 // [DOC: chip]
 const chipStoreInitial = {hoverId: null, swipedId: null, held: false, breaks: NONE}
 
+// [DOC: chip-keys]
+const rekey = (chips, prev) => {
+    const ids = new Set(chips.map(chip => chip.id))
+    const byId = new Map(prev.map(([key, chip]) => [chip.id, key]))
+    const free = prev.filter(([, chip]) => !ids.has(chip.id))
+    const taken = new Set(prev.map(([key]) => key))
+    return chips.map(chip => {
+        if (byId.has(chip.id)) return [byId.get(chip.id), chip]
+        const at = free.findIndex(([, old]) => sameValue(old.original, chip.original))
+        if (at >= 0) return [free.splice(at, 1)[0][0], chip]
+        let key = chip.id
+        while (taken.has(key)) key += '~'
+        taken.add(key)
+        return [key, chip]
+    })
+}
+
+// [DOC: chip-keys]
+export const useChipKeys = (chips) => {
+    const [last, setLast] = useState(() => ({chips, keyed: rekey(chips, [])}))
+    if (last.chips === chips) return last.keyed
+    const keyed = rekey(chips, last.keyed)
+    setLast({chips, keyed})
+    return keyed
+}
+
 // [DOC: chip-layout]
 export default function useChipLayout(chips) {
-    const {selectRef, duration, easing, multiple, deleteInline, deleteAlways, icons, valueAsOption, renderOption} = useContext(SelectConfigContext)
+    const {selectRef, duration, easing, deleteInline, deleteAlways, icons, valueAsOption, renderOption} = useContext(SelectConfigContext)
     const {selectedIDs, deleting, visibility, active} = useContext(SelectStateContext)
     const {setDeleting, setVisibility} = useContext(SelectActionsContext)
 
@@ -32,7 +60,7 @@ export default function useChipLayout(chips) {
     const delIconRef = useRef(null)
     const inline = deleteInline && !deleteAlways && !deleting && !!icons.remove
     const reserve = inline ? delWidth + SLACK : 0
-    const probe = multiple && inline && !delWidth && chips.length > 0
+    const probe = inline && !delWidth && chips.length > 0
     // [DOC: chip-resize]
     const look = !valueAsOption ? 0 : renderOption ? 2 : 1
 
@@ -121,6 +149,14 @@ export default function useChipLayout(chips) {
         snapRef.current = null
         if (!reducedMotion()) from.forEach((rect, el) => el.isConnected && flip(el, rect, duration, easing))
     }, [breaks, chips, look, chipStore, duration, easing])
+
+    // [DOC: value-height]
+    useLayoutEffect(() => {
+        const value = valueRef.current
+        const hold = holdRef.current
+        if (!value || !heightRef.current.value || isResizing(value)) return
+        followHeight(selectRef.current, heightRef.current, value.offsetHeight, hold.swap ? hold.duration / 2 : hold.duration, hold.easing)
+    }, [breaks, held, selectRef])
 
     useEffect(() => () => heightRef.current.anim?.cancel(), [])
 

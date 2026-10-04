@@ -1,13 +1,13 @@
 import {useCallback, useEffect, useLayoutEffect, useRef} from 'react'
 
 // [DOC: dropdown-position]
+const nudge = (panel, side, by) => {if (Math.abs(by) > 0.5) panel.style[side] = `${parseFloat(panel.style[side]) + by}px`}
 const shift = (panel, rect, upward, offset) => {
     const box = panel.getBoundingClientRect()
     const style = getComputedStyle(panel)
-    const dx = box.left - parseFloat(style.marginLeft) - rect.left
-    const dy = upward ? box.bottom + parseFloat(style.marginBottom) - rect.top + offset : box.top - parseFloat(style.marginTop) - rect.bottom - offset
-    if (Math.abs(dx) > 0.5) panel.style.left = `${rect.left - dx}px`
-    if (Math.abs(dy) > 0.5) panel.style[upward ? 'bottom' : 'top'] = `${parseFloat(panel.style[upward ? 'bottom' : 'top']) + (upward ? dy : -dy)}px`
+    nudge(panel, 'left', rect.left - box.left + parseFloat(style.marginLeft))
+    if (upward) nudge(panel, 'bottom', box.bottom + parseFloat(style.marginBottom) - rect.top + offset)
+    else nudge(panel, 'top', rect.bottom + offset - box.top + parseFloat(style.marginTop))
 }
 
 // [DOC: dropdown-position]

@@ -25,7 +25,7 @@ const compose = (base, now, texts, multiple) => {
 }
 
 // [DOC: live-region]
-const LiveRegion = memo(function LiveRegion() {
+const LiveRegion = /* @__PURE__ */ memo(function LiveRegion() {
     const {selectRef, selectId, multiple, texts} = useContext(SelectConfigContext)
     const {selected, selectedIDs, normalizedOptions, visibility, deleting, error} = useContext(SelectStateContext)
     const mounted = useSyncExternalStore(subscribe, () => true, () => false)

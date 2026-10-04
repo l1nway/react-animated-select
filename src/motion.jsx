@@ -9,7 +9,7 @@ const AXES = {
 const LIMITS = {x: {minWidth: '0px', maxWidth: 'none'}, y: {minHeight: '0px', maxHeight: 'none'}}
 
 // [DOC: presence]
-const PresenceContext = createContext(null)
+const PresenceContext = /* @__PURE__ */ createContext(null)
 
 // [DOC: collapse-group]
 let batch = null
@@ -103,7 +103,8 @@ export function Collapse({
 
         // unchanged: hold hidden state
         if (last.current === shown) {
-            if (!shown && !anim.current && el.animate) anim.current = el.animate([closed, closed], {fill: 'forwards'})
+            // [DOC: collapse]
+            if (!shown && anim.current?.effect?.target !== el && el.animate) anim.current = el.animate([closed, closed], {fill: 'forwards'})
             return
         }
         last.current = shown
@@ -127,7 +128,7 @@ export function Collapse({
         }
         // [DOC: collapse-group]
         group?.forEach(other => other !== member.current && other.restart())
-    }, [shown, axis, fade, duration, easing, nodeRef, group])
+    }, [shown, unmountOnExit, axis, fade, duration, easing, nodeRef, group])
 
     // [DOC: collapse]
     useLayoutEffect(() => {

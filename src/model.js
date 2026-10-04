@@ -51,8 +51,7 @@ const normalizeItem = (rawItem, index, prefix, group, groupDisabled, {emptyOptio
 }
 
 export const normalizeOptions = ({
-    options, jsxOptions, childrenFirst,
-    hasMore, loadButton, loadPending, loadingTitle,
+    options, jsxOptions, childrenFirst, tail,
     emptyOption, invalidOption, disabledOption, emptyGroup
 }) => {
     const texts = {emptyOption, invalidOption, disabledOption}
@@ -144,9 +143,8 @@ export const normalizeOptions = ({
         meta?.items.forEach(item => final.push(item))
     })
 
-    if (hasMore && loadButton) {
-        final.push({id: 'special-load-more-id', name: loadingTitle, loadMore: true, loading: loadPending, type: 'special'})
-    }
+    // [DOC: paging]
+    if (tail) final.push(tail)
     return final
 }
 
