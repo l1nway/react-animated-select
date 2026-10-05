@@ -1,0 +1,56 @@
+.rac-props-soon {
+  color: var(--rac-purple-text);
+  --rac-icon: 1.6em;
+  cursor: wait;
+
+  .rac-table-tick {
+    cursor: inherit;
+  }
+}
+
+.rac-props-edit {
+  --rac-edit-end: calc(1em + 1.6em + 1em);
+  background-color: var(--rac-surface-2);
+  position: relative;
+  padding: 0;
+
+  &::after {
+    content: attr(data-value);
+    padding: 0 var(--rac-edit-end) 0 1em;
+    visibility: hidden;
+    white-space: pre;
+  }
+
+  &:hover .rac-props-pencil {
+    opacity: 1;
+  }
+
+  &:focus-within .rac-props-pencil {
+    opacity: 0;
+  }
+}
+
+.rac-props-input {
+  background-color: transparent;
+  padding: 0 var(--rac-edit-end) 0 1em;
+  font: inherit;
+  position: absolute;
+  color: inherit;
+  outline: none;
+  border: none;
+  inset: 0;
+  height: 100%;
+  width: 100%;
+}
+
+.rac-props-pencil {
+  color: rgba(168, 85, 247, 0.5);
+  transition: opacity 300ms;
+  pointer-events: none;
+  position: absolute;
+  inset: 0 1em 0 auto;
+  height: 1.6em;
+  width: 1.6em;
+  margin: auto 0;
+  opacity: 0;
+}

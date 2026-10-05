@@ -1,0 +1,30 @@
+.rac-grouping > .rac-table-scroll {
+  margin-bottom: 0;
+}
+
+.rac-grouping-tag {
+  color: rgb(78, 201, 176);
+}
+
+.rac-grouping-prop {
+  color: var(--rac-tok-key);
+}
+
+.rac-track-card.rac-group-card {
+  flex: 1 0 max-content;
+  align-items: stretch;
+  min-width: 16em;
+
+  .rac-track-head {
+    justify-content: center;
+  }
+
+  .rac-track-desc {
+    text-wrap: nowrap;
+    text-align: center;
+  }
+}
+
+.rac-group-code {
+  position: relative;
+}

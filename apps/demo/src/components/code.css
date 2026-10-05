@@ -1,0 +1,155 @@
+.rac-code-container {
+  position: relative;
+  overflow: hidden;
+  display: block;
+  outline: none;
+}
+
+.rac-code-container:is(:hover, :focus-within) .rac-code-button, :hover > .rac-code-button {
+  opacity: 1;
+}
+
+.rac-code-button {
+  background-color: transparent;
+  color: var(--rac-old-char);
+  transition:
+    300ms opacity,
+    300ms color;
+  position: absolute;
+  cursor: pointer;
+  outline: none;
+  display: grid;
+  border: none;
+  right: 1em;
+  opacity: 0;
+  top: 1em;
+
+  &:hover {
+    color: white;
+  }
+
+  &:focus-visible {
+    outline: 2px solid var(--rac-primary);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+    opacity: 1;
+  }
+}
+
+.rac-copy-icon {
+  transition: opacity 100ms 100ms, scale 100ms 100ms;
+  grid-area: 1 / 1;
+
+  .rac-code-button:not([data-copied]) &:last-child,
+  .rac-code-button[data-copied] &:first-child {
+    transition-delay: 0ms;
+    opacity: 0;
+    scale: 0.5;
+  }
+}
+
+@media (hover: none) {
+  .rac-code-button {
+    opacity: 1;
+  }
+}
+
+.rac-code-wrapper {
+  position: relative;
+  display: block;
+}
+
+.rac-code {
+  font-family: var(--rac-mono);
+  white-space: pre;
+  line-height: 1.425rem;
+  text-align: left;
+  font-size: 13px;
+  overflow: auto;
+  padding: 16px;
+  tab-size: 4;
+  margin: 0;
+}
+
+.rac-code[data-fade] .token {
+  animation: rac-code-fade 400ms ease backwards;
+}
+
+@keyframes rac-code-fade {
+  from {
+    color: var(--rac-tok-key);
+  }
+}
+
+.rac-code-solid {
+  background-color: var(--rac-surface-2);
+}
+
+.rac-soon {
+  border: 1px dashed var(--rac-line-hover);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  width: 100%;
+}
+
+.rac-soon-badge {
+  min-height: calc(2em + 4px);
+  padding: 0.25em 0.75em;
+  color: var(--rac-purple-text);
+  align-items: center;
+  --rac-icon: 1.25em;
+  display: flex;
+  gap: 0.5em;
+}
+
+.rac-soon-code {
+  border-top: 1px dashed var(--rac-line-hover);
+  background-color: var(--rac-surface-3);
+}
+
+.rac-morph-row {
+  transition: height 300ms ease, visibility 0s;
+  overflow-y: clip;
+  height: 1lh;
+
+  &:not([data-on]) {
+    transition: height 300ms ease, visibility 0s 300ms;
+    visibility: hidden;
+    height: 0;
+  }
+}
+
+.rac-morph-seg {
+  transition: width 300ms steps(var(--n)), visibility 0s;
+  width: calc(var(--n) * 1ch);
+  vertical-align: top;
+  display: inline-block;
+  overflow: hidden;
+
+  &:not([data-on]) {
+    transition: width 300ms steps(var(--n)), visibility 0s 300ms;
+    visibility: hidden;
+    width: 0;
+  }
+}
+
+/* [DOC: code-morph] */
+@starting-style {
+  .rac-morph-row[data-on] {
+    height: 0;
+  }
+
+  .rac-morph-row:not([data-on]) {
+    visibility: visible;
+    height: 1lh;
+  }
+
+  .rac-morph-seg[data-on] {
+    width: 0;
+  }
+
+  .rac-morph-seg:not([data-on]) {
+    width: calc(var(--n) * 1ch);
+    visibility: visible;
+  }
+}

@@ -1,0 +1,90 @@
+.rac-header {
+    border-bottom: 0.1px solid var(--rac-purple-line);
+    background-color: var(--rac-surface);
+    justify-content: space-between;
+    padding: 0em 2.5em 1em;
+    --rac-enter-y: -16px;
+    overflow-anchor: none;
+    align-items: center;
+    flex-shrink: 0;
+    display: flex;
+    width: 100%;
+
+    @media (max-width: 1024px) {
+        flex-direction: column;
+        padding: 1em 2.5em 1em;
+        gap: 1em;
+    }
+}
+
+.rac-main-text {
+    flex-direction: column;
+    display: flex;
+    gap: 1em;
+}
+
+.rac-header-buttons {
+    align-items: center;
+    display: flex;
+    gap: 0.5em;
+
+    @media (max-width: 1024px) {
+        gap: 2.5em;
+    }
+}
+
+.rac-header-icon {
+    @media (max-width: 1024px) {
+        height: 2em;
+        width: 2em;
+    }
+}
+
+.rac-button-container {
+    --rac-enter-delay: calc(250ms + var(--i) * 80ms);
+    --rac-enter-scale: 0.6;
+    flex-shrink: 0;
+    display: flex;
+}
+
+.rac-lib-temp {
+    color: var(--rac-old-char);
+}
+
+.rac-lib-heading {
+    font-weight: 500;
+}
+
+.rac-scramble {
+    position: relative;
+}
+
+.rac-scramble-ghost {
+    user-select: none;
+    opacity: 0;
+}
+
+.rac-scramble-text {
+    position: absolute;
+    inset: 0;
+}
+
+.rac-lib-desc {
+    color: var(--rac-old-char);
+    margin: 0;
+}
+
+.rac-scramble-word {
+    white-space: nowrap;
+}
+
+.rac-lib-title {
+    display: inline-block;
+    text-align: center;
+}
+
+.rac-lib-title[data-color='0'] {color: var(--rac-color-1);}
+.rac-lib-title[data-color='1'] {color: var(--rac-color-2);}
+.rac-lib-title[data-color='2'] {color: var(--rac-color-3);}
+.rac-lib-title[data-color='3'] {color: var(--rac-color-4);}
+.rac-lib-title[data-color='4'] {color: var(--rac-color-5);}

@@ -1,0 +1,66 @@
+.rac-playground {
+  flex-direction: column;
+  display: flex;
+  gap: 1em;
+}
+
+.rac-playground-icon {
+  color: var(--rac-tok-fn);
+}
+
+.rac-live-container {
+  transition: border-color 0.3s ease, height 0.3s ease;
+  overflow: hidden;
+}
+
+.rac-live-code {
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  color: var(--rac-tok-key);
+  padding: 10px;
+  font: inherit;
+  margin: 0;
+}
+
+.rac-live-preview-box {
+  min-height: calc(4em + 36px);
+  justify-content: center;
+  align-items: center;
+  display: flex;
+  padding: 2em;
+}
+
+.rac-live-editor-box {
+  position: relative;
+}
+
+.rac-editor-header {
+  background-color: #212130;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 8px 16px;
+  font-size: 12px;
+  color: #888;
+}
+
+.rac-live-editor {
+  font-family: 'Fira Code', monospace !important;
+  background-color: var(--rac-surface-2);
+  font-size: 14px !important;
+}
+
+.rac-live-editor textarea {
+  background-color: transparent !important;
+}
+
+.rac-live-editor pre {
+  background-color: transparent !important;
+}
+
+.rac-live-error {
+  padding: 1rem;
+  background: #441111;
+  color: #ff9999;
+  font-size: 13px;
+  white-space: pre-wrap;
+}

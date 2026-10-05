@@ -1,13 +1,26 @@
 node_modules/
 dist/
-demo/
 *.tgz
 *.log
-.env
-.env.*
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
-.claude/settings.local.json
+**/.claude/settings.local.json
 MONOREPO_MIGRATION.md
+
+# secrets and local env
+.env
+.env.*
+!.env.example
+!apps/demo/.env.development
+!apps/demo/.env.production
+!apps/demo/.env.remote
+
+# generated
+packages/react-animated-select/README.md
+packages/react-animated-select/LICENSE
+apps/backend/src/data/bundle.json
+
+# local only
+apps/sandbox/

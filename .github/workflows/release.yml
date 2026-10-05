@@ -1,0 +1,47 @@
+name: Release
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'packages/react-animated-select/**'
+      - '.changeset/**'
+      - 'README.md'
+      - 'LICENSE'
+      - '.github/workflows/release.yml'
+  workflow_dispatch:
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+concurrency:
+  group: release
+  cancel-in-progress: false
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+  release:
+    needs: ci
+    runs-on: ubuntu-latest
+    outputs:
+      published: ${{steps.changesets.outputs.published}}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm ci
+      # changesets/action v2 works with @changesets/cli v3 and publishes through npm trusted publishing (OIDC), no NPM_TOKEN
+      - id: changesets
+        uses: changesets/action@v2
+        with:
+          version-script: npm run version-packages
+          publish-script: npm run release
+          pr-title: 'Version Packages'
+          commit-message: 'chore: release'
+          create-github-releases: true
+  backend:
+    needs: release
+    if: needs.release.outputs.published == 'true'
+    uses: ./.github/workflows/backend.yml

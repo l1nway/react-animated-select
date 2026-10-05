@@ -1,0 +1,56 @@
+.rac-loading {
+  flex-direction: column;
+  display: flex;
+  width: 100%;
+}
+
+.rac-loaded-succesfully {
+  background-color: var(--rac-purple-bg);
+  border: 1px solid var(--rac-purple-line);
+  border-radius: 0.5rem;
+  margin-bottom: 1em;
+  width: fit-content;
+  align-self: center;
+  color: var(--rac-purple-text);
+  cursor: pointer;
+  height: 3.25rem;
+  display: flex;
+  width: 9rem;
+
+  &:hover .rac-loaded-button {
+    color: #e5e7eb;
+  }
+}
+
+.rac-loaded-button {
+  justify-content: start;
+  align-items: center;
+  position: relative;
+  display: flex;
+  outline: none;
+  gap: 0.75em;
+  width: 100%;
+}
+
+.rac-loaded-container {
+  justify-content: space-between;
+  padding-right: 0.25em;
+  align-items: center;
+  display: flex;
+  width: 100%;
+}
+
+.rac-loaded-container[data-del] span {
+  padding-left: 1em;
+}
+
+.rac-loaded-icon {
+  min-height: 1.5rem;
+  min-width: 1.5rem;
+  right: 0.25em;
+}
+
+.rac-loaded {
+  justify-content: center;
+  display: grid;
+}

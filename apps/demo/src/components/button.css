@@ -1,0 +1,31 @@
+/* [DOC: button] */
+.rac-button {
+  transition: border-color 0.3s ease, color 0.3s ease, opacity 0.3s ease;
+  border: 1px solid var(--rac-purple-line);
+  background-color: var(--rac-surface-2);
+  border-radius: 0.5rem;
+  padding: 0.5em 1.25em;
+  align-items: center;
+  cursor: pointer;
+  color: var(--rac-text);
+  display: flex;
+  font: inherit;
+  gap: 0.5em;
+
+  &:hover:not(:disabled, [aria-disabled='true']), &:focus-visible {
+    border-color: var(--rac-purple-text);
+    color: var(--rac-purple-text);
+  }
+
+  &:disabled, &[aria-disabled='true'] {
+    cursor: progress;
+    opacity: 0.5;
+  }
+}
+
+.rac-button-icon {
+  place-items: center;
+  display: grid;
+  height: 1em;
+  width: 1em;
+}

@@ -1,0 +1,49 @@
+.rac-styling-table {
+  .rac-styling-title, .rac-styling-value {
+    white-space: nowrap;
+  }
+
+  tbody th[data-depth='1'] {padding-left: 2em;}
+  tbody th[data-depth='2'] {padding-left: 3em;}
+  tbody th[data-depth='3'] {padding-left: 4em;}
+  tbody th[data-depth='4'] {padding-left: 5em;}
+}
+
+.rac-styling-maintitle {
+  font-weight: bold;
+}
+
+.rac-styling-label {
+  transition:
+    300ms padding-bottom,
+    300ms border-color;
+  border-bottom: 1px solid var(--rac-line);
+  justify-content: space-between;
+  background-color: transparent;
+  padding: 0 0 1em 0;
+  align-items: center;
+  margin-bottom: 1em;
+  border-inline: none;
+  text-align: start;
+  border-top: none;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+  font: inherit;
+  width: 100%;
+  gap: 1em;
+
+  &[aria-expanded='true'] {
+    border-color: transparent;
+    padding-bottom: 0;
+  }
+}
+
+.rac-styling-icon {
+  transition: transform 500ms;
+  flex-shrink: 0;
+
+  [aria-expanded='true'] > & {
+    transform: rotate(-180deg);
+  }
+}

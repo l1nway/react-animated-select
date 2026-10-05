@@ -1,0 +1,39 @@
+.rac-multiple-feature {
+  padding-left: 1em;
+  margin: 0;
+}
+
+.rac-multiple-desc {
+  flex-direction: column;
+  padding-bottom: 1em;
+  padding-top: 0.5em;
+  display: flex;
+  gap: 1em;
+}
+
+.rac-multiple-subtitle {
+  grid-template-columns: min-content 1fr;
+  align-items: center;
+  display: grid;
+  gap: 0.5em;
+
+  &:not(:only-child) {
+    padding-bottom: 0.5em;
+  }
+
+  svg {
+    min-width: 1.5em;
+  }
+
+  & > span {
+    grid-column: 1 / -1;
+  }
+}
+
+.rac-multiple-subfeature {
+  margin-left: 2em;
+}
+
+.rac-multiple-subtitle + .rac-multiple-subfeature {
+  padding-bottom: 0.5em;
+}

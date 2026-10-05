@@ -1,0 +1,145 @@
+.rac-forms-form {
+  flex-direction: column;
+  display: flex;
+}
+
+.rac-forms-field {
+  align-content: start;
+  padding: 1em 1em 0;
+  display: grid;
+  gap: 0.5em;
+}
+
+.rac-forms-label {
+  font-weight: 500;
+  color: var(--rac-muted);
+}
+
+.rac-forms-foot {
+  padding: 1em;
+  display: flex;
+  gap: 0.75em;
+}
+
+.rac-forms-spin {
+  transform: rotate(calc(var(--turns) * -360deg));
+  transition: transform 0.5s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rac-forms-spin {
+    transition: none;
+  }
+}
+
+.rac-forms-result {
+  position: relative;
+  display: flex;
+  flex: 1 0 0;
+}
+
+.rac-forms-output {
+  font-family: var(--rac-mono);
+  border-radius: 0 0 calc(0.5rem - 1px) calc(0.5rem - 1px);
+  border-top: 1px solid;
+  border-top-color: inherit;
+  background-color: var(--rac-surface-2);
+  padding: 0.75em 1em;
+  align-content: start;
+  min-height: 9em;
+  font-size: 13px;
+  overflow: auto;
+  display: grid;
+  flex: 1;
+  gap: 0.35em;
+}
+
+.rac-forms-entry {
+  --len: calc(var(--n) + 9);
+  animation: rac-forms-type calc(var(--len) * 25ms) steps(var(--len)) calc(var(--i) * 300ms) both;
+  grid-template-columns: 8ch minmax(0, 1fr);
+  overflow-wrap: anywhere;
+  width: fit-content;
+  max-width: 100%;
+  display: grid;
+  gap: 1ch;
+
+  b {
+    font-weight: normal;
+    color: var(--rac-tok-key);
+  }
+}
+
+.rac-forms-output[data-leaving] .rac-forms-entry {
+  animation: rac-forms-erase 0.25s ease both;
+}
+
+.rac-forms-hint {
+  animation: rac-forms-fade 0.25s ease both;
+  color: var(--rac-muted);
+}
+
+@keyframes rac-forms-type {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+
+  to {
+    clip-path: inset(0);
+  }
+}
+
+@keyframes rac-forms-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes rac-forms-erase {
+  to {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+}
+
+/* [DOC: forms-layout] */
+.rac-forms-code {
+  contain: size;
+  display: grid;
+
+  .rac-code {
+    overscroll-behavior: contain;
+    height: 100%;
+  }
+}
+
+.rac-forms-tabs {
+  width: fit-content;
+  visibility: hidden;
+}
+
+@media (max-width: 1280px) {
+  .rac-forms-demo {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .rac-forms-tabs {
+    visibility: visible;
+  }
+
+  .rac-forms-demo > * {
+    transition: opacity 0.25s ease, visibility 0.25s;
+    grid-area: 1 / 1;
+  }
+
+  .rac-forms-demo[data-tab='demo'] > .rac-forms-code, .rac-forms-demo[data-tab='code'] > .rac-forms-form {
+    visibility: hidden;
+    opacity: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .rac-forms-output {
+    min-height: 11.25em;
+  }
+}

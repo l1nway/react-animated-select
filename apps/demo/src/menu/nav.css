@@ -1,0 +1,89 @@
+.rac-menu-indicator {
+    display: none;
+}
+
+/* mobile bottom bar */
+@media (max-width: 1024px) {
+    .rac-menu {
+        padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+        border-top: 0.1px solid var(--rac-purple-line);
+        transition: transform 200ms ease, visibility 200ms;
+        background-color: var(--rac-surface);
+        height: var(--rac-nav-h);
+        --rac-enter-y: 100%;
+        --rac-enter-x: 0px;
+        max-height: none;
+        overflow: hidden;
+        position: fixed;
+        width: 100%;
+        top: auto;
+        bottom: 0;
+        left: 0;
+
+        &[data-keyboard] {
+            transform: translateY(100%);
+            visibility: hidden;
+        }
+
+        nav {
+            position: relative;
+            width: 100%;
+        }
+
+        .rac-menu-list {
+            transform: translateZ(0);
+            position: relative;
+            height: 3.5rem;
+            display: flex;
+        }
+
+        .rac-menu-list > li {
+            --rac-enter-delay: calc(300ms + var(--i) * 60ms);
+            padding: 0.375em 0.25em;
+            --rac-enter-scale: 0.6;
+            --rac-enter-x: 0px;
+            flex: 1;
+        }
+
+        .rac-menu-group {
+            padding: 0 0.25em !important;
+            flex-direction: column;
+            height: 100%;
+            width: 100%;
+            gap: 0.125em;
+
+            &.--selected {
+                background-color: transparent;
+                border-color: transparent;
+            }
+
+            svg {
+                height: 1.25rem;
+                width: 1.25rem;
+            }
+
+            .rac-menu-text {
+                display: none;
+            }
+
+            .rac-menu-short {
+                display: block;
+            }
+        }
+    }
+
+    .rac-menu-indicator {
+        --rac-pill-inset: 0.375em 0.25em;
+        display: block;
+    }
+
+    .rac-menu-element {
+        justify-content: center;
+        margin: 0 !important;
+        width: max-content;
+    }
+
+    .rac-menu-sub-container {
+        display: none;
+    }
+}

@@ -1,0 +1,77 @@
+{
+  "name": "react-animated-select",
+  "version": "0.8.1",
+  "type": "module",
+  "author": {
+    "name": "l1nway",
+    "email": "l1nway@icloud.com",
+    "url": "https://github.com/l1nway/"
+  },
+  "description": "Animated, accessible and deeply customizable select for React: single and multiple choice, groups, chips, async loading, keyboard, touch and SSR, with zero dependencies",
+  "files": [
+    "dist",
+    "index.d.ts"
+  ],
+  "keywords": [
+    "react",
+    "select",
+    "multiselect",
+    "combobox",
+    "dropdown",
+    "chips",
+    "animated",
+    "accessible",
+    "ssr",
+    "ui-components"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/l1nway/react-animated-select.git",
+    "directory": "packages/react-animated-select"
+  },
+  "bugs": {
+    "url": "https://github.com/l1nway/react-animated-select/issues"
+  },
+  "license": "MIT",
+  "homepage": "https://l1nway.github.io/react-animated-select/",
+  "publishConfig": {
+    "access": "public",
+    "provenance": true
+  },
+  "scripts": {
+    "build": "vite build",
+    "lint": "eslint src",
+    "prepack": "node ../../scripts/copyMeta.js",
+    "prepublishOnly": "npm run build"
+  },
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.js",
+  "types": "./index.d.ts",
+  "exports": {
+    ".": {
+      "import": {
+        "types": "./index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "require": {
+        "types": "./dist/index.d.cts",
+        "default": "./dist/index.cjs"
+      }
+    },
+    "./style.css": "./dist/style.css",
+    "./package.json": "./package.json"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "peerDependencies": {
+    "react": ">=19.2.0",
+    "react-dom": ">=19.2.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.9",
+    "@vitejs/plugin-react": "^5.1.2",
+    "vite": "^7.3.1",
+    "vite-plugin-lib-inject-css": "^2.2.2"
+  }
+}

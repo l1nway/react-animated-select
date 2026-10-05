@@ -1,0 +1,40 @@
+.rac-states.rac-animations-section {
+  padding-top: 1em;
+}
+
+.rac-animations-table {
+  tbody td.rac-animations-value:has(:focus-visible) {
+    outline-color: transparent;
+  }
+
+  tbody td[data-fill]:has(.rac-animations-select) {
+    position: relative;
+  }
+
+  .rac-animations-select {
+    --rac-bg: var(--rac-surface-3);
+    border-radius: 0;
+    position: absolute;
+    padding: 0 1em;
+    border: none;
+    inset: 0;
+  }
+}
+
+.rac-animations-range {
+  align-items: center;
+  display: flex;
+  gap: 1em;
+
+  .slider-container {
+    width: 8em;
+  }
+}
+
+.rac-animations-num {
+  font-family: var(--rac-mono);
+  font-variant-numeric: tabular-nums;
+  display: inline-block;
+  min-width: 6ch;
+  color: var(--rac-purple-text);
+}

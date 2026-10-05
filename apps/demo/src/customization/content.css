@@ -1,0 +1,33 @@
+.rac-states.rac-content-section {
+  margin: 0;
+}
+
+.rac-content-currency {
+  display: inline-flex;
+  align-items: center;
+  --rac-icon: 1.1em;
+  min-width: 0;
+  gap: 0.5em;
+}
+
+.rac-content-name {
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.rac-content-code {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+  color: var(--rac-muted);
+}
+
+.rac-content-select .rac-chip {
+  background-color: color-mix(in srgb, var(--accent, var(--rac-tint-2)) 20%, var(--rac-tint-2));
+
+  @media (hover: hover) {
+    &:hover {
+      background-color: color-mix(in srgb, var(--accent, var(--rac-tint-3)) 20%, var(--rac-tint-3));
+    }
+  }
+}

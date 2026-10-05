@@ -1,71 +1,33 @@
 {
-  "name": "react-animated-select",
-  "version": "0.8.1",
-  "type": "module",
-  "author": {
-    "name": "l1nway",
-    "email": "l1nway@icloud.com",
-    "url": "https://github.com/l1nway/"
-  },
-  "description": "Animated, accessible and deeply customizable select for React: single and multiple choice, groups, chips, async loading, keyboard, touch and SSR, with zero dependencies",
-  "files": [
-    "dist",
-    "index.d.ts"
-  ],
-  "keywords": [
-    "react",
-    "select",
-    "multiselect",
-    "combobox",
-    "dropdown",
-    "chips",
-    "animated",
-    "accessible",
-    "ssr",
-    "ui-components"
-  ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/l1nway/react-animated-select.git"
-  },
-  "bugs": {
-    "url": "https://github.com/l1nway/react-animated-select/issues"
-  },
-  "license": "MIT",
-  "homepage": "https://l1nway.github.io/react-animated-select-docs/",
-  "scripts": {
-    "build": "vite build",
-    "dev": "vite build --watch",
-    "prepublishOnly": "npm run build"
-  },
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.js",
-  "types": "./index.d.ts",
-  "exports": {
-    ".": {
-      "import": {
-        "types": "./index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+    "name": "react-animated-select-monorepo",
+    "private": true,
+    "type": "module",
+    "workspaces": [
+        "packages/react-animated-select",
+        "apps/demo"
+    ],
+    "engines": {
+        "node": ">=22.14"
     },
-    "./style.css": "./dist/style.css",
-    "./package.json": "./package.json"
-  },
-  "sideEffects": [
-    "**/*.css"
-  ],
-  "peerDependencies": {
-    "react": ">=19.2.0",
-    "react-dom": ">=19.2.0"
-  },
-  "devDependencies": {
-    "@types/react": "^19.2.9",
-    "@vitejs/plugin-react": "^5.1.2",
-    "vite": "^7.3.1",
-    "vite-plugin-lib-inject-css": "^2.2.2"
-  }
+    "scripts": {
+        "dev": "npm run dev -w apps/demo",
+        "dev:remote": "npm run dev:remote -w apps/demo",
+        "dev:api": "npm run dev --prefix apps/backend",
+        "sandbox": "vite --config apps/sandbox/vite.config.js",
+        "build": "npm run build -w packages/react-animated-select && npm run build -w apps/demo",
+        "lint": "npm run lint --workspaces --if-present",
+        "test": "npm test --workspaces --if-present",
+        "check:pack": "node scripts/checkPack.js",
+        "changeset": "changeset",
+        "version-packages": "changeset version && npm install --package-lock-only",
+        "release": "npm run build -w packages/react-animated-select && npm run check:pack && changeset publish"
+    },
+    "devDependencies": {
+        "@changesets/cli": "^3.0.3",
+        "@eslint/js": "^9.39.1",
+        "eslint": "^9.39.1",
+        "eslint-plugin-react-hooks": "^7.0.1",
+        "eslint-plugin-react-refresh": "^0.4.24",
+        "globals": "^16.5.0"
+    }
 }

@@ -1,0 +1,27 @@
+{
+  "name": "rac-backend",
+  "version": "0.1.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build-data": "node scripts/bundle.js",
+    "start": "node src/index.js",
+    "dev": "npm run build-data && nodemon src/index.js"
+  },
+  "keywords": [],
+  "author": "l1nway",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@google/generative-ai": "^0.24.1",
+    "axios": "^1.14.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.0",
+    "express": "^5.2.1",
+    "groq-sdk": "^1.1.2",
+    "multer": "^2.1.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.14"
+  }
+}

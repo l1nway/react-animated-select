@@ -1,0 +1,32 @@
+{
+  "name": "react-animated-select-docs",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:remote": "vite --mode remote",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "perf": "vite build && node scripts/perf.mjs"
+  },
+  "dependencies": {
+    "@l1nway/collapse": "github:l1nway/collapse#semver:0.8.0",
+    "framer-motion": "^12.38.0",
+    "gsap": "^3.14.2",
+    "lottie-react": "^2.4.1",
+    "lucide-react": "^1.7.0",
+    "prism-react-renderer": "^2.4.1",
+    "react": "^19.2.3",
+    "react-animated-select": "*",
+    "react-dom": "^19.2.3",
+    "react-live": "^4.1.8",
+    "vite": "^7.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.5",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1"
+  }
+}

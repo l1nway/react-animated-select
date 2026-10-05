@@ -1,0 +1,30 @@
+.rac-select, .rac-options {
+  --rac-bg: #0a0a0f;
+  --rac-fg: #fff;
+  --rac-radius: 0.5rem;
+}
+
+.rac-options {
+  border: 0.1px solid var(--rac-line-hover);
+}
+
+.rac-warn, [data-warn] {
+  color: color-mix(in srgb, var(--rac-error, #ef4444) 70%, currentColor);
+}
+
+[data-warn='soft'] {
+  color: color-mix(in srgb, #f59e0b 70%, currentColor);
+}
+
+.rac-warn {
+  --rac-icon: 1.5em;
+  grid-template-columns: min-content 1fr;
+  align-items: center;
+  margin-top: 1em;
+  display: grid;
+  gap: 0.5em;
+
+  & > span {
+    grid-column: 1 / -1;
+  }
+}

@@ -1,0 +1,60 @@
+.slider-container {
+  align-items: center;
+  position: relative;
+  display: flex;
+  height: 2em;
+  width: 10em;
+
+  @media (max-width: 600px) {
+    width: 100%;
+  }
+}
+
+.slider-track {
+  background-color: var(--rac-surface-2);
+  position: relative;
+  border-radius: 999px;
+  touch-action: none;
+  cursor: pointer;
+  width: 100%;
+  height: 0.4em;
+}
+
+.slider-fill {
+  background-color: var(--rac-purple-text);
+  position: absolute;
+  border-radius: inherit;
+  pointer-events: none;
+  transition: width 400ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  width: var(--progress);
+  height: 100%;
+}
+
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  left: var(--progress);
+  width: 1.3em;
+  height: 1.3em;
+  background-color: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(192, 132, 252, 0.4);
+  transform: translate(-50%, -50%) scale(1);
+  transition: left 400ms cubic-bezier(0.34, 1.56, 0.64, 1), transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 200ms ease;
+  touch-action: none;
+  cursor: grab;
+}
+
+.slider-container[data-dragging] .slider-fill, .slider-container[data-settling] .slider-fill {
+  transition: none;
+}
+
+.slider-container[data-dragging] .slider-thumb, .slider-container[data-settling] .slider-thumb {
+  transition: box-shadow 150ms ease;
+  will-change: transform;
+}
+
+.slider-container[data-dragging] .slider-thumb {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5), 0 0 0 6px rgba(192, 132, 252, 0.15);
+  cursor: grabbing;
+}
