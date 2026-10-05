@@ -96,6 +96,10 @@
   td[data-type='boolean'] {color: var(--rac-tok-blue);}
 }
 
+.rac-table:has(.rac-table-text) tbody :is(th, td):not(.rac-table-text) {
+  width: 1%;
+}
+
 .rac-table .rac-table-text {
   white-space: normal;
 

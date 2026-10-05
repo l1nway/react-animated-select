@@ -9,9 +9,17 @@
 }
 
 .rac-props-edit {
+  --rac-edit-end: calc(1em + 1.6em + 1em);
   background-color: var(--rac-surface-2);
   position: relative;
   padding: 0;
+
+  &::after {
+    content: attr(data-value);
+    padding: 0 var(--rac-edit-end) 0 1em;
+    visibility: hidden;
+    white-space: pre;
+  }
 
   &:hover .rac-props-pencil {
     opacity: 1;
@@ -24,13 +32,14 @@
 
 .rac-props-input {
   background-color: transparent;
-  padding: 0 1em;
+  padding: 0 var(--rac-edit-end) 0 1em;
   font: inherit;
-  height: var(--rac-table-row);
-  min-width: 0;
+  position: absolute;
   color: inherit;
   outline: none;
   border: none;
+  inset: 0;
+  height: 100%;
   width: 100%;
 }
 

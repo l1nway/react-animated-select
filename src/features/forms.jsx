@@ -45,6 +45,7 @@ function Forms() {
     const [tab, setTab] = useState(0)
     const [leaving, setLeaving] = useState(false)
     const [busy, setBusy] = useState(false)
+    const [turns, setTurns] = useState(0)
     const seen = useRef(new Set())
     const timer = useRef(0)
     useEffect(() => () => clearTimeout(timer.current), [])
@@ -55,6 +56,10 @@ function Forms() {
     }, [])
     const clear = useCallback(() => matchMedia('(prefers-reduced-motion: reduce)').matches ? wipe() : setLeaving(true), [wipe])
     const erased = useCallback(e => e.animationName === 'rac-forms-erase' && wipe(), [wipe])
+    const reset = useCallback(() => {
+        setTurns(t => t + 1)
+        out && clear()
+    }, [out, clear])
     const submit = useCallback(e => {
         e.preventDefault()
         setLeaving(false)
@@ -82,7 +87,7 @@ function Forms() {
             </div>
             <p className='rac-heading-desc'>{desc}</p>
             <div className='rac-split rac-forms-demo' id={`${id}-panel`} role='tabpanel' aria-labelledby={`${id}-tab-${TABS[tab].id}`} data-tab={TABS[tab].id}>
-                <form className='rac-panel rac-forms-form' onSubmit={submit}>
+                <form className='rac-panel rac-forms-form' onSubmit={submit} onReset={reset}>
                     <div className='rac-forms-field'>
                         <span className='rac-forms-label' id={`${id}-plan`}>Plan</span>
                         <Select
@@ -108,7 +113,7 @@ function Forms() {
                     </div>
                     <div className='rac-forms-foot'>
                         <button className='rac-button rac-iconed' type='submit' disabled={busy}><Send aria-hidden='true'/> Submit</button>
-                        <button className='rac-button rac-iconed' type='reset'><RotateCcw aria-hidden='true'/> Reset</button>
+                        <button className='rac-button rac-iconed' type='reset'><RotateCcw aria-hidden='true' className='rac-forms-spin' style={{'--turns': turns}}/> Reset</button>
                     </div>
                     <div className='rac-forms-result'>
                         {/* [DOC: forms-output] */}

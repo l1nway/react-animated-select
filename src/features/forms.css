@@ -21,6 +21,17 @@
   gap: 0.75em;
 }
 
+.rac-forms-spin {
+  transform: rotate(calc(var(--turns) * -360deg));
+  transition: transform 0.5s ease-in-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rac-forms-spin {
+    transition: none;
+  }
+}
+
 .rac-forms-result {
   position: relative;
   display: flex;

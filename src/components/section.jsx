@@ -27,7 +27,7 @@ const size = node => typeof node === 'string' ? node.length : Children.toArray(n
 export const Text = ({children}) => <td className='rac-table-text' style={{'--len': size(children)}}><p>{children}</p></td>
 
 const Edit = ({item, name, value, onChange}) => (
-    <td className='rac-props-edit' data-type={item.type} data-fill>
+    <td className='rac-props-edit' data-type={item.type} data-value={value} data-fill>
         <input className='rac-props-input' onChange={e => onChange(name, e.target.value)} aria-label={item.prop} value={value} type='text'/>
         <Pencil className='rac-props-pencil' aria-hidden/>
     </td>

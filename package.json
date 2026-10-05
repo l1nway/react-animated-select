@@ -20,7 +20,7 @@
     "lucide-react": "^1.7.0",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.2.3",
-    "react-animated-select": "^0.8.0",
+    "react-animated-select": "^0.8.1",
     "react-dom": "^19.2.3",
     "react-live": "^4.1.8",
     "vite": "^7.3.1"
