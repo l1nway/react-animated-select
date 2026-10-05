@@ -23,8 +23,9 @@ const step = (list, at, key, noWrap) => {
     if (key === 'Home') return list[0]
     if (key === 'End') return list[last]
     const dir = key === 'ArrowUp' || key === 'PageUp' ? -1 : 1
-    const pos = list.indexOf(at)
-    if (pos === -1) return list[dir > 0 ? 0 : last]
+    const found = list.findIndex(i => i >= at)
+    // between neighbours
+    const pos = list[found] === at ? found : (found === -1 ? list.length : found) - (dir > 0 ? 1 : 0)
     const next = pos + dir * (key.startsWith('Page') ? PAGE : 1)
     if (next >= 0 && next <= last) return list[next]
     return key.startsWith('Page') || noWrap ? list[next < 0 ? 0 : last] : list[(next + list.length) % list.length]
@@ -50,7 +51,7 @@ export default function useSelectBehavior({props, state, setState, normalizedOpt
     const {deleting} = state
     const {reach, list} = useReachable(options, expandedGroups)
 
-    const refs = useRef({lastWindowFocusTime: 0, justFocused: false, focusTimeout: null, query: '', queryTimeout: null})
+    const refs = useRef({lastWindowFocusTime: 0, justFocused: false, focusTimeout: null, query: '', queryTimeout: null, row: -1})
 
     // [DOC: highlight]
     const fallbackHighlight = useMemo(() => {
@@ -62,7 +63,12 @@ export default function useSelectBehavior({props, state, setState, normalizedOpt
     // [DOC: highlight]
     useLayoutEffect(() => {
         const {index} = highlightStore.get()
-        highlightStore.set({fallback: fallbackHighlight, index: index !== -1 && reach(options[index]) ? index : -1})
+        const {row} = refs.current
+        // load row kept
+        const next = index === -1 || reach(options[index]) || options[index]?.loadMore ? index
+            : index === row ? list.find(i => i > row) ?? list.at(-1) ?? -1 : -1
+        refs.current.row = options[next]?.loadMore ? next : -1
+        highlightStore.set({fallback: fallbackHighlight, index: next})
     })
 
     // [DOC: select-behavior]

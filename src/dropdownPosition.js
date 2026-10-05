@@ -2,12 +2,12 @@ import {useCallback, useEffect, useLayoutEffect, useRef} from 'react'
 
 // [DOC: dropdown-position]
 const nudge = (panel, side, by) => {if (Math.abs(by) > 0.5) panel.style[side] = `${parseFloat(panel.style[side]) + by}px`}
-const shift = (panel, rect, upward, offset) => {
+const shift = (panel, left, edge, upward, offset) => {
     const box = panel.getBoundingClientRect()
     const style = getComputedStyle(panel)
-    nudge(panel, 'left', rect.left - box.left + parseFloat(style.marginLeft))
-    if (upward) nudge(panel, 'bottom', box.bottom + parseFloat(style.marginBottom) - rect.top + offset)
-    else nudge(panel, 'top', rect.bottom + offset - box.top + parseFloat(style.marginTop))
+    nudge(panel, 'left', left - box.left + parseFloat(style.marginLeft))
+    if (upward) nudge(panel, 'bottom', box.bottom + parseFloat(style.marginBottom) - edge + offset)
+    else nudge(panel, 'top', edge + offset - box.top + parseFloat(style.marginTop))
 }
 
 // [DOC: dropdown-position]
@@ -16,8 +16,27 @@ const hasIO = () => typeof IntersectionObserver !== 'undefined'
 const isUp = (rect, height, below = window.innerHeight - rect.bottom) => below < height && rect.top > below
 
 // [DOC: dropdown-position]
+const clipsOf = (el) => {
+    const list = [], {body, documentElement} = el.ownerDocument
+    for (let node = el.parentElement; node && node !== body && node !== documentElement; node = node.parentElement)
+        if (getComputedStyle(node).overflowY !== 'visible') list.push(node)
+    return list
+}
+const visible = (rect, clips) => {
+    let top = -Infinity, bottom = Infinity
+    for (const el of clips) {
+        const box = el.getBoundingClientRect()
+        top = Math.max(top, box.top + el.clientTop)
+        bottom = Math.min(bottom, box.top + el.clientTop + el.clientHeight)
+    }
+    const pin = v => Math.min(Math.max(v, top), bottom)
+    return {pin, ratio: rect.height ? +((pin(rect.bottom) - pin(rect.top)) / rect.height).toFixed(3) : 1}
+}
+
+// [DOC: dropdown-position]
 const useDropdownPosition = ({selectRef, panelRef, open, frozen, offset, onFlip}) => {
     const lastHeight = useRef(0)
+    const clips = useRef(null)
     const held = useRef(frozen)
     const flip = useRef(onFlip)
     useLayoutEffect(() => {
@@ -32,23 +51,29 @@ const useDropdownPosition = ({selectRef, panelRef, open, frozen, offset, onFlip}
         if (panel.scrollHeight) lastHeight.current = panel.scrollHeight
         const rect = select.getBoundingClientRect()
         const side = panel.dataset.placement, height = lastHeight.current
+        const {pin, ratio} = visible(rect, clips.current ??= clipsOf(select))
         // [DOC: dropdown-flip]
         const fits = side === 'top' ? rect.top - offset >= height : window.innerHeight - rect.bottom - offset >= height
-        let upward = side && (held.current || fits) ? side === 'top' : isUp(rect, height)
+        let upward = side && (held.current || fits || ratio < 1) ? side === 'top' : isUp(rect, height)
         if (side && upward !== (side === 'top')) {
             flip.current?.()
             upward = side === 'top'
         }
         decide(upward)
+        const edge = pin(upward ? rect.top : rect.bottom)
         panel.style.width = `${rect.width}px`
         panel.style.left = `${rect.left + window.scrollX}px`
-        panel.style.top = upward ? 'auto' : `${rect.bottom + window.scrollY + offset}px`
-        panel.style.bottom = upward ? `${window.innerHeight - rect.top - window.scrollY + offset}px` : 'auto'
-        shift(panel, rect, upward, offset)
+        panel.style.top = upward ? 'auto' : `${edge + window.scrollY + offset}px`
+        panel.style.bottom = upward ? `${window.innerHeight - edge - window.scrollY + offset}px` : 'auto'
+        shift(panel, rect.left, edge, upward, offset)
+        // [DOC: dropdown-position]
+        if (ratio < 1) panel.style.setProperty('--rac-visible', ratio)
+        else panel.style.removeProperty('--rac-visible')
+        panel.toggleAttribute('data-offscreen', ratio === 0)
     }, [selectRef, offset, decide])
 
     // [DOC: dropdown-position]
-    const listRef = useCallback((list) => {if (list) place(list.parentElement)}, [place])
+    const listRef = useCallback((list) => {if (list && open) place(list.parentElement)}, [place, open])
     // [DOC: dropdown-flip]
     const replace = useCallback((panel) => {
         panel?.removeAttribute('data-placement')
@@ -87,7 +112,8 @@ const useDropdownPosition = ({selectRef, panelRef, open, frozen, offset, onFlip}
             const rect = select.getBoundingClientRect()
             const box = panelRef.current?.getBoundingClientRect() ?? rect
             const upward = isUp(rect, lastHeight.current), room = lastHeight.current + offset
-            return [rect.left - box.left, upward ? rect.top - box.bottom : rect.bottom - box.top, rect.width, window.innerHeight, panelRef.current?.scrollHeight, upward, rect.top >= room, window.innerHeight - rect.bottom >= room].join()
+            const {pin, ratio} = visible(rect, clips.current ?? []), top = panelRef.current?.dataset.placement === 'top'
+            return [rect.left - box.left, top ? pin(rect.top) - box.bottom : pin(rect.bottom) - box.top, ratio, rect.width, window.innerHeight, panelRef.current?.scrollHeight, upward, rect.top >= room, window.innerHeight - rect.bottom >= room].join()
         }
         const arm = () => {
             moved?.disconnect()
@@ -119,7 +145,6 @@ const useDropdownPosition = ({selectRef, panelRef, open, frozen, offset, onFlip}
             frame ||= requestAnimationFrame(tick)
         }
 
-        panelRef.current?.removeAttribute('data-offscreen')
         place(panelRef.current)
         last = key()
         arm()
@@ -131,19 +156,14 @@ const useDropdownPosition = ({selectRef, panelRef, open, frozen, offset, onFlip}
         const outside = ({target}) => !select.contains(target) && !panelRef.current?.contains(target)
         const mo = typeof MutationObserver !== 'undefined' && new MutationObserver(list => {if (list.some(outside) && sync()) kick()})
         if (mo) mo.observe(doc.body, {subtree: true, childList: true, attributes: true, characterData: true})
-        // clipped by a scroll ancestor
-        const seen = hasIO() && new IntersectionObserver(([{isIntersecting, boundingClientRect: r, rootBounds: v}]) => {
-            const clipped = !isIntersecting && !!v && r.bottom > v.top && r.top < v.bottom && r.right > v.left && r.left < v.right
-            panelRef.current?.toggleAttribute('data-offscreen', clipped)
-        })
-        if (seen) seen.observe(select)
         return () => {
             cancelAnimationFrame(frame)
             window.removeEventListener('scroll', kick, {capture: true})
             window.removeEventListener('resize', kick)
-            for (const observer of [ro, mo, seen, moved]) if (observer) observer.disconnect()
+            for (const observer of [ro, mo, moved]) if (observer) observer.disconnect()
             // next open decides afresh
             panel?.removeAttribute('data-placement')
+            clips.current = null
         }
     }, [open, place, offset, selectRef, panelRef])
 

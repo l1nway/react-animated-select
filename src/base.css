@@ -44,13 +44,18 @@
     flex: 1;
     min-width: 0;
     min-height: var(--rac-row);
+    /* [DOC: picks] */
+    box-sizing: border-box;
     display: flex;
     flex-wrap: wrap;
     align-items: center;
 }
 
 /* [DOC: trigger-width] */
-.rac-title {min-width: 0; max-width: calc(100% - 0.25px); overflow-x: clip; white-space: nowrap; text-overflow: ellipsis;}
+.rac-title, .rac-pick {min-width: 0; overflow-x: clip; white-space: nowrap; text-overflow: ellipsis;}
+.rac-title {max-width: calc(100% - 0.25px);}
+/* [DOC: picks] */
+.rac-value:has(.rac-pick) {padding-block: calc((var(--rac-row) - 1lh) / 2);}
 
 .rac-dots {
     display: inline-flex;
@@ -98,8 +103,8 @@
 /* [DOC: options-panel] */
 .rac-options {box-sizing: border-box; z-index: 2147483647; overflow: clip;}
 /* [DOC: dropdown-position] */
-.rac-options {transition: opacity var(--rac-duration) var(--rac-ease), visibility 0s;}
-.rac-options[data-offscreen] {opacity: 0; visibility: hidden; transition-delay: 0s, var(--rac-duration);}
+.rac-options {opacity: var(--rac-visible, 1); transition: visibility 0s;}
+.rac-options[data-offscreen] {visibility: hidden; transition: opacity var(--rac-duration) var(--rac-ease), visibility 0s var(--rac-duration);}
 
 .rac-list {
     max-height: var(--rac-list-max-height);

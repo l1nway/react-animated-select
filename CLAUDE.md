@@ -10,8 +10,8 @@ Rules:
 - Do not make speculative, exploratory or "while I'm here" edits. Change only what the task explicitly asks for.
 - Do not refactor, rename, reformat or restructure code unless asked.
 - Do not add dependencies (runtime or dev) without explicit approval.
-- Do not change `package.json` fields (`exports`, `files`, `main`, `module`, `types`, `peerDependencies`, `sideEffects`, `version`) without explicit approval: they define the published contract.
-- Do not change the public API or `index.d.ts` without explicit approval: it is a breaking change for consumers.
+- Keep the published contract in sync with the code. If a task changes something that the contract mirrors (a new or removed export, a prop, a build output file), update `index.d.ts` and the matching `package.json` fields (`exports`, `files`, `main`, `module`, `types`) in the same change, and list those edits in the reply. Before finishing, check that `index.d.ts` matches the exports of `src/index.js` and the props of `<Select/>`.
+- Do not change the contract on its own initiative: no new, removed or renamed public API, no changes to `peerDependencies`, `sideEffects` or `version` without explicit approval. A breaking change for consumers needs approval.
 - Do not run `npm publish`, bump versions, create tags or push without explicit approval.
 - When unsure whether a change is in scope, ask first.
 

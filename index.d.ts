@@ -43,6 +43,11 @@ export interface SelectIcons {
     checkbox: SelectIcon
 }
 
+/** An extension passed to `<Select plugins={[...]}/>`: use the built-in `chips` and `paging`. */
+export interface SelectPlugin {
+    readonly [key: string]: unknown
+}
+
 export interface SelectProps extends AriaAttributes {
     [key: `data-${string}`]: string | number | boolean | undefined
 
@@ -58,6 +63,8 @@ export interface SelectProps extends AriaAttributes {
     /** value: an array item as given (an object stays the whole object), an <Option/> as its `value`; a controlled value must have the shape of its source. */
     onChange?: (value: any, ids: any) => void
     multiple?: boolean
+    /** Optional features: `[chips]` for chips in a multiple Select, `[paging]` for `hasMore` / `loadMore` / `loadButton`. */
+    plugins?: SelectPlugin[]
     childrenFirst?: boolean
     groupsClosed?: boolean
 
@@ -157,6 +164,12 @@ export interface SelectProps extends AriaAttributes {
 }
 
 export const Select: FC<SelectProps>
+
+/** Plugin: chips for the selected values of a multiple Select. */
+export const chips: SelectPlugin
+
+/** Plugin: loading more options (`hasMore`, `loadMore`, `loadButton`, `loadOffset`, `loadAhead`). */
+export const paging: SelectPlugin
 
 export interface OptionProps {
     value?: any

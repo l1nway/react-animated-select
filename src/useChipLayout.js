@@ -2,8 +2,8 @@ import {useCallback, useContext, useEffect, useEffectEvent, useLayoutEffect, use
 import {flushSync} from 'react-dom'
 import {SelectConfigContext, SelectActionsContext, SelectStateContext, createStore} from './state'
 import {reducedMotion, watchMotion, followHeight} from './utils'
-import {sameValue} from './model'
-import {NONE, slotsOf, isBusy, isResizing, restBreaks, freeze, snapOf, flip, resizesOf, resize} from './chipGeometry'
+import {NONE, slotsOf, restBreaks, freeze, snapRows} from './chipGeometry'
+import {isBusy, isResizing, snapOf, flip, resizesOf, resize, shift, padOf, repad} from './chipMotion'
 
 // [DOC: delete-reserve]
 const SLACK = 0.25
@@ -11,34 +11,8 @@ const SLACK = 0.25
 // [DOC: chip]
 const chipStoreInitial = {hoverId: null, swipedId: null, held: false, breaks: NONE}
 
-// [DOC: chip-keys]
-const rekey = (chips, prev) => {
-    const ids = new Set(chips.map(chip => chip.id))
-    const byId = new Map(prev.map(([key, chip]) => [chip.id, key]))
-    const free = prev.filter(([, chip]) => !ids.has(chip.id))
-    const taken = new Set(prev.map(([key]) => key))
-    return chips.map(chip => {
-        if (byId.has(chip.id)) return [byId.get(chip.id), chip]
-        const at = free.findIndex(([, old]) => sameValue(old.original, chip.original))
-        if (at >= 0) return [free.splice(at, 1)[0][0], chip]
-        let key = chip.id
-        while (taken.has(key)) key += '~'
-        taken.add(key)
-        return [key, chip]
-    })
-}
-
-// [DOC: chip-keys]
-export const useChipKeys = (chips) => {
-    const [last, setLast] = useState(() => ({chips, keyed: rekey(chips, [])}))
-    if (last.chips === chips) return last.keyed
-    const keyed = rekey(chips, last.keyed)
-    setLast({chips, keyed})
-    return keyed
-}
-
 // [DOC: chip-layout]
-export default function useChipLayout(chips) {
+export default function useChipLayout(chips, {height, enter, leaving, onLeft}) {
     const {selectRef, duration, easing, deleteInline, deleteAlways, icons, valueAsOption, renderOption} = useContext(SelectConfigContext)
     const {selectedIDs, deleting, visibility, active} = useContext(SelectStateContext)
     const {setDeleting, setVisibility} = useContext(SelectActionsContext)
@@ -53,16 +27,23 @@ export default function useChipLayout(chips) {
     // [DOC: presence]
     const still = useSyncExternalStore(watchMotion, reducedMotion, () => false)
 
-    const holdRef = useRef({rows: null, reserve: 0, chips, swap: false, duration, easing})
+    const holdRef = useRef({rows: null, reserve: 0, chips, swap: false, dress: false, wide: false, duration, easing})
     const snapRef = useRef(null)
-    const heightRef = useRef({value: 0, root: '', anim: null})
+    const padRef = useRef(null)
     const valueRef = useRef(null)
     const delIconRef = useRef(null)
-    const inline = deleteInline && !deleteAlways && !deleting && !!icons.remove
-    const reserve = inline ? delWidth + SLACK : 0
+    // [DOC: plugin-morph]
+    const [entering, setEntering] = useState(() => !!enter && duration > 0 && !reducedMotion())
+    const plain = leaving || entering
+    const removable = !!icons.remove
+    const inline = deleteInline && !deleteAlways && !deleting && removable
+    const reserve = inline && !plain ? delWidth + SLACK : 0
     const probe = inline && !delWidth && chips.length > 0
     // [DOC: chip-resize]
-    const look = !valueAsOption ? 0 : renderOption ? 2 : 1
+    const look = plain ? 3 : !valueAsOption ? 0 : renderOption ? 2 : 1
+    // [DOC: delete-mode]
+    const dress = removable ? (deleteInline || deleting ? 1 : 0) | (deleteAlways || deleting ? 2 : 0) : 0
+    const dressRef = useRef(dress)
 
     // [DOC: chip-layout]
     const layout = useEffectEvent((refreeze, observed) => {
@@ -74,14 +55,44 @@ export default function useChipLayout(chips) {
         if (resizing && observed) return
         if (refreeze && chipStore.get().held) freeze(chipStore, value, hold)
         // [DOC: value-height]
-        const time = hold.swap ? hold.duration / 2 : hold.duration
-        if (resizing) hold.fit != null && followHeight(selectRef.current, heightRef.current, hold.fit, time, hold.easing, value)
-        else if (observed || heightRef.current.value) followHeight(selectRef.current, heightRef.current, value.offsetHeight, time, hold.easing)
+        if (resizing) hold.fit != null && followHeight(selectRef.current, height, hold.fit, hold.duration, hold.easing, value)
+        else if (observed || height.value) followHeight(selectRef.current, height, value.offsetHeight, hold.duration, hold.easing)
         if (!chipStore.get().held) chipStore.set({breaks: restBreaks(chipStore, value, hold.chips, hold.reserve)})
     })
 
+    // [DOC: chip-hold]
+    const settle = useCallback(() => {
+        const value = valueRef.current
+        const hold = holdRef.current
+        if (!value || !chipStore.get().held || isBusy(value, hold.dress)) return
+        const slots = slotsOf(value)
+        const from = slots.map(el => el.getBoundingClientRect())
+        const breaks = restBreaks(chipStore, value, hold.chips, hold.reserve)
+        Object.assign(hold, {rows: null, floor: null, fit: null, dress: false, wide: false})
+        flushSync(() => chipStore.set({held: false, breaks}))
+        // [DOC: presence]
+        hold.swap = isBusy(value)
+        if (hold.swap) flushSync(() => freeze(chipStore, value, hold))
+        if (!reducedMotion()) slots.forEach((el, index) => el.isConnected && flip(el, from[index], hold.swap ? duration / 2 : duration, easing))
+    }, [chipStore, duration, easing])
+
     // [DOC: chip-layout]
     useLayoutEffect(() => {Object.assign(holdRef.current, {duration, easing})}, [duration, easing])
+
+    // [DOC: delete-mode]
+    useLayoutEffect(() => {
+        const was = dressRef.current, value = valueRef.current, hold = holdRef.current
+        dressRef.current = dress
+        if (was === dress || !value || !duration || reducedMotion()) return
+        if ((was ^ dress) & 1) shift(value, !!(dress & 1), duration, easing, settle)
+        if (!((was | dress) & 1) || !isBusy(value, true)) return
+        const held = hold.rows, start = held ?? snapRows(snapRef.current)
+        Object.assign(hold, {dress: true, wide: false, rows: start, reserve})
+        if (start) freeze(chipStore, value, hold)
+        if (start && hold.rows.length <= start.length) return
+        Object.assign(hold, {wide: true, rows: held})
+        freeze(chipStore, value, hold)
+    }, [dress, reserve, chipStore, duration, easing, settle])
 
     // [DOC: chip-hold]
     useLayoutEffect(() => {
@@ -89,7 +100,7 @@ export default function useChipLayout(chips) {
         const value = valueRef.current
         const changed = hold.chips !== chips
         Object.assign(hold, {chips, reserve})
-        if (changed && value && isBusy(value)) freeze(chipStore, value, hold)
+        if (changed && value && isBusy(value, hold.dress)) freeze(chipStore, value, hold)
         layout(!changed)
     }, [chips, reserve, chipStore])
 
@@ -100,65 +111,62 @@ export default function useChipLayout(chips) {
         if (observer) observer.observe(valueRef.current)
         else relayout()
         document.fonts?.addEventListener('loadingdone', relayout)
-        return () => {
-            observer?.disconnect()
-            document.fonts?.removeEventListener('loadingdone', relayout)
-        }
+        return () => {observer?.disconnect(); document.fonts?.removeEventListener('loadingdone', relayout)}
     }, [])
 
     // [DOC: chip-hold]
-    const settle = useCallback(() => {
-        const value = valueRef.current
-        if (!value || !chipStore.get().held || isBusy(value)) return
-        const hold = holdRef.current
-        const slots = slotsOf(value)
-        const from = slots.map(el => el.getBoundingClientRect())
-        const breaks = restBreaks(chipStore, value, hold.chips, hold.reserve)
-        Object.assign(hold, {rows: null, floor: null, fit: null})
-        flushSync(() => chipStore.set({held: false, breaks}))
-        // [DOC: presence]
-        hold.swap = isBusy(value)
-        if (hold.swap) flushSync(() => freeze(chipStore, value, hold))
-        if (!reducedMotion()) slots.forEach((el, index) => el.isConnected && flip(el, from[index], hold.swap ? duration / 2 : duration, easing))
-    }, [chipStore, duration, easing])
-
-    // [DOC: chip-hold]
     const snapshot = useCallback((sized) => {
-        if (valueRef.current) snapRef.current = snapOf(valueRef.current, sized)
+        const value = valueRef.current
+        if (!value) return
+        snapRef.current = snapOf(value, sized)
+        if (sized) padRef.current = padOf(value)
     }, [])
 
     // [DOC: chip-resize]
     useLayoutEffect(() => {
         const value = valueRef.current
         const hold = holdRef.current
+        const pad = padRef.current
+        padRef.current = null
         if (!value || !snapRef.current || !duration || reducedMotion()) return
+        repad(value, pad, duration, easing)
         const runs = resizesOf(snapRef.current)
         if (!runs.length) return
-        hold.floor = new Map(runs.map(({id, from}) => [id, from.width]))
+        hold.floor = new Map(runs.map(({id, width}) => [id, width]))
         freeze(chipStore, value, hold)
-        followHeight(selectRef.current, heightRef.current, hold.fit, duration, easing, value)
-        resize(runs, duration, easing, () => {
-            settle()
-            layout(false, true)
-        })
-    }, [look, chipStore, duration, easing, selectRef, settle])
+        followHeight(selectRef.current, height, hold.fit, duration, easing, value)
+        resize(runs, duration, easing, () => {settle(); layout(false, true)})
+    }, [look, chipStore, duration, easing, selectRef, settle, height])
+
+    // [DOC: plugin-morph]
+    useEffect(() => {
+        const frame = entering && requestAnimationFrame(() => setEntering(false))
+        return () => cancelAnimationFrame(frame)
+    }, [entering])
+    useLayoutEffect(() => {
+        const value = valueRef.current
+        if (!leaving) return
+        let frame
+        const busy = () => chipStore.get().held || !!value?.getAnimations({subtree: true}).some(a => a.playState === 'running' && a.effect?.getComputedTiming().endTime < Infinity)
+        const check = () => {if (busy()) frame = requestAnimationFrame(check); else onLeft()}
+        check()
+        return () => cancelAnimationFrame(frame)
+    }, [leaving, onLeft, chipStore])
 
     useLayoutEffect(() => {
         const from = snapRef.current
         if (!from || breaks !== chipStore.get().breaks) return
         snapRef.current = null
         if (!reducedMotion()) from.forEach((rect, el) => el.isConnected && flip(el, rect, duration, easing))
-    }, [breaks, chips, look, chipStore, duration, easing])
+    }, [breaks, chips, look, dress, chipStore, duration, easing])
 
     // [DOC: value-height]
     useLayoutEffect(() => {
         const value = valueRef.current
         const hold = holdRef.current
-        if (!value || !heightRef.current.value || isResizing(value)) return
-        followHeight(selectRef.current, heightRef.current, value.offsetHeight, hold.swap ? hold.duration / 2 : hold.duration, hold.easing)
-    }, [breaks, held, selectRef])
-
-    useEffect(() => () => heightRef.current.anim?.cancel(), [])
+        if (!value || !height.value || isResizing(value)) return
+        followHeight(selectRef.current, height, value.offsetHeight, hold.duration, hold.easing)
+    }, [breaks, held, selectRef, height])
 
     // [DOC: touch-delete]
     useEffect(() => {
@@ -175,5 +183,5 @@ export default function useChipLayout(chips) {
         setDelWidth(el.getBoundingClientRect().width + parseFloat(style.marginLeft) + parseFloat(style.marginRight))
     }, [probe])
 
-    return {chipStore, delGroup, valueRef, delIconRef, probe, settle, held, snapshot, look, wait: duration > 0 && !still}
+    return {chipStore, delGroup, valueRef, delIconRef, probe, settle, held, snapshot, look, dress, plain, wait: duration > 0 && !still}
 }

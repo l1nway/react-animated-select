@@ -113,7 +113,7 @@ export const watchMotion = (callback) => {
 export const followHeight = (root, memo, value, duration, easing, pin) => {
     if (!root || value === memo.value) return
     const style = getComputedStyle(root)
-    const from = memo.anim ? style.height : memo.root
+    const from = memo.anim?.playState === 'running' ? style.height : memo.root
     memo.anim?.cancel()
     // [DOC: chip-resize]
     if (pin) Object.assign(pin.style, {height: `${value}px`, boxSizing: 'border-box'})

@@ -3,7 +3,8 @@ import {SelectConfigContext} from './state'
 
 const AXES = {
     x: ['width', 'marginLeft', 'marginRight', 'paddingLeft', 'paddingRight', 'borderLeftWidth', 'borderRightWidth'],
-    y: ['height', 'marginTop', 'marginBottom', 'paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth']
+    y: ['height', 'marginTop', 'marginBottom', 'paddingTop', 'paddingBottom', 'borderTopWidth', 'borderBottomWidth'],
+    none: []
 }
 // [DOC: collapse]
 const LIMITS = {x: {minWidth: '0px', maxWidth: 'none'}, y: {minHeight: '0px', maxHeight: 'none'}}
@@ -17,13 +18,14 @@ const currentBatch = () => batch ??= (queueMicrotask(() => {batch = null}), {})
 
 // [DOC: collapse]
 export function Collapse({
-    as = 'div', axis = 'y', fade = false, in: inProp, unmountOnExit = true, easing: easingProp, duration: durationProp,
+    as = 'div', axis: enterAxis = 'y', exitAxis = enterAxis, fade = false, in: inProp, unmountOnExit = true, easing: easingProp, duration: durationProp,
     group, nodeRef: externalRef, onEntered, onExited, ...rest
 }) {
     const config = useContext(SelectConfigContext)
     const presence = useContext(PresenceContext)
     const byPresence = inProp === undefined && !!presence
     const shown = byPresence ? presence.present : !!inProp
+    const axis = shown ? enterAxis : exitAxis
     // [DOC: presence]
     const duration = durationProp ?? (config?.duration ?? 300) / (byPresence && presence.swap ? 2 : 1)
     const easing = easingProp ?? config?.easing ?? 'ease'
@@ -59,7 +61,7 @@ export function Collapse({
         if (!el) return
         const props = fade ? [...AXES[axis], 'opacity'] : AXES[axis]
         // clip only while animating
-        const still = {overflow: 'hidden', textOverflow: 'clip', ...LIMITS[axis]}
+        const still = axis === 'none' ? {} : {overflow: 'hidden', textOverflow: 'clip', ...LIMITS[axis]}
         const closed = {...Object.fromEntries(props.map(p => [p, p === 'opacity' ? 0 : '0px'])), ...still}
         // [DOC: collapse]
         const frame = () => {

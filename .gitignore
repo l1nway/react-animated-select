@@ -10,3 +10,4 @@ Thumbs.db
 .vscode/
 .idea/
 .claude/settings.local.json
+MONOREPO_MIGRATION.md

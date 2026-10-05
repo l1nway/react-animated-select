@@ -57,6 +57,11 @@
     }
 }
 
+/* [DOC: picks] */
+.rac-pick {margin-inline-end: 0.3em;}
+.rac-pick::after {content: ','; transition: opacity var(--rac-duration) var(--rac-ease);}
+.rac-pick[data-last]::after {opacity: 0;}
+
 :is(.rac-title, .rac-option)[data-bool='true'] {
     color: var(--rac-success);
 }

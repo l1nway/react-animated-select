@@ -1,6 +1,6 @@
 import {SelectConfigContext, SelectActionsContext, SelectStateContext} from './state'
-import {renderIcon, stopEvent, refocus, optionDomId, optionContent, flag, dots, withClass, followHeight} from './utils'
-import {memo, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react'
+import {renderIcon, stopEvent, refocus, optionDomId, optionContent, flag, dots, withClass, followHeight, reducedMotion, watchMotion} from './utils'
+import {memo, useCallback, useContext, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore} from 'react'
 import {effectiveHighlight} from './useSelectBehavior'
 import {toJSON} from './model'
 import {Presence, Collapse} from './motion'
@@ -40,51 +40,71 @@ const FormField = /* @__PURE__ */ memo(function FormField() {
 })
 
 // [DOC: value]
-export const Title = /* @__PURE__ */ memo(function Title({hidden, settle}) {
-    const {multiple, selectedText, valueAsOption, renderOption, texts} = useContext(SelectConfigContext)
-    const {selectedIDs, title, valueOption, hasActualValue, loading, error} = useContext(SelectStateContext)
+export const Title = /* @__PURE__ */ memo(function Title({hidden, settle, wait, children}) {
+    const {valueAsOption, renderOption} = useContext(SelectConfigContext)
+    const {title, valueOption, hasActualValue, loading, error} = useContext(SelectStateContext)
     // [DOC: trigger-width]
     const [titleGroup] = useState(() => new Set())
 
     // [DOC: value]
     const rich = valueAsOption && valueOption ? optionContent(valueOption, renderOption, true) : null
     const busy = loading && !error && !hasActualValue
-    const picked = multiple && selectedIDs.length > 0 && !selectedText
-    const titleKey = `${picked ? 'picked' : rich ? valueOption.id : title}${busy ? '-loading' : ''}`
+    const titleKey = `${rich ? valueOption.id : title}${busy ? '-loading' : ''}`
     const bool = valueOption?.type === 'boolean' ? String(valueOption.raw) : undefined
 
     return (
-        <Presence>
+        <Presence wait={wait}>
             {!hidden &&
                 <Collapse axis='x' fade group={titleGroup} className={withClass('rac-title', rich && valueOption.className)} style={rich ? valueOption.style : undefined} data-bool={bool} onEntered={settle} onExited={settle} key={titleKey}>
-                    {rich ? <div className='rac-option-jsx'>{rich}</div> : picked ? selectedIDs.map(o => o.name || texts.emptyOption).join(', ') : title}
+                    {rich ? <div className='rac-option-jsx'>{rich}</div> : title}
                     {busy && dots}
                 </Collapse>
             }
+            {children}
         </Presence>
+    )
+})
+
+// [DOC: picks]
+const Picks = /* @__PURE__ */ memo(function Picks() {
+    const {selectedText, duration, texts} = useContext(SelectConfigContext)
+    const {selectedIDs} = useContext(SelectStateContext)
+    const still = useSyncExternalStore(watchMotion, reducedMotion, () => false)
+    const show = selectedIDs.length > 0 && !selectedText
+    return (
+        <Title hidden={show} wait={duration > 0 && !still}>
+            {show && selectedIDs.map((option, i) => <Collapse as='span' axis='none' exitAxis='x' fade className='rac-pick' data-last={flag(i === selectedIDs.length - 1)} key={option.id}>{option.name || texts.emptyOption}</Collapse>)}
+        </Title>
     )
 })
 
 // [DOC: value]
 const Value = /* @__PURE__ */ memo(function Value() {
-    const {selectRef, multiple, valueAsOption, duration, easing, ext} = useContext(SelectConfigContext)
+    const {selectRef, multiple, duration, easing, ext} = useContext(SelectConfigContext)
     const Plugin = multiple ? ext.Value : undefined
     const valueRef = useRef(null)
+    // [DOC: plugin-morph]
+    const [slot, setSlot] = useState({Slot: Plugin, multiple, enter: false, left: false})
+    let next = slot
+    if (Plugin ? slot.Slot !== Plugin || slot.left : slot.Slot && (!multiple || slot.left)) next = {Slot: Plugin, multiple, enter: !!Plugin && !slot.Slot && slot.multiple, left: false}
+    else if (slot.multiple !== multiple) next = {...slot, multiple}
+    if (next !== slot) setSlot(next)
+    const {Slot, enter} = next
+    const onLeft = useCallback(() => setSlot(prev => prev.left ? prev : {...prev, left: true}), [])
     // [DOC: value-height]
-    const [follow, setFollow] = useState(valueAsOption)
-    if (valueAsOption && !follow) setFollow(true)
+    const [height] = useState(() => ({value: 0, root: '', anim: null}))
     const timing = useRef({duration, easing})
     useLayoutEffect(() => {timing.current = {duration, easing}}, [duration, easing])
     useLayoutEffect(() => {
         const value = valueRef.current
-        if (!follow || multiple || !value || typeof ResizeObserver === 'undefined') return
-        const height = {value: 0, root: '', anim: null}
+        if (!value || typeof ResizeObserver === 'undefined') return
         const observer = new ResizeObserver(() => followHeight(selectRef.current, height, value.offsetHeight, timing.current.duration, timing.current.easing))
         observer.observe(value)
-        return () => {observer.disconnect(); height.anim?.cancel()}
-    }, [follow, multiple, selectRef])
+        return () => observer.disconnect()
+    }, [Slot, selectRef, height])
+    useEffect(() => () => height.anim?.cancel(), [height])
 
-    return Plugin ? <Plugin/> : <div className='rac-value' ref={valueRef}><Title/></div>
+    return Slot ? <Slot height={height} enter={enter} leaving={!Plugin} onLeft={onLeft}/> : <div className='rac-value' ref={valueRef}>{multiple ? <Picks/> : <Title/>}</div>
 })
 
 // [DOC: trigger]
