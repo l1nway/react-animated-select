@@ -7,6 +7,8 @@ import {isBusy, isResizing, snapOf, flip, resizesOf, resize, shift, padOf, repad
 
 // [DOC: delete-reserve]
 const SLACK = 0.25
+// [DOC: delete-mode]
+const ROOM = 'data-del-room'
 
 // [DOC: chip]
 const chipStoreInitial = {hoverId: null, swipedId: null, held: false, breaks: NONE}
@@ -42,7 +44,7 @@ export default function useChipLayout(chips, {height, enter, leaving, onLeft}) {
     // [DOC: chip-resize]
     const look = plain ? 3 : !valueAsOption ? 0 : renderOption ? 2 : 1
     // [DOC: delete-mode]
-    const dress = removable ? (deleteInline || deleting ? 1 : 0) | (deleteAlways || deleting ? 2 : 0) : 0
+    const dress = removable ? (deleteInline ? 1 : 0) | (deleteAlways || deleting ? 2 : 0) : 0
     const dressRef = useRef(dress)
 
     // [DOC: chip-layout]
@@ -67,6 +69,9 @@ export default function useChipLayout(chips, {height, enter, leaving, onLeft}) {
         if (!value || !chipStore.get().held || isBusy(value, hold.dress)) return
         const slots = slotsOf(value)
         const from = slots.map(el => el.getBoundingClientRect())
+        // [DOC: delete-mode] the controls rejoin the row here, so everything below measures the final width
+        const root = selectRef.current
+        if (root && !root.hasAttribute('data-deleting')) root.removeAttribute(ROOM)
         const breaks = restBreaks(chipStore, value, hold.chips, hold.reserve)
         Object.assign(hold, {rows: null, floor: null, fit: null, dress: false, wide: false})
         flushSync(() => chipStore.set({held: false, breaks}))
@@ -74,10 +79,33 @@ export default function useChipLayout(chips, {height, enter, leaving, onLeft}) {
         hold.swap = isBusy(value)
         if (hold.swap) flushSync(() => freeze(chipStore, value, hold))
         if (!reducedMotion()) slots.forEach((el, index) => el.isConnected && flip(el, from[index], hold.swap ? duration / 2 : duration, easing))
-    }, [chipStore, duration, easing])
+    }, [chipStore, duration, easing, selectRef])
 
     // [DOC: chip-layout]
     useLayoutEffect(() => {Object.assign(holdRef.current, {duration, easing})}, [duration, easing])
+
+    // [DOC: delete-mode] before the dress effect: the ghost it measures must already have the wider row
+    useLayoutEffect(() => {
+        const root = selectRef.current, value = valueRef.current
+        if (!deleting || !root || !value || root.hasAttribute(ROOM)) return
+        // the layout width: the controls are already scaling down, and a transform must not shrink the room
+        const width = (el) => {
+            const style = getComputedStyle(el)
+            const sum = (...keys) => keys.reduce((total, key) => total + (parseFloat(style[key]) || 0), 0)
+            const edges = style.boxSizing === 'border-box' ? 0 : sum('paddingInlineStart', 'paddingInlineEnd', 'borderInlineStartWidth', 'borderInlineEndWidth')
+            return sum('width', 'marginInlineStart', 'marginInlineEnd') + edges
+        }
+        const controls = root.querySelectorAll(':scope > .rac-clear, :scope > .rac-arrow')
+        const room = Array.from(controls).reduce((total, el) => total + width(el), 0)
+        if (!room) return
+        const slots = slotsOf(value)
+        const from = slots.map(el => el.getBoundingClientRect())
+        root.style.setProperty('--rac-room', `${room}px`)
+        root.setAttribute(ROOM, '')
+        // [DOC: delete-mode] the only motion in the modes where no chip changes width; the dress effect overrides it in the one where they do
+        const {duration: ms, easing: ease} = holdRef.current
+        if (!reducedMotion()) slots.forEach((el, index) => flip(el, from[index], ms, ease))
+    }, [deleting, selectRef])
 
     // [DOC: delete-mode]
     useLayoutEffect(() => {
@@ -93,6 +121,27 @@ export default function useChipLayout(chips, {height, enter, leaving, onLeft}) {
         Object.assign(hold, {wide: true, rows: held})
         freeze(chipStore, value, hold)
     }, [dress, reserve, chipStore, duration, easing, settle])
+
+    // [DOC: delete-mode] the release gives the row back (see settle); this is the path with nothing to wait for
+    useLayoutEffect(() => {
+        const root = selectRef.current, value = valueRef.current
+        if (deleting || !root || !value || !root.hasAttribute(ROOM)) return
+        let frame
+        const check = () => {
+            if (!root.hasAttribute(ROOM)) return
+            // only an inline button changes a chip's width, so only then must the row keep the room until the chips are narrow again
+            if (chipStore.get().held || isBusy(value, deleteInline)) frame = requestAnimationFrame(check)
+            else {
+                const slots = slotsOf(value)
+                const from = slots.map(el => el.getBoundingClientRect())
+                const {duration: ms, easing: ease} = holdRef.current
+                root.removeAttribute(ROOM)
+                if (!reducedMotion()) slots.forEach((el, index) => flip(el, from[index], ms, ease))
+            }
+        }
+        check()
+        return () => cancelAnimationFrame(frame)
+    }, [deleting, deleteInline, chipStore, selectRef])
 
     // [DOC: chip-hold]
     useLayoutEffect(() => {

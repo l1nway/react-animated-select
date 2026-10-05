@@ -1,4 +1,5 @@
 import {Component, Fragment, memo, useCallback, useContext, useRef, useEffect, useState, useSyncExternalStore} from 'react'
+import {flushSync} from 'react-dom'
 import {SelectConfigContext, SelectActionsContext, SelectStateContext} from './state'
 import {renderIcon, stopEvent, refocus, optionContent, withClass, flag} from './utils'
 import {Collapse, Presence} from './motion'
@@ -61,9 +62,10 @@ const SelectedItem = /* @__PURE__ */ memo(function SelectedItem({element, deleti
         Object.assign(refs.current, {x: clientX, y: clientY, longPress: false})
         clearTimeout(refs.current.longPressTimer)
         if (removable) refs.current.longPressTimer = setTimeout(() => {
-            setDeleting(true)
+            // delete mode is committed before the focus below, which would otherwise open the list
+            flushSync(() => setDeleting(true))
             refs.current.longPress = true
-            selectRef.current?.focus()
+            selectRef.current?.focus({preventScroll: true})
             setVisibility(false)
             window.navigator.vibrate?.(50)
         }, LONG_PRESS_MS)

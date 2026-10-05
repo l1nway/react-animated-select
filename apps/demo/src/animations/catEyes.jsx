@@ -22,13 +22,30 @@ const RISEN = 24
 const SUNK = 11
 const STIFFNESS = 64
 const DAMPING = 16
-const EVENTS = ['pointermove', 'pointerdown', 'mouseover', 'wheel', 'touchmove']
+// [DOC: cat-eyes]
+const COMP = {w: 1440, h: 2560, x: 709, y: 2428}
+const LIFT = 24
+const REACH = 0.3
+const EVENTS =['pointermove', 'pointerdown', 'mouseover', 'wheel', 'touchmove']
 
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
+// gaze toward the pointer, each axis in -1..1
+function gaze(svg, point) {
+    if (!svg || point.x === null) return [0, 0]
+    const box = svg.getBoundingClientRect()
+    const scale = Math.min(box.width / COMP.w, box.height / COMP.h)
+    const dx = point.x - box.left - box.width / 2 - (COMP.x - COMP.w / 2) * scale
+    const dy = point.y - box.top - box.height / 2 - (COMP.y - COMP.h / 2) * scale
+    const distance = Math.hypot(dx, dy) || 1
+    const strength = Math.min(1, distance / (REACH * window.innerWidth))
+    return [dx / distance * strength, dy / distance * strength]
+}
+
 function Eyes({status, pointer}) {
     const lottieRef = useRef(null)
-    const motion = useRef({frame: 0, velocity: 0, drawn: -1})
+    const boxRef = useRef(null)
+    const motion = useRef({frame: 0, velocity: 0, drawn: -1, lift: 0, liftVelocity: 0, drawnLift: 0})
 
     useEffect(() => {
         const m = motion.current
@@ -36,16 +53,20 @@ function Eyes({status, pointer}) {
         const timer = status === 'pointer' && setTimeout(() => setStore({cat: 'exit'}), 7000)
         let speed = Math.max(0, m.velocity * Math.sign(path[0] - m.frame))
         let last = performance.now()
+        const canLift = typeof CSS !== 'undefined' && CSS.supports('translate', '0 1px')
         let raf
 
         const tick = now => {
             const dt = Math.min(now - last, 50) / 1000
             last = now
+            m.svg ||= boxRef.current?.querySelector('svg')
+            if (m.svg && !m.pupils?.length) m.pupils = [...m.svg.querySelectorAll('.rac-cat-pupil')]
+            const [gazeX, gazeY] = status === 'pointer' ? gaze(m.svg, pointer.current) : [0, 0]
 
             if (status === 'show') m.frame = Math.min(m.frame + FPS * dt, RIGHT)
 
             if (status === 'pointer') {
-                m.velocity += (STIFFNESS * (LEFT + (RIGHT - LEFT) * pointer.current - m.frame) - DAMPING * m.velocity) * dt
+                m.velocity += (STIFFNESS * (LEFT + (RIGHT - LEFT) * (0.5 + gazeX / 2) - m.frame) - DAMPING * m.velocity) * dt
                 m.frame += m.velocity * dt
                 if (m.frame < LEFT || m.frame > RIGHT) {m.frame = clamp(m.frame, LEFT, RIGHT); m.velocity = 0}
             }
@@ -56,6 +77,15 @@ function Eyes({status, pointer}) {
                 m.frame += Math.sign(distance) * Math.min(speed * dt, Math.abs(distance))
                 // same pose jump
                 if (m.frame === CENTER) {path.shift(); m.frame = path.shift()}
+            }
+
+            m.liftVelocity += (STIFFNESS * (gazeY * LIFT - m.lift) - DAMPING * m.liftVelocity) * dt
+            m.lift += m.liftVelocity * dt
+
+            // vertical gaze
+            if (canLift && m.pupils?.length && Math.abs(m.lift - m.drawnLift) > 0.01) {
+                m.pupils.forEach(pupil => {pupil.style.translate = `0 ${m.lift}px`})
+                m.drawnLift = m.lift
             }
 
             // skip same frame
@@ -77,7 +107,7 @@ function Eyes({status, pointer}) {
     }, [status, pointer])
 
     return (
-        <div className='rac-cat-eyes-container'>
+        <div className='rac-cat-eyes-container' ref={boxRef}>
             <Suspense fallback={null}>
                 <EyesLottie
                     className='rac-cat-eyes'
@@ -92,10 +122,14 @@ function Eyes({status, pointer}) {
 
 function CatEyes() {
     const status = useStore(state => state.cat)
-    const pointer = useRef(0.5)
+    const pointer = useRef({x: null, y: 0})
 
     useEffect(() => {
-        const track = e => {pointer.current = clamp((e.touches?.[0] ?? e).clientX / window.innerWidth, 0, 1)}
+        const track = e => {
+            const point = e.touches?.[0] ?? e
+            pointer.current.x = point.clientX
+            pointer.current.y = point.clientY
+        }
         EVENTS.forEach(name => window.addEventListener(name, track, {passive: true}))
         return () => EVENTS.forEach(name => window.removeEventListener(name, track))
     }, [])

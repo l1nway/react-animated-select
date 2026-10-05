@@ -30,6 +30,12 @@
   padding: 2em;
 }
 
+.rac-live-option .rac-option-jsx {
+  align-items: center;
+  display: flex;
+  gap: 0.5em;
+}
+
 .rac-live-editor-box {
   position: relative;
 }
@@ -47,6 +53,12 @@
   font-family: 'Fira Code', monospace !important;
   background-color: var(--rac-surface-2);
   font-size: 14px !important;
+}
+
+@media (pointer: coarse) {
+  .rac-live-editor {
+    font-size: 16px !important;
+  }
 }
 
 .rac-live-editor textarea {

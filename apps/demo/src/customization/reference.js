@@ -60,7 +60,8 @@ const texts = {loading: 'Charting routes', error: 'Signal lost', disabled: 'Lock
 .aurora .rac-chip:hover {box-shadow: inset 0 0 0 1px #ec4899;}
 .aurora .rac-chip-del {border-radius: 0 999px 999px 0; padding-inline: 0.2em;}
 .rac-select.aurora[data-deleting] .rac-chip {background: #ff4d8d33;}
-.rac-options.aurora .rac-list {border-radius: 1em; padding: 0.35em; outline: 1px solid #8b5cf655; outline-offset: -1px; scrollbar-color: #ec4899 transparent;}
+.rac-options.aurora {--rac-radius: 1em; outline: 1px solid #8b5cf655; outline-offset: -1px;}
+.rac-options.aurora .rac-list {padding: 0.35em; scrollbar-color: #ec4899 transparent;}
 .aurora .rac-option {border-radius: 0.7em; padding-inline: 0.8em; transition: background-color 150ms, translate 250ms cubic-bezier(0.34, 1.56, 0.64, 1);}
 .aurora .rac-option[data-highlighted] {background-image: linear-gradient(90deg, #ec489933, transparent 80%); translate: 0.25em 0;}
 .aurora .rac-option[aria-selected='true'] {color: #f9a8d4; font-weight: 600;}
@@ -69,8 +70,8 @@ const texts = {loading: 'Charting routes', error: 'Signal lost', disabled: 'Lock
 }]
 
 const inputs = [
-    {name: '--rac-bg', value: 'color-mix(in srgb, Canvas 98%, CanvasText 2%)', desc: 'Trigger and list background, trigger border; the base of every tint'},
-    {name: '--rac-fg', value: 'CanvasText', desc: 'Trigger and list text; the color of every tint'},
+    {name: '--rac-bg', value: 'color-mix(in srgb, Canvas 98%, CanvasText 2%)', desc: 'Trigger and panel background, trigger border; the base of every tint'},
+    {name: '--rac-fg', value: 'CanvasText', desc: 'Trigger and panel text; the color of every tint'},
     {name: '--rac-danger', value: '#e7000b', desc: 'Error border and error row, false values, invalid options, chip delete colors, delete mode'},
     {name: '--rac-success', value: '#4caf50', desc: 'Color of true values'},
     {name: '--rac-row', value: '2em', desc: 'Height of one row of the value area; chips are sized from it'},
@@ -100,8 +101,8 @@ const classes = [
     {name: '.rac-chip-del', depth: 3, value: 'button', desc: 'The chip delete button (icons.remove), labelled by texts.remove and the name'},
     {name: '.rac-clear', depth: 1, value: 'button', desc: 'The clear button (icons.clear), labelled by texts.clear'},
     {name: '.rac-arrow', depth: 1, value: 'div', desc: 'The arrow wrapper (icons.arrow), rotated by CSS from the root state'},
-    {name: '.rac-options', value: 'div (portal)', desc: 'The floating panel in document.body. Gets optionsClassName and the --* keys of style'},
-    {name: '.rac-list', depth: 1, value: 'div[role=listbox]', desc: 'The scrolling list: background, color, max-height from --rac-list-max-height, scrollbar'},
+    {name: '.rac-options', value: 'div (portal)', desc: 'The floating panel in document.body: background, color, radius. Gets optionsClassName and the --* keys of style'},
+    {name: '.rac-list', depth: 1, value: 'div[role=listbox]', desc: 'The scrolling list: max-height from --rac-list-max-height, scrollbar. Shape it (radius, padding, outline) only together with .rac-options'},
     {name: '.rac-option', depth: 2, value: 'div[role=option]', desc: 'One row: padding, highlight and selected tints (no :hover rule, the pointer sets the highlight)'},
     {name: '.rac-option-text', depth: 3, value: 'span', desc: 'The text label of a row'},
     {name: '.rac-option-jsx', depth: 3, value: 'div', desc: 'Custom row content (<Option> children, renderOption); also wraps chip content with valueAsOption'},
@@ -122,7 +123,7 @@ const states = [
     {name: '[data-error]', value: '.rac-select', desc: 'error: red border, kept on hover'},
     {name: '[data-empty]', value: '.rac-select', desc: 'No value: the title shows the placeholder or a state text'},
     {name: '[data-placement]', value: '.rac-select, .rac-options', desc: '\'top\' or \'bottom\': the side the panel opens on, known before it opens'},
-    {name: '[data-deleting]', value: '.rac-select', desc: 'Touch delete mode: chips shake and show their delete buttons'},
+    {name: '[data-deleting]', value: '.rac-select', desc: 'Touch delete mode: chips shake and show their delete buttons; the clear button and the arrow collapse in place and the chips take over their width'},
     {name: '[data-inline-delete]', value: '.rac-select', desc: 'deleteInline: delete buttons sit inside the chip'},
     {name: '[data-bool]', value: '.rac-title, .rac-option', desc: '\'true\' or \'false\': a boolean value, green or red'},
     {name: '[aria-selected=\'true\']', value: '.rac-option', desc: 'Selected; with data-highlighted a stronger tint'},

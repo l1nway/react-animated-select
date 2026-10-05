@@ -42,7 +42,18 @@
     &:disabled {cursor: inherit;}
 }
 
-.rac-select:is([data-deleting], [data-inline-delete]) .rac-chip-del {position: relative;}
+.rac-select[data-inline-delete] .rac-chip-del {position: relative;}
+
+/* [DOC: delete-mode] scale, not width: a width that shrank over time would re-wrap the chips on every frame */
+.rac-select:is([data-deleting], [data-del-room]) :is(.rac-clear, .rac-arrow) {
+    scale: 0;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+/* [DOC: delete-mode] the row takes the controls' width in one step, and the chips animate into it */
+.rac-select[data-del-room] .rac-value {margin-inline-end: calc(-1 * var(--rac-room, 0px));}
 
 /* [DOC: touch-target] */
 @media (any-pointer: coarse) {
@@ -96,7 +107,7 @@
     &:hover {color: var(--rac-danger);}
 }
 
-.rac-select:is([data-deleting], [data-inline-delete]) .rac-chip-del {
+.rac-select[data-inline-delete] .rac-chip-del {
     background-color: transparent;
 }
 

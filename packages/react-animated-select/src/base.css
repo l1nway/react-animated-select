@@ -78,7 +78,14 @@
 
 .rac-clear {padding: 0; border: 0; background: none; color: inherit; font: inherit; cursor: pointer;}
 
-.rac-arrow, .rac-group-arrow {transition: rotate var(--rac-duration) var(--rac-ease);}
+/* [DOC: delete-mode] the scale / opacity / visibility trio is what touch delete mode collapses (chip.css) */
+.rac-clear, .rac-arrow, .rac-group-arrow {
+    transition:
+        rotate var(--rac-duration) var(--rac-ease),
+        scale var(--rac-duration) var(--rac-ease),
+        opacity var(--rac-duration) var(--rac-ease),
+        visibility var(--rac-duration) var(--rac-ease);
+}
 
 /* [DOC: dropdown-position] */
 .rac-select:not([data-placement='top'], [aria-expanded='true']) .rac-arrow,

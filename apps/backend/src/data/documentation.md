@@ -1,87 +1,108 @@
-# [Installation and usage]
-```bash
-    npm  install  react-animated-select
-```
+<!-- synced: react-animated-select@0.8.1 -->
+# React Animated Select: usage reference (version 0.8.1)
 
-Все доступные импорты:
+## Install and imports
+- `npm install react-animated-select`. Peer dependencies: `react` and `react-dom` 19.2 or newer. No other dependencies.
+- Exports, all from the package root: `Select`, `Option`, `OptGroup`, `defineOption`, and the plugins `chips` and `paging`. TypeScript types ship with the package (`SelectProps`, `OptionProps`, `OptGroupProps`, `SelectTexts`, `SelectIcons`, `SelectPlugin`).
+- CSS: with ES imports the styles load automatically. With CommonJS (`require`) or a bundler that ignores CSS imports from packages, import once: `import 'react-animated-select/style.css'`.
+- Works with SSR (Next.js App Router, Remix, renderToString) and hydrates without mismatch; every file starts with 'use client'. The options panel is not in the server HTML; it mounts after hydration.
+
+## Basic usage
 ```jsx
-    import {Select, Option, OptGroup} from 'react-animated-select'
+import {Select, Option} from 'react-animated-select'
+const [value, setValue] = useState(null)
+<Select placeholder='Pick one' options={['A', {name: 'B', id: 2}]} value={value} onChange={setValue}>
+    <Option id='c'>C</Option>
+    <Option id='d' disabled>D</Option>
+</Select>
 ```
-- Select: основной компонент, используется в случае отсутствия необходимости прокидывать уникальные JSX-опции, и если опции передаются через массив в проп `options`.
-- Option: компонент для кастомной JSX-опции, используется в случае необходимости своей верстки опции (например, добавить иконку). Рекомендуемые пропсы: id/value. доступные пропсы: className (по умолчанию undefined; используется для стилизации обёртки над JSX-содержимым кастомной опции), disabled (по умолчанию false; используется для отключения опции).
-- OptGroup: компонент для группировки JSX-опций, используется для группировки опций в группы. Чтобы поместить JSX опцию в группу, нужно вкладывать их в соответствующий OptGroup. Рекомендуемые пропсы: id/value. доступные пропсы: className (по умолчанию undefined; используется для стилизации названия группы опций), disabled (по умолчанию false; используется для группы опций).
 
-## [Opening and Control]
-Для открытия селекта необходимо кликнуть по нему или переключиться на него фокусом (селект открывается при попадании на него фокуса и закрывается, когда фокус потерян).
+## Options
+- `options`: an array of primitives, objects, groups or a dictionary, merged with `<Option/>` / `<OptGroup/>` children. `childrenFirst` puts the JSX options first.
+- Object fields: `id` or `value` (identity), `name` or `label` (text), `disabled`, `group` (group name). Text falls back along label, name, id, value.
+- Groups: `{group: 'Fruits', options: [...]}` or `{name: 'Fruits', options: [...]}`, items with a `group` field, or `<OptGroup name='Fruits'>` with `<Option/>` children. Groups with the same name merge across sources. Groups can be disabled and collapsed; `groupsClosed` starts every group collapsed. Clicking a header (or Enter / Space) toggles it.
+- A dictionary (plain object) uses its values as options; keys are ignored. An object with a key `name`, `label`, `id` or `value` is one option, one with `options` is a group.
+- Per-option `className` / `style` exist only on `<Option/>` and `<OptGroup/>`, not on array items.
+- Any data is safe: duplicates (`1, 1, 1`, equal objects), `NaN`, `null`, `''`, functions, circular objects never break the Select; a click selects exactly the clicked row. `null` / `''` show `texts.emptyOption`, a function shows `texts.invalidOption`. Give duplicates distinct `id`s if you need to know which one was picked.
+- `<Option/>` props: `value`, `id`, `label`, `name`, `group`, `disabled`, `className`, `style`, children (any JSX).
+- `<OptGroup/>` props: `name` (or `label` / `id` / `value`), `disabled`, `className`, `style`, `<Option/>` children.
+- `<Option/>` inside your own wrapper component is ignored (dev warning). For reusable option components use `defineOption`: `const CountryOption = defineOption(({c}) => <Option value={c.code}>{c.flag} {c.name}</Option>)`, then `countries.map(c => <CountryOption key={c.code} c={c}/>)`. Its render function must be pure (no hooks).
+- `renderOption={(item, {selected, disabled}) => <b>{item.name}</b>}` draws custom rows for array options. Keep it stable (`useCallback`) for large lists.
+- `valueAsOption`: the title and the chips render the option's own content (JSX or `renderOption`) instead of its text. By default only the text is shown in the trigger.
 
-- `visibility` (boolean): Ручное управление состоянием статуса открытости.
-- `ownBehavior` (boolean): Полностью отключает нативное поведение, переводя селект на внешнее управление.
+## Value and onChange
+- `onChange(value, ids)` fires on every commit: pick, uncheck, chip delete, clear, form reset. An array item is reported as given (an object stays the whole object); an `<Option/>` as its `value`, or its text without one. `ids` are the option ids.
+- Clearing reports `null` (single) or `[]` (multiple). Picking the already selected option of a single Select only closes the list, with no `onChange`.
+- Controlled: `value` + `onChange`. Uncontrolled: `defaultValue`. `defaultValue` is also the target of a form reset in both modes, so a controlled Select may pass it too, only for the reset. Pick one mode, like a React input: `undefined` means uncontrolled, so clear a controlled Select with `null` / `[]`, never `undefined`. Switching between defined and `undefined` warns in development. A `value` without `onChange` makes the Select read-only (dev warning).
+- A controlled value must have the shape of its source (the object from the array, or the `<Option/>` value). A value without a matching option is still shown.
+- `multiple`: multiple choice with checkboxes; the value is an array. Without the `chips` plugin the picked labels show as comma-separated text that wraps onto new rows.
 
-## [Option Deletion and Layout]
-Выбранные опции отдельно удалять можно в режиме множественного выбора (multiple={true}), рядом с которым при ховере (ПК) либо свайпу (Touch) появляется иконка удаления (по умолчанию «крестик»).
-По умолчанию кнопка удаления не видна, но сделать её видимой у каждой опции сразу, можно сделать пропом `showDelete`.
-По умолчанию кнопка удаления появляется поверх конкретной опции, чтобы не вызывать изменения позиций опций, но можно включить проп `deleteInline` что сделает иконку удаления фактической, и она будет выезжать справа от опции, но занимать место и «расталкивать» соседние опции. Во избежание проблем с вёрсткой была разработана специальная система «спейсеров», которые резервируют необходимое пространство для них ещё до проигрывания анимации, что позволяет избегать дребезгов вёрстки.
+## Plugins (since 0.8)
+- `import {Select, chips, paging} from 'react-animated-select'`, then `plugins={[chips]}`, `plugins={[paging]}` or both. An inline array is fine (compared by value). An unused plugin is not bundled (JS and CSS). The list may change at runtime: toggling `chips` morphs chips into text labels and back without a layout jump.
+- `chips`: in `multiple` mode the selected values become animated chips with delete buttons. `deleteInline`: the delete button sits inside the chip instead of over its end. `deleteAlways`: the delete button is always visible instead of on hover. On touch: swipe left reveals a chip's delete button, a long press enters delete mode (chips shake, a tap removes one, Android vibrates).
+- `paging`: async loading with `hasMore`, `loadMore`, `loadButton`, `loadOffset`, `loadAhead`. Without the plugin these props do nothing and warn in development.
+- Migrating to 0.8: chips need `plugins={[chips]}`; `hasMore` / `loadMore` / `loadButton` need `plugins={[paging]}`; `deleteInline` / `deleteAlways` without `chips` warn.
+- Sizes (min / gzip): core 37.5 / 14.4 KB JS; chips +9.5 / +3.3 KB JS and +2 KB CSS; paging +1 KB.
 
-## [List of props]
+## All Select props
+Every prop is optional. Any `aria-*` and `data-*` prop is forwarded to the root element.
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `options` | `Array \| Object` | `[]` | Data source for options. The recommended format is an array of objects with `id`, `name`, and optional `disabled`. For compatibility, `value` may be used instead of `id`, and `label` instead of `name`. |
-| `value` | `any` | `undefined` | The current value for a controlled component. |
-| `defaultValue` | `any` | `undefined` | Initial value for an uncontrolled component. |
-| `onChange` | `function` | `undefined` | Callback called when an option is selected. Arguments: (data, id). |
-| `multiple` | `boolean` | `false` | Allows select multiple options. |
-| `placeholder` | `string` | `"Choose option"` | Text shown when no option is selected. |
-| `disabled` | `boolean` | `false` | Disables the entire component. |
-| `loading` | `boolean` | `false` | Shows a loading animation and disables interaction. |
-| `error` | `boolean` | `false` | Shows the error state and `errorText`. |
-| `style` | `object` | `{}` | Inline styles for the root container. |
-| `className` | `string` | '' | Additional CSS class for the root container .rac-select. |
-| `OpenIcon` | `ElementType \ string \ JSX` | Default icon | Custom open icon. Accepts a component, image path, or JSX. |
-| `ClearIcon` | `ElementType \ string \ JSX` | Default icon | Custom clear selected option(s) icon. Accepts a component, image path, or JSX. |
-| `DelIcon` | `ElementType \ string \ JSX` | Default icon | Custom delete icon (for options in multiple mode). Accepts a component, image path, or JSX. |
-| `Checkmark` | `ElementType \ string \ JSX` | Default icon | A classic tick icon that signifies a successful selection. In multi-select mode, it appears inside the Checkbox to provide a clear visual confirmation that a specific option has been successfully toggled. |
-| `Checkbox` | `ElementType \ string \ JSX` | `border: 0.1px solid gray` | By default, this is a simple border surrounding the Checkmark to indicate a toggleable state. However, it can be fully customized by uploading a unique icon to match your design system's specific multi-select aesthetic. |
+Data and value:
+- `options` (array or object, `[]`), `children` (`<Option/>`, `<OptGroup/>`, `defineOption` components), `value`, `defaultValue`, `onChange` (`(value, ids) => void`), `multiple` (`false`), `plugins` (`[]`), `childrenFirst` (`false`), `groupsClosed` (`false`).
 
----
+State and behaviour:
+- `disabled` (`false`): not interactive like a native disabled select; the value stays visible.
+- `loading` (`false`): busy stripe at the bottom of the trigger (`aria-busy`), a loading row in the list, title `texts.loading` when there is no value. The Select stays usable while it has options.
+- `error` (`false`): red border (`data-error`), an error row `texts.error` at the end of the list, title `texts.error` when there is no value. Still usable while it has options.
+- An empty option list makes the Select inactive (cannot open), whatever the status.
+- `open` (boolean): controlled open state. Without `onOpenChange`, only you open and close it. An outside toggle button should have `onMouseDown={e => e.preventDefault()}` so the Select does not close on blur first.
+- `onOpenChange` (`(open) => void`): every open and close, in both modes; never on mount.
+- `popup` (`true`): `false` makes a tag list: no panel, `role="group"`, never opens, no arrow; chip deletion and clear keep working.
+- `onFocus`, `onBlur` (focus entering / leaving the Select as a whole, list included), `onKeyDown` (runs before the Select handles a key; `event.preventDefault()` makes the Select skip that key, so keys can be turned off or remapped).
 
-### Animation Controls
+Form:
+- `id` (id of the root), `name` (submits the value with the form: one field per value in multiple mode, objects as JSON), `form` (id of the owner form, like `<select form="id">`), `required` (`false`: an empty Select blocks the submit with the browser's bubble).
 
-| Prop | Type | Default | Description |
-|------|------|---------|-------------|
-| `duration` | `number` | `300` | Speed of all transitions in milliseconds (mapped to CSS variable `--rac-duration`). |
-| `easing` | `string` | `'ease-out'` | CSS transition timing function (e.g., `cubic-bezier(.4,0,.2,1)`). |
-| `offset` | `number` | `1` | Vertical gap (in pixels) between the select trigger and the dropdown list. |
-| `animateOpacity` | `boolean` | `true` | Enables or disables the fade effect during opening and closing. |
+Async loading (`paging` plugin):
+- `hasMore` (`false`): more pages exist. `loadMore` (`() => void | Promise`): loads the next page; a returned Promise unlocks the next load when it settles (success or failure). `loadButton` (`false`): a "Load more" row instead of loading on scroll. `loadOffset` (`100` px): how close the end of the list must come to load; a short list loads until it fills. `loadAhead` (`3`): keyboard highlight distance from the end that triggers a load.
 
----
+Content:
+- `placeholder` (`'Choose option'`): title without a value; also the accessible name unless `aria-label` / `aria-labelledby` is set.
+- `selectedText` (string): with any value, replaces the title and the chips with this text (for example 'Filters applied').
+- `texts` (object): every other string; pass only the keys to change.
+- `renderOption`, `valueAsOption` (`false`): see Options.
+- `icons` (object): `arrow`, `clear`, `remove`, `check`, `checkbox`.
+- `deleteInline` (`false`), `deleteAlways` (`false`): chip delete button placement and visibility (`chips` plugin).
 
-### Behavioral Props
+Styling and motion:
+- `className` (`''`, on the root `.rac-select`), `optionsClassName` (`''`, on the panel `.rac-options`), `style` (`{}`, inline style of the root; its `--*` keys are copied onto the panel), `container` (element or `() => element`, default `document.body`: where the panel is portaled, for example a modal inside a focus trap).
+- `duration` (`300` ms) and `easing` (`'ease'`) drive every animation and CSS transition; `duration={0}` turns animations off. `offset` (`1` px): gap between the trigger and the panel. `animateOpacity` (`true`): the panel fades while opening and closing. `keepMounted` (`false`): the closed panel stays in the DOM, collapsed. `ref`: the root element.
 
-| Prop            | Type       | Default    | Description |
-| --------------- | ---------- | ---------- | ------------------------------------------------------------------------------------------------------- |
-| `unmount`       | `boolean`  | `true`     | In default, the dropdown unmounts from the React component tree and DOM when closed. false value keeps the dropdown mounted in the DOM with zero sizes and opacity. |
-| `hasMore`       | `boolean`  | `false`    | Indicates whether more options are available for loading (used for infinite loading). |
-| `loadMore`      | `function` | `() => {}` | Callback triggered when more options need to be loaded. |
-| `loadMoreText`  | `string`   | `'Loading'`  | Text displayed inside the options list during loading. |
-| `loadOffset`    | `number`   | `100`      | Distance (in pixels) from the bottom of the list that triggers `loadMore`. |
-| `loadAhead`     | `number`   | `3`        | Number of remaining options before the end at which loading is triggered during keyboard navigation. |
-| `loadButton`     | `boolean` | `false`       | Enables a manual “Load more” button instead of automatic loading. |
-| `loadButtonText` | `string`  | `'Load more'` | Text displayed on the load button.                                |
-| `childrenFirst` | `boolean`  | `false`    | Determines priority of JSX `<Option />` children over options passed via props. |
-| `groupsClosed` | `boolean` | `false` | Default open status of groups. |
-| `onClose`      | `function` | `() => {}` | Callback triggered when select opened. |
-| `onOpen`      | `function` | `() => {}` | Callback triggered when select closed. |
+## texts keys and defaults
+`empty` 'No options', `disabled` 'Disabled', `loading` 'Loading', `error` 'Failed to load', `clear` 'Clear selection' (clear button label), `remove` 'Remove' (chip delete label prefix), `loadMore` 'Load more', `loadingMore` 'Loading', `emptyOption` 'Empty option', `invalidOption` 'Invalid option', `disabledOption` 'Disabled option', `emptyGroup` 'Empty group', `groupOpen` 'expanded', `groupClosed` 'collapsed', `list` 'Options' (listbox label), `required` (browser's own bubble text). Live region texts take a template or a function `(value) => string` for plural forms: `removed` 'Removed {label}', `cleared` 'Selection cleared', `selected` '{n} selected', `loaded` '{n} more options loaded'.
+Example: `texts={{empty: 'Nothing here', loading: 'Loading…'}}`. For a whole locale keep one object in a module and pass it to every Select.
 
----
+## icons
+- Each key takes a component (`icons={{arrow: ChevronDown}}`), an element (`<img src=…/>`) or a URL string (rendered as `img.rac-icon`, 1em high). Defaults are built-in SVGs; the arrow icon points up and CSS rotates it.
+- `null` or `false` turns a control off: no `clear` = no clear button and no Delete key; no `remove` = no chip delete button, no Backspace and no long-press delete mode; no `arrow` hides the arrows. `checkbox` replaces the built-in checkbox frame.
 
-### Text Customization
+## Keyboard and accessibility
+- Focus (click or Tab) opens the list. Enter / Space select, ArrowUp / ArrowDown move (skipping disabled options and collapsed groups), PageUp / PageDown jump by ten, Home / End go to the ends, typing letters jumps to a matching option (typeahead). Escape closes (or leaves touch delete mode), Tab closes and moves on, Delete clears, Backspace removes the last chip (or clears a single value).
+- The root is an ARIA combobox with a listbox (`aria-expanded`, `aria-activedescendant`, `aria-required`, `aria-busy`). Name it with `aria-label` or `aria-labelledby`; a `<label htmlFor>` cannot name it. A polite live region announces removed chips, clearing, multiple picks, loaded pages and errors (texts in `texts`). While `error` is on, `aria-describedby` points at the error text.
 
-| Prop | Default | Description |
-|------|---------|-------------|
-| `emptyText` | `'No options'` | Text shown when the list is empty. |
-| `loadingText` | `'Loading'` | Text shown in the title during the loading state. |
-| `errorText` | `'Failed to load'` | Text shown when `error={true}`. |
-| `disabledText` | `'Disabled'` | Text shown when `disabled={true}`. |
+## Forms
+- With `name` the Select submits with its form like a native select. `form.reset()`, a reset button, React 19 `<form action>` and `requestFormReset()` bring it back to `defaultValue` (or empty) and call `onChange`, in controlled mode too. It resets one task after native fields.
+- Inside `<fieldset disabled>` it is disabled like with `disabled`. After a failed validation an empty `required` Select gets `data-invalid` and `aria-invalid="true"` (red border) until a pick or a reset; `texts.required` sets the bubble text.
 
----
+## Common recipes
+- Multiple with chips: `<Select multiple plugins={[chips]} options={tags} value={picked} onChange={setPicked}/>`.
+- Infinite list: `<Select plugins={[paging]} options={items} hasMore={hasMore} loadMore={() => fetchNext()} loading={busy}/>`; add `loadButton` for a "Load more" row.
+- Inside a modal with a focus trap: `container={() => modalRef.current}`.
+- Clear button off: `icons={{clear: null}}`. Faster animations: `duration={150}`.
+- Only show and prune tags, never open: `popup={false}`.
+
+## Removed props (since 0.7.5: no effect, a dev warning)
+`visibility` / `setVisibility` / `onOpen` / `onClose` → `open` / `onOpenChange`; `ownBehavior` → `open` without `onOpenChange`; `unmount` → `keepMounted` (inverted); `showDelete` → `deleteAlways`; `OpenIcon`, `ClearIcon`, `DelIcon`, `Checkmark`, `Checkbox` → `icons.arrow`, `.clear`, `.remove`, `.check`, `.checkbox`; `emptyText`, `disabledText`, `loadingText`, `errorText`, `clearText`, `removeText` → `texts.empty`, `.disabled`, `.loading`, `.error`, `.clear`, `.remove`; `loadButtonText`, `loadMoreText` → `texts.loadMore`, `texts.loadingMore`; `emptyOption`, `invalidOption`, `disabledOption` → `texts.emptyOption`, `.invalidOption`, `.disabledOption`; `<OptGroup emptyGroupText>` → `texts.emptyGroup`.
+
+## Not available yet
+Search / filtering input, a virtualized list, drag-to-reorder chips, per-role animation presets, `selectedText` as a function. These are planned, not released.

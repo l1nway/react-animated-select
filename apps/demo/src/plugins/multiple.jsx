@@ -40,7 +40,7 @@ const features = [{
 const props = [
     {prop: 'plugins', type: 'object', default: '[]', show: on => on ? '{[chips]}' : '{[]}', text: 'Pass [chips] for chips in a multiple Select. deleteAlways and deleteInline warn without it.', kind: 'tick'},
     {prop: 'deleteAlways', type: 'boolean', default: 'false', text: 'Keep the delete button always visible instead of showing it on hover.', kind: 'tick'},
-    {prop: 'deleteInline', type: 'boolean', default: 'false', text: 'Place the delete button inside the chip, which widens, instead of over its text; no chip changes rows.', kind: 'tick'},
+    {prop: 'deleteInline', type: 'boolean', default: 'false', text: 'Place the delete button inside the chip, which widens, instead of over its text; no chip changes rows. Touch delete mode keeps this placement.', kind: 'tick'},
     {prop: 'sortable', type: 'plugin', default: '—', text: 'An add-on plugin for chips, works only together with it: plugins={[chips, sortable]}. Besides removing, drag chips to reorder the value: mouse drag, long press then drag on touch, modifier + arrows on keyboard.', kind: 'soon'}
 ]
 

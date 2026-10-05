@@ -7,7 +7,7 @@ Every class, state attribute and CSS variable of `react-animated-select`. This i
 - All library styles live in `@layer rac`. Any ordinary (unlayered) CSS you write wins over them, whatever its specificity: `.rac-chip {border-radius: 1em}` is enough, no `!important`.
 - If your app uses cascade layers itself, declare the library layer first: `@layer rac, app;`.
 - Inside it, `rac.base` (`base.css`) is what the Select needs to work (layout, chip mechanics, panel scrolling, arrow rotation, checkmark reveal, cursors) and `rac.theme` (`theme.css`) is the default look (colors, borders, spacing, typography, color transitions, the delete mode shake). Restyling usually means overriding theme properties; override base ones knowingly.
-- The chip rules (both layers, every `rac-chip*` class, `rac-spacer`, the `data-deleting` / `data-inline-delete` chip styling and `rac-shake`) are in `chip.css`, which ships with the `chips` plugin: a bundle without `chips` has no chip CSS. The combined `style.css` of the package still contains everything.
+- The chip rules (both layers, every `rac-chip*` class, `rac-spacer`, the `data-deleting` / `data-inline-delete` / `data-del-room` styling, including what delete mode does to `rac-clear`, `rac-arrow` and `rac-value`, and `rac-shake`) are in `chip.css`, which ships with the `chips` plugin: a bundle without `chips` has no chip CSS. The combined `style.css` of the package still contains everything.
 - States are attributes, not modifier classes: `.rac-select[aria-expanded='true']`, `.rac-option[aria-selected='true']`.
 - The options panel is a portal into `document.body`, outside your wrapper. Theme it with global selectors (`.rac-options`, `.rac-option`), or pass variables through the Select's `style` prop: its `--*` keys are copied onto the panel (`style={{'--rac-bg': '#222'}}`).
 - `className` and `style` go to the root (`.rac-select`); `optionsClassName` goes to the panel (`.rac-options`).
@@ -23,7 +23,7 @@ Every class, state attribute and CSS variable of `react-animated-select`. This i
 | `rac-title` | `div` | Placeholder, selected label or state text (`texts.loading`, `texts.error`, …). One line, truncated with an ellipsis when it is wider than the value area. |
 | `rac-pick` | `span` | Multiple mode without the `chips` plugin: one per picked label, in the wrapping `rac-value` row. One line each, truncated with an ellipsis when wider than the row. Fades in; leaves by fading and closing its width and end margin. While picks are shown, `.rac-value` gets a block padding of `(--rac-row − 1lh) / 2` so the first row stays where the title was. Theme: a `0.3em` end margin and a `,` (`::after`) on every pick; on the last one (`data-last`) the comma fades to `opacity: 0` over `--rac-duration`. `.rac-pick::after {content: none}` removes the comma. While the `chips` plugin is toggled at runtime, the chip labels also carry `rac-pick` for the morph (`data-plain`), so your pick styles shape that animation too. |
 | `rac-dots` | `span` > `i`×3 | The loading dots, after the title and in loading rows. Dots are `currentColor`. |
-| `rac-clear` | `button` | The clear button (`icons.clear`), labelled by `texts.clear`. |
+| `rac-clear` | `button` | The clear button (`icons.clear`), labelled by `texts.clear`. In delete mode it and the arrow stay in the DOM and in the flow, keep their box and collapse in place by `scale` and `opacity`, while the chip row takes their width (`chip.css`, see `data-deleting` and `data-del-room`); their `scale` / `opacity` / `visibility` transition is in `base.css`, next to the arrow's `rotate`. |
 | `rac-arrow` | `div` | The arrow wrapper (`icons.arrow`). Rotated by CSS from the root state. |
 | `rac-icon` | `img` | Any icon passed as a URL (any key of `icons`). `height: 1em`. |
 | `rac-input` | `input` | Internal: the invisible form fields of `name` / `required`, stretched over the root so the browser's validation bubble points at the Select. Without `name` and `required` there is one `hidden` field (the form anchor, for reset). Do not style it. |
@@ -36,7 +36,7 @@ Every class, state attribute and CSS variable of `react-animated-select`. This i
 | `rac-chip` | `div` | One selected value. Background, padding, margins, corner radius (half of `--rac-radius`), hover color, shake in delete mode. `touch-action: pan-y` (base): vertical page scrolling stays, horizontal moves are the chip's swipe. With `valueAsOption` it also gets the option's own `className` and `style`. `box-sizing: border-box` and at most the row width (base, `max-width: inherit` from its slot); set your own `max-width` to truncate chips earlier. |
 | `rac-chip-text` | `span` | The chip's text label (not with `valueAsOption`). Shrinks with an ellipsis when the chip is wider than the row. |
 | `rac-chip > rac-option-jsx` | `div` | With `valueAsOption`: the chip's rich content. `min-width: 0; overflow-x: clip` (base): it shrinks with the chip and is clipped without an ellipsis, so the delete button stays inside the chip. |
-| `rac-chip-del` | `button` | The chip's delete button (`icons.remove`), labelled `texts.remove` + name. An overlay by default, inline with `deleteInline` and in delete mode. `:disabled` while the Select is inactive (shown then only with `deleteAlways`). Its end corners inherit the chip's (theme), so the overlay background follows a rounded chip; round `.rac-chip` and the button follows. |
+| `rac-chip-del` | `button` | The chip's delete button (`icons.remove`), labelled `texts.remove` + name. An overlay by default, inline with `deleteInline`; delete mode changes only when the button shows, never where it sits. `:disabled` while the Select is inactive (shown then only with `deleteAlways`). Its end corners inherit the chip's (theme), so the overlay background follows a rounded chip; round `.rac-chip` and the button follows. |
 | `rac-chip-slot` | `div` | Internal: the animated slot around a chip, at most the row width. Style `.rac-chip` instead. |
 | `rac-spacer` | `div` | Internal: a zero-height line break after a row end, present while chips animate and, with `deleteInline` (without `deleteAlways`), always (it keeps room for the inline delete button in every row). Do not style it; a `row-gap` on `.rac-value` adds one gap per break, so space chips with `.rac-chip` margins. |
 
@@ -46,8 +46,8 @@ Every class, state attribute and CSS variable of `react-animated-select`. This i
 
 | Class | Element | What it is |
 |---|---|---|
-| `rac-options` | `div` (portal) | The floating panel. Corner radius (`--rac-radius`, theme); `z-index`, `box-sizing`, `overflow: clip` (base: a `border-radius` on it rounds the list, its scrollbar and the highlighted first or last option, at rest as during the open animation); receives `optionsClassName`. |
-| `rac-list` | `div[role=listbox]` | The scrolling list. Background, color, `max-height` (`--rac-list-max-height`), scrollbar. |
+| `rac-options` | `div` (portal) | The floating panel. Background, color and corner radius (`--rac-radius`, theme); `z-index`, `box-sizing`, `overflow: clip` (base: a `border-radius` on it rounds the list, its scrollbar and the highlighted first or last option, at rest as during the open animation); receives `optionsClassName`. The background belongs here because this is the box the open animation resizes: an `easing` that overshoots makes it taller than the list for a few frames. |
+| `rac-list` | `div[role=listbox]` | The scrolling list. `max-height` (`--rac-list-max-height`), scrollbar. Give it a shape of its own (radius, padding, outline) only together with a matching `.rac-options`, or the panel background shows around it. |
 | `rac-option` | `div[role=option]` | One option row, and the auto-loading footer. Padding, highlight and selected colors (pointer hover sets the highlight; there is no `:hover` rule). |
 | `rac-option-text` | `span` | The text label of a row. |
 | `rac-option-jsx` | `div` | The wrapper of custom row content (`<Option>` children or `renderOption`). With `valueAsOption` the chip and the single-mode title wrap the same content in it, so `.rac-option-jsx, .rac-chip {…}` styles both. |
@@ -74,8 +74,9 @@ Valueless flags (`data-error`, …) are present or absent: select them with `[da
 | `data-invalid` | `rac-select` | A `required` Select failed validation (a submit, `checkValidity()`, `reportValidity()`) and is still empty. Red border like `data-error`. Gone on a pick, back on clearing, removed by `form.reset()`. |
 | `data-empty` | `rac-select` | No value: the title shows the placeholder (or another state text). |
 | `data-placement='top'` / `'bottom'` | `rac-select`, `rac-options` | The side the panel opens on (known before opening, updated while the page scrolls). Written by JS, not rendered: missing before the first measurement and in SSR HTML, where it means `bottom`. |
-| `data-offscreen` | `rac-options` | While open, a scroll container clips the trigger away completely (visible fraction 0); base fades the panel to 0 over `--rac-duration`, then `visibility: hidden`, so it catches no clicks. Removed at once when any part of the trigger is visible again (no fade back: the opacity follows `--rac-visible`). |
-| `data-deleting` | `rac-select` | Touch delete mode: chips shake and show their delete buttons (styled in `chip.css`). |
+| `data-offscreen` | `rac-options` | While open, a scroll container clips the trigger away completely on either axis (vertical visible fraction 0, or zero visible width); base fades the panel to 0 over `--rac-duration`, then `visibility: hidden`, so it catches no clicks. Removed at once when any part of the trigger is visible again (no fade back: the opacity follows `--rac-visible`, which tracks the vertical fraction only). |
+| `data-deleting` | `rac-select` | Touch delete mode: chips shake and show their delete buttons, where `deleteInline` puts them; the clear button and the arrow stay mounted and keep their box, and collapse in place (`scale: 0`, `opacity: 0`, `visibility: hidden`, `pointer-events: none`) while the chips take over their width (`data-del-room`). Styled in `chip.css`. |
+| `data-del-room` | `rac-select` | Internal, written by the chip layout, not by React: delete mode hides the clear button and the arrow, so `.rac-value` takes their width through `margin-inline-end: calc(-1 * var(--rac-room))` and the chips spread into it. Set in every mode when delete mode opens, dropped at the release of the chip animation, not when delete mode ends. Do not style it. |
 | `data-inline-delete` | `rac-select` | `deleteInline`: delete buttons sit inside the chip instead of over it (styled in `chip.css`). |
 | `data-last` | `rac-pick` | The last present pick (a leaving pick keeps its old value until it is gone). The theme fades its comma out. |
 | `data-plain` | `rac-chip-slot > div` | Internal (`chips`): while the plugin is toggled at runtime, the chip is shown in the pick look. It loses the `rac-chip` class, its label becomes a `span.rac-pick`, and base gives it `display: flex`, no shrink and `max-width: inherit`. Style the morph through `.rac-pick`, not this flag. |
@@ -102,8 +103,8 @@ Inputs (on `:root`; set them anywhere, for example on one Select through a class
 
 | Variable | Default | Used for |
 |---|---|---|
-| `--rac-bg` | `Canvas` + 2% `CanvasText` | Trigger and list background, trigger border; the base of every tint. |
-| `--rac-fg` | `CanvasText` | Trigger and list text; the color of every tint. |
+| `--rac-bg` | `Canvas` + 2% `CanvasText` | Trigger and panel background, trigger border; the base of every tint. |
+| `--rac-fg` | `CanvasText` | Trigger and panel text; the color of every tint. |
 | `--rac-danger` | `#e7000b` | Error border and error row, `false` values, invalid options, chip delete colors, delete mode. |
 | `--rac-success` | `#4caf50` | `true` values. |
 | `--rac-radius` | `0px` | Corner radius of the trigger and the panel (the panel clips, so the list and its first and last rows follow); chips get half of it, and the chip delete overlay follows the chip. A length with a unit (`0px`, not `0`). |
@@ -133,6 +134,7 @@ Written by JS (inline on the panel; read it, do not set it):
 
 | Variable | Written when | Used for |
 |---|---|---|
+| `--rac-room` | Internal, on `rac-select` while `data-del-room` is set: the measured width of the clear button and the arrow, inline margins included. | The negative end margin that lets `.rac-value` use their space in delete mode. Do not set it. |
 | `--rac-visible` | While open, a scroll container partly clips the trigger: the visible fraction of its height (`0`..`1`, three decimals); absent when fully visible. | Base `opacity` of `.rac-options` (`var(--rac-visible, 1)`): the panel fades in step with the trigger. With your own opacity, write `calc(var(--rac-visible, 1) * 0.9)` to keep it. |
 | `--rac-sep` | Internal (`chips`): while the `chips` plugin is turned on at runtime, on a chip label whose pick comma is fading out, with `data-sep`; the computed `content` of the old `.rac-pick::after`. | `chip.css` base: `[data-sep]::after {content: var(--rac-sep)}`. Do not style it. |
 

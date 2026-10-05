@@ -97,7 +97,7 @@ export default function useSelect(ownProps, jsxOptions) {
 
     // open focuses, close resets
     useEffect(() => {
-        if (visibility && selectRef.current && document.activeElement !== selectRef.current) selectRef.current.focus()
+        if (visibility && selectRef.current && document.activeElement !== selectRef.current) selectRef.current.focus({preventScroll: true})
         if (!visibility) highlightStore.set({index: -1, ready: false})
     }, [visibility, highlightStore])
 

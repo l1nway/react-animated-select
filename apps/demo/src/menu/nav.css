@@ -2,38 +2,50 @@
     display: none;
 }
 
-/* mobile bottom bar */
+/* [DOC: mobile-bottom-bar] */
 @media (max-width: 1024px) {
     .rac-menu {
-        padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
-        border-top: 0.1px solid var(--rac-purple-line);
-        transition: transform 200ms ease, visibility 200ms;
+        bottom: max(var(--rac-nav-gap), env(safe-area-inset-bottom));
+        box-shadow: 0 0.5rem 1.5rem rgba(0, 0, 0, 0.35);
+        border: 0.1px solid var(--rac-purple-line);
         background-color: var(--rac-surface);
-        height: var(--rac-nav-h);
-        --rac-enter-y: 100%;
+        width: min(88%, 26.25rem);
+        /* never crosses the bottom edge, see README */
+        --rac-enter-scale: 0.9;
+        --rac-enter-y: 0px;
+        border-radius: 999px;
+        margin-inline: auto;
         --rac-enter-x: 0px;
+        height: 3.5rem;
         max-height: none;
         overflow: hidden;
         position: fixed;
-        width: 100%;
+        padding: 0;
         top: auto;
-        bottom: 0;
+        right: 0;
         left: 0;
 
-        &[data-keyboard] {
-            transform: translateY(100%);
-            visibility: hidden;
+        /* translucent like a native tab bar, opaque where unsupported */
+        @supports (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px)) {
+            background-color: color-mix(in srgb, var(--rac-surface) 72%, transparent);
+            -webkit-backdrop-filter: blur(12px) saturate(180%);
+            backdrop-filter: blur(12px) saturate(180%);
+        }
+
+        .rac-menu-indicator::before {
+            border-radius: 999px;
         }
 
         nav {
             position: relative;
+            height: 100%;
             width: 100%;
         }
 
         .rac-menu-list {
             transform: translateZ(0);
             position: relative;
-            height: 3.5rem;
+            height: 100%;
             display: flex;
         }
 
@@ -42,6 +54,8 @@
             padding: 0.375em 0.25em;
             --rac-enter-scale: 0.6;
             --rac-enter-x: 0px;
+            /* equal slots under the indicator */
+            min-width: 0;
             flex: 1;
         }
 
@@ -75,6 +89,13 @@
     .rac-menu-indicator {
         --rac-pill-inset: 0.375em 0.25em;
         display: block;
+    }
+
+    /* hidden while typing */
+    @media (pointer: coarse) {
+        body:has(:is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=button], [type=submit], [type=reset], [type=image], [type=date], [type=datetime-local], [type=month], [type=time]), textarea, [contenteditable]:not([contenteditable=false])):not([readonly], [inputmode=none]):focus) .rac-menu {
+            visibility: hidden;
+        }
     }
 
     .rac-menu-element {

@@ -28,6 +28,13 @@ Statuses:
 
 ## Open
 
+### A panel clipped sideways is now clamped to its container
+- **Kind:** behaviour
+- **From:** library
+- **Source:** `src/dropdownPosition.js` (`visible`, `place`), doc-key `dropdown-position`; `FEATURES.md`, Options panel in a portal; `STYLES.md`, `data-offscreen`
+- **What changed:** a trigger clipped sideways by a horizontally scrolling container used to get a panel of the trigger's full width, which reached past the right edge of the document, made the whole page scroll sideways and (on iOS) produced involuntary scroll jumps, a lagging panel and torn painting. The panel now spans only the horizontally visible part of the trigger and ends at the container's edge; at zero visible width it gets `data-offscreen` and fades out. `--rac-visible` still tracks the vertical fraction only. The old limit "a trigger clipped sideways keeps a full-width panel" is gone from `FEATURES.md`.
+- **Demo work needed** (`#customize`, the props tables): the Selects in `src/components/track.jsx` / `props.css` sit in a horizontally scrolling table and will visibly change — a narrow column now gives a narrow panel. Check how the Animations and Styling tables look on a phone-width viewport and decide whether the column needs a minimum width. Also decide whether this behaviour deserves a showcase of its own, since it is the case the library now handles and most Select libraries do not.
+
 ### Multiple: switching the delete-button modes animates
 - **Kind:** behaviour
 - **From:** library

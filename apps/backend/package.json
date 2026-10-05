@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build-data": "node scripts/bundle.js",
+    "build-data": "node scripts/bundle.js && node scripts/checkData.js",
+    "check-data": "node scripts/checkData.js --strict",
     "start": "node src/index.js",
     "dev": "npm run build-data && nodemon src/index.js"
   },
@@ -13,8 +14,6 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-    "@google/generative-ai": "^0.24.1",
-    "axios": "^1.14.0",
     "cors": "^2.8.6",
     "dotenv": "^17.4.0",
     "express": "^5.2.1",

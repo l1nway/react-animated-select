@@ -102,11 +102,6 @@
   gap: 0.5em;
 }
 
-.rac-soon-code {
-  border-top: 1px dashed var(--rac-line-hover);
-  background-color: var(--rac-surface-3);
-}
-
 .rac-morph-row {
   transition: height 300ms ease, visibility 0s;
   overflow-y: clip;

@@ -40,4 +40,4 @@ Both start with the `TriangleAlert` icon and a bold "Without the plugin:" title;
 
 ## Planned plugins
 
-`search.jsx` and `virtual.jsx` are placeholders: `Heading` with the Hammer icon and `Soon` (`src/components/code.jsx`). The virtual snippet is a planned API: do not present it as shipped, and replace the part with a live demo when the plugin is released. The virtual text refers to the Performance meter (`src/features/performance.jsx`): keep the reference if that section is reworked.
+`search.jsx` and `virtual.jsx` are placeholders: `Heading` with the Hammer icon and `Soon` (`src/components/code.jsx`). Both are a bare `Heading` and one `Soon` badge, with no description and no snippet (`Soon` takes only `title`); replace the part with a live demo when the plugin is released.

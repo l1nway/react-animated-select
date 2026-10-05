@@ -13,7 +13,8 @@ html {
   --rac-secondary: #ec4899;
   --rac-error: #ef4444;
 
-  --rac-nav-h: calc(3.5rem + env(safe-area-inset-bottom));
+  --rac-nav-gap: 0.5rem;
+  --rac-nav-h: calc(3.5rem + var(--rac-nav-gap));
 
   --rac-muted: #9ca3af;
   --rac-line: #1f293780;
@@ -32,6 +33,10 @@ html {
   --rac-mono: Menlo, Monaco, Consolas, 'Andale Mono', 'Ubuntu Mono', 'Courier New', monospace;
 
   height: 100%;
+
+  @media (max-width: 1024px) {
+    scroll-padding-bottom: var(--rac-nav-h);
+  }
 }
 
 :where(button, a, summary, label):focus-visible {

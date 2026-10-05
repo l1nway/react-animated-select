@@ -43,25 +43,24 @@ Problems the demo found while talking to the "Ask a question" backend. The site 
 - **Expected:** errors are readable from the site, so it can show the right message.
 - **Fix:** give the WAF block action a custom response that includes the header `Access-Control-Allow-Origin: *`, and/or attach a CloudFront response headers policy with CORS to the `/ask` behavior. Check afterwards with `curl -i` that a blocked request returns the header.
 
-## 3. Unreadable audio returns 500
+## 3. Unreadable audio returns 500 (fixed in the backend code, 2026-10-05, not deployed yet)
 
-- **Now:** a file in `audio` that is not valid audio returns `500 {"error":"Internal Server Error"}`.
-- **Expected:** `400` (or `415` for an unsupported format) with a short message. A 500 should mean a real server fault, since it is what monitoring should alert on.
+- **Was:** a file in `audio` that is not valid audio returned `500 {"error":"Internal Server Error"}`.
+- **Now:** `400 {"error": "The recording could not be read"}`. The site shows its generic server message for it; no demo change is needed.
 
-## 4. `audio/mp4` support
+## 4. `audio/mp4` support (fixed in the backend code, 2026-10-05, not deployed yet)
 
-- **Now:** not verified. Every real recording is over 8 KB, so issue 1 blocks it before the backend.
-- **Expected:**
-  - Accept `audio/mp4` (AAC in an MP4 container, file `record.mp4`) as well as `audio/webm`.
-  - Do not match the MIME type exactly. Browsers send parameters such as `audio/webm;codecs=opus` or `audio/mp4;codecs=mp4a.40.2`, so compare only the part before `;`.
-  - If the speech-to-text service detects the format by file name, keep the original name or extension when forwarding.
+- Checked locally: `record.webm` (`audio/webm;codecs=opus`), `record.mp4` (`audio/mp4`) and `record.wav` all return `200`; spoken English and Russian questions are transcribed and answered.
+- The backend accepts any `audio/*` type (only the part before `;` is compared) and keeps the file's extension when forwarding it to Whisper.
+- In production it is still blocked by issue 1.
 
-## 5. Limits exist only on the client
+## 5. Limits exist only on the client (fixed in the backend code, 2026-10-05, not deployed yet)
 
-- **Now:** the 2048-character and 60-second limits are enforced only in the browser and are easy to bypass.
-- **Expected:**
-  - The server checks text length and audio size or duration itself, and returns `413` when either is over the limit.
-  - Requests are rate-limited per IP, with `429` when the limit is hit.
+- **Was:** the 2048-character and 60-second limits were enforced only in the browser and were easy to bypass.
+- **Now** (`apps/backend/src/limits.js`, details in `apps/backend/CLAUDE.md`):
+  - `413` for a `prompt` over 2048 characters or an `audio` file over 1 MB.
+  - `429` with `Retry-After`: one request in flight per IP, 5 per minute and 50 per day per IP, 2000 per day for everyone.
+  - The site already shows both statuses; no demo change is needed.
 
 ## 6. Recording bitrate (done on the site)
 

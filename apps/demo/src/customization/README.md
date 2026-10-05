@@ -41,7 +41,7 @@ Live Select + tabbed code below it (`showcase.jsx`, `showcase.css`). Users: Cont
 - Styling presets (`PRESETS` in `reference.js`): `{id, text, props, codes}`, where `codes` is always `[jsx, css]`. `props` is spread last into the Select (it may override `placeholder`). `codes[1].text` is injected as a `<style>` on the stage.
   - `site` (As styled) shows `src/components/basic.css` itself through `import basic from '../components/basic.css?snippet'` (build-time tokenized, Snippets in `src/components/README.md`). It is the same file the site imports in `main.jsx`, so the snippet cannot drift. Do not retype those rules in `reference.js`. The theme is global (Site theme in `src/components/README.md`), so this preset passes no class: `props` is only `icons`, and the JSX snippet is `<Select icons options/>`.
   - `default`: see Bare preset. Its CSS slot is a one-line comment, so the slot never pops in or out.
-  - `aurora` sets every knob (classes, variables, `style`, icons, texts, duration, easing, offset). Its live `className` / `optionsClassName` add `rac-preset` (Preset isolation); the snippet shows `aurora` only.
+  - `aurora` sets every knob (classes, variables, `style`, icons, texts, duration, easing, offset). Its live `className` / `optionsClassName` add `rac-preset` (Preset isolation); the snippet shows `aurora` only. Its panel shape (radius, outline) sits on `.rac-options`, not on `.rac-list`: the library paints the panel background there, and its `easing` overshoots, so a shape on the list alone would detach from the box for a few frames of every opening (library `STYLES.md`, `rac-list`).
 
 ## Preset isolation
 
@@ -51,7 +51,7 @@ The site theme (`basic.css`) is global, so without a guard it would sit under ev
 - `all` does not cover custom properties. Every variable `basic.css` sets must be listed here too.
 - Specificity is (0,1,0), the same as the theme. It wins by order (`showcase.css` is a lazy chunk, after the entry CSS) and loses to the preset's own rules: the stage `<style>` is in `body`, after every stylesheet in `head`, and Aurora's element rules are (0,2,0) anyway. `.rac-showcase-stage > .rac-select {contain: inline-size}` (0,2,0) survives.
 - Descendants (`.rac-list`, options, chips) keep the site context on purpose: for Aurora the page is the site page (dark scheme, site font), as it would be the visitor's own page. Only Default also strips that (Bare preset).
-- Checked headless (Edge): Aurora panel `border: 0`, radius `0`, list `#110d24`; Default panel `border: 0`, `color-scheme: light`; As styled panel `1px rgba(139, 92, 246, 0.3)`, radius 8px.
+- Checked headless (Edge): Aurora panel `border: 0`, Default panel `border: 0`, `color-scheme: light`; As styled panel `1px rgba(139, 92, 246, 0.3)`, radius 8px. Re-checked for Aurora 2026-10-05 (Chromium) after the panel took over the background: panel `#110d24`, radius `16px`, its own `outline`, list transparent and unrounded.
 
 ## Bare preset
 

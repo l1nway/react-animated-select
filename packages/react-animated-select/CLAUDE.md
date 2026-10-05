@@ -17,6 +17,8 @@ The library and the backend each relate only to the demo; the demo relates to bo
 1. An agent working on the demo that finds a bug in the library reports it to the owner. It fixes the library in place only with the owner's approval or on a direct instruction (then right away, so the context is not lost, following this `CLAUDE.md`). Otherwise it records the bug in [BUGS.md](BUGS.md).
 2. Working on the library, a change the site should reflect (a fix, a new feature or prop, a changed default or style hook): update `apps/demo` in the same change, or add an entry to [apps/demo/SYNC.md](../../apps/demo/SYNC.md). If the task does not say which, ask the owner.
 
+3. Working on the library, a change the "Ask a question" assistant should know (a prop, default, `texts` or `icons` key, export, class, state attribute, variable, plugin, behaviour) adds one short line to the "Knowledge queue" of [apps/backend/BUGS.md](../../apps/backend/BUGS.md) in the same change. Never edit the backend's knowledge files or prompts: Gemini applies the queue (root `CLAUDE.md`, "Model roles").
+
 The library session reads [BUGS.md](BUGS.md), fixes, and marks entries done.
 
 ## Releases

@@ -72,9 +72,13 @@
 
 /* panel */
 
-.rac-list {
+/* [DOC: options-panel] */
+.rac-options {
     background-color: var(--rac-bg);
     color: var(--rac-fg);
+}
+
+.rac-list {
     scrollbar-color: var(--rac-tint-2) var(--rac-tint-1);
     scrollbar-width: thin;
     scroll-padding-block: 0.5em;

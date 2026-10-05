@@ -33,9 +33,9 @@ const FormField = /* @__PURE__ */ memo(function FormField() {
     // form anchor
     const silent = !required && (!name || multiple && !picked.length)
     const values = silent || !picked.length ? [''] : picked.map(option => formValue(option.original))
-    const focus = () => selectRef.current?.focus()
+    const focus = () => selectRef.current?.focus({preventScroll: true})
     return values.map((value, i) =>
-        <input className='rac-input' key={i} ref={i ? undefined : inputRef} name={silent ? undefined : name} form={form} value={value} hidden={silent} required={required && !i} disabled={disabled && !fieldsetDisabled} tabIndex={-1} aria-hidden='true' autoComplete='off' onChange={noop} onInvalid={markInvalid} onFocus={focus}/>
+        <input className='rac-input' key={i} ref={i ? undefined : inputRef} name={silent ? undefined : name} form={form} value={value} hidden={silent} required={required && !i} disabled={disabled && !fieldsetDisabled} tabIndex={-1} aria-hidden='true' autoComplete='off' inputMode='none' onChange={noop} onInvalid={markInvalid} onFocus={focus}/>
     )
 })
 
@@ -120,8 +120,9 @@ const Trigger = /* @__PURE__ */ memo(function Trigger() {
     }, () => undefined)
 
     // [DOC: state-semantics]
-    const showClear = !!icons.clear && hasActualValue && active && !deleting
-    const showArrow = !!icons.arrow && active && !deleting && popup
+    // [DOC: delete-mode] delete mode hides both in CSS, so their width leaves the row in one frame
+    const showClear = !!icons.clear && hasActualValue && active
+    const showArrow = !!icons.arrow && active && popup
     // [DOC: popup]
     const roleAttrs = popup ? {role: 'combobox', 'aria-haspopup': 'listbox', 'aria-controls': `${selectId}-listbox`, 'aria-expanded': visibility, 'aria-activedescendant': activeDescendant, 'aria-required': required || undefined} : {role: 'group'}
 

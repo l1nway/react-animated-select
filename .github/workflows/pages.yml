@@ -43,3 +43,18 @@ jobs:
     steps:
       - id: deployment
         uses: actions/deploy-pages@v4
+  cleanup:
+    needs: deploy
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      deployments: write
+    env:
+      GH_TOKEN: ${{github.token}}
+    steps:
+      # keep only the newest github-pages deployment: mark the rest inactive, then delete them
+      - run: |
+          gh api --paginate "repos/${{github.repository}}/deployments?environment=github-pages&per_page=100" --jq '.[].id' | tail -n +2 | while read -r id; do
+            gh api -X POST "repos/${{github.repository}}/deployments/$id/statuses" -f state=inactive > /dev/null
+            gh api -X DELETE "repos/${{github.repository}}/deployments/$id"
+          done

@@ -10,9 +10,9 @@ const CODE = `function App() {
 
     return (
         <Select icons={{arrow: ChevronUp}} onChange={setValue} value={value}>
-            <Option value='1'><Zap/> Basic Plan</Option>
-            <Option value='2'><Star/> Pro License</Option>
-            <Option value='3' disabled><Shield/> Enterprise</Option>
+            <Option value='1' className='rac-live-option'><Zap/> Basic Plan</Option>
+            <Option value='2' className='rac-live-option'><Star/> Pro License</Option>
+            <Option value='3' className='rac-live-option' disabled><Shield/> Enterprise</Option>
         </Select>
     )
 }

@@ -7,6 +7,16 @@ import {Collapse} from './motion'
 const NONE = 0, HIGHLIGHTED = 1, HIGHLIGHTED_READY = 2
 
 // [DOC: highlight]
+const scrollIntoList = (el) => {
+    const list = el?.closest?.('.rac-list')
+    if (!list) return
+    const box = el.getBoundingClientRect(), view = list.getBoundingClientRect()
+    const top = view.top + list.clientTop, bottom = top + list.clientHeight
+    const by = box.top < top && box.bottom <= bottom ? box.top - top : box.bottom > bottom && box.top >= top ? box.bottom - bottom : 0
+    if (by) list.scrollTop += by
+}
+
+// [DOC: highlight]
 const useHighlighted = (index) => {
     const {highlightStore} = useContext(SelectConfigContext)
     const ref = useRef(null)
@@ -17,7 +27,7 @@ const useHighlighted = (index) => {
     }, () => NONE)
 
     useLayoutEffect(() => {
-        if (mode === HIGHLIGHTED_READY) ref.current?.scrollIntoView?.({block: 'nearest'})
+        if (mode === HIGHLIGHTED_READY) scrollIntoList(ref.current)
     }, [mode])
     return [ref, mode !== NONE]
 }

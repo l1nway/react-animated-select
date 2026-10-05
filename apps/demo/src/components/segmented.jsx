@@ -21,7 +21,7 @@ const CSS = `
 }
 
 .rac-segmented-item {
-  transition: color 0.3s ease, opacity 150ms ease;
+  transition: color 0.3s ease, opacity 0.3s ease;
   background-color: transparent;
   font-family: inherit;
   padding: 0.6em 1.1em;

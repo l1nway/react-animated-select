@@ -99,7 +99,7 @@ export const stopEvent = (e) => {
 }
 
 // [DOC: nested-controls]
-export const refocus = (e, ref) => {if (e?.currentTarget.contains(document.activeElement)) ref.current?.focus()}
+export const refocus = (e, ref) => {if (e?.currentTarget.contains(document.activeElement)) ref.current?.focus({preventScroll: true})}
 
 const REDUCED = '(prefers-reduced-motion: reduce)'
 export const reducedMotion = () => !!window.matchMedia?.(REDUCED).matches

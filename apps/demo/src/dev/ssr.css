@@ -91,6 +91,10 @@
     position: absolute;
     top: 0.9em;
 
+    &:last-of-type {
+      transform: translateX(-100%);
+    }
+
     &[data-passed='true'] {
       color: var(--rac-purple-text);
     }

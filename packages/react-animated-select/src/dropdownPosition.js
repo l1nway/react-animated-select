@@ -23,14 +23,17 @@ const clipsOf = (el) => {
     return list
 }
 const visible = (rect, clips) => {
-    let top = -Infinity, bottom = Infinity
+    let top = -Infinity, bottom = Infinity, left = -Infinity, right = Infinity
     for (const el of clips) {
         const box = el.getBoundingClientRect()
         top = Math.max(top, box.top + el.clientTop)
         bottom = Math.min(bottom, box.top + el.clientTop + el.clientHeight)
+        left = Math.max(left, box.left + el.clientLeft)
+        right = Math.min(right, box.left + el.clientLeft + el.clientWidth)
     }
     const pin = v => Math.min(Math.max(v, top), bottom)
-    return {pin, ratio: rect.height ? +((pin(rect.bottom) - pin(rect.top)) / rect.height).toFixed(3) : 1}
+    const span = v => Math.min(Math.max(v, left), right)
+    return {pin, span, ratio: rect.height ? +((pin(rect.bottom) - pin(rect.top)) / rect.height).toFixed(3) : 1}
 }
 
 // [DOC: dropdown-position]
@@ -48,10 +51,11 @@ const useDropdownPosition = ({selectRef, panelRef, open, frozen, offset, onFlip}
     const place = useCallback((panel) => {
         const select = selectRef.current
         if (!select || !panel) return
-        if (panel.scrollHeight) lastHeight.current = panel.scrollHeight
         const rect = select.getBoundingClientRect()
+        const {pin, span, ratio} = visible(rect, clips.current ??= clipsOf(select))
+        const start = span(rect.left), width = span(rect.right) - start
+        if (width && panel.scrollHeight) lastHeight.current = panel.scrollHeight
         const side = panel.dataset.placement, height = lastHeight.current
-        const {pin, ratio} = visible(rect, clips.current ??= clipsOf(select))
         // [DOC: dropdown-flip]
         const fits = side === 'top' ? rect.top - offset >= height : window.innerHeight - rect.bottom - offset >= height
         let upward = side && (held.current || fits || ratio < 1) ? side === 'top' : isUp(rect, height)
@@ -61,15 +65,15 @@ const useDropdownPosition = ({selectRef, panelRef, open, frozen, offset, onFlip}
         }
         decide(upward)
         const edge = pin(upward ? rect.top : rect.bottom)
-        panel.style.width = `${rect.width}px`
-        panel.style.left = `${rect.left + window.scrollX}px`
+        panel.style.width = `${width}px`
+        panel.style.left = `${start + window.scrollX}px`
         panel.style.top = upward ? 'auto' : `${edge + window.scrollY + offset}px`
         panel.style.bottom = upward ? `${window.innerHeight - edge - window.scrollY + offset}px` : 'auto'
-        shift(panel, rect.left, edge, upward, offset)
+        shift(panel, start, edge, upward, offset)
         // [DOC: dropdown-position]
         if (ratio < 1) panel.style.setProperty('--rac-visible', ratio)
         else panel.style.removeProperty('--rac-visible')
-        panel.toggleAttribute('data-offscreen', ratio === 0)
+        panel.toggleAttribute('data-offscreen', ratio === 0 || width === 0)
     }, [selectRef, offset, decide])
 
     // [DOC: dropdown-position]
@@ -112,8 +116,8 @@ const useDropdownPosition = ({selectRef, panelRef, open, frozen, offset, onFlip}
             const rect = select.getBoundingClientRect()
             const box = panelRef.current?.getBoundingClientRect() ?? rect
             const upward = isUp(rect, lastHeight.current), room = lastHeight.current + offset
-            const {pin, ratio} = visible(rect, clips.current ?? []), top = panelRef.current?.dataset.placement === 'top'
-            return [rect.left - box.left, top ? pin(rect.top) - box.bottom : pin(rect.bottom) - box.top, ratio, rect.width, window.innerHeight, panelRef.current?.scrollHeight, upward, rect.top >= room, window.innerHeight - rect.bottom >= room].join()
+            const {pin, span, ratio} = visible(rect, clips.current ?? []), top = panelRef.current?.dataset.placement === 'top'
+            return [span(rect.left) - box.left, top ? pin(rect.top) - box.bottom : pin(rect.bottom) - box.top, ratio, span(rect.right) - span(rect.left), window.innerHeight, panelRef.current?.scrollHeight, upward, rect.top >= room, window.innerHeight - rect.bottom >= room].join()
         }
         const arm = () => {
             moved?.disconnect()

@@ -11,8 +11,8 @@ import './ssr.css'
 // demo data
 const plans = ['Basic', 'Pro', 'Enterprise']
 const STEPS = [['HTML arrives', 800], ['JS loaded', 3000], ['Hydrated', 4500]]
-const TOTAL = 6000
-const DONE = STEPS.length + 1
+const TOTAL = 4500
+const DONE = STEPS.length
 const LANES = [
     ['Client rendering', 2, 2, ['Nothing yet', 'Empty page: JS is downloading', 'Rendered and interactive', 'Rendered and interactive']],
     ['Server rendering', 1, 3, ['Nothing yet', 'Static HTML: visible, not interactive', 'Static HTML: JS loaded, hydrating', 'Hydrated: interactive']]
@@ -62,7 +62,7 @@ function Ssr() {
     useEffect(() => {
         if (!seen) return
         const still = matchMedia('(prefers-reduced-motion: reduce)').matches
-        const steps = still ? [[DONE, 0]] : [...STEPS.map(([, at], i) => [i + 1, at]), [DONE, TOTAL]]
+        const steps = still ? [[DONE, 0]] : STEPS.map(([, at], i) => [i + 1, at])
         const timers = steps.map(([next, at]) => setTimeout(() => setPhase(next), at))
         return () => timers.forEach(clearTimeout)
     }, [seen, run])

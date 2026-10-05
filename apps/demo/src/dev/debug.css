@@ -33,7 +33,7 @@
 
   .rac-segmented-item {
     font-family: var(--rac-mono);
-    transition: color 0.3s ease, background-color 0.3s ease;
+    transition: color 0.3s ease, background-color 0.3s ease, opacity 0.3s ease;
     align-content: center;
     border-radius: 0;
     font-size: inherit;

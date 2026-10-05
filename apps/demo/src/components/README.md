@@ -366,13 +366,13 @@ The one look of every Select on the site: `basic.css`, imported once in `main.js
 
 **Contract**
 - Global selectors, no class on the Select: `.rac-select, .rac-options {--rac-bg; --rac-fg; --rac-radius}` and `.rac-options {border}`. The panel is a portal, so it is themed by its own class `.rac-options`, not by inheritance from the trigger. Never add a theme class (`className` / `optionsClassName`) to a Select again; the old `rac-basic-select` / `rac-basic-options` pair on ~25 Selects is gone.
-- Variables first: colours go through `--rac-bg` / `--rac-fg` only, so every tint, hover, highlight, chip and scrollbar of the library follows them (`--rac-tint-*`, `--rac-muted` are derived on the same two elements). `--rac-fg` is explicit (`#fff`): without it the text is `CanvasText`, white only because the site is `color-scheme: dark`; a visitor who copies the file into a light page would get black on `#0a0a0f`.
+- Variables first: colours go through `--rac-bg` / `--rac-fg` only, so every tint, hover, highlight, chip and scrollbar of the library follows them (`--rac-tint-*`, `--rac-muted` are derived on the same two elements). `--rac-fg` is explicit (`#fff`): without it the text is `CanvasText`, white only because the site is `color-scheme: dark`; a visitor who copies the file into a light page would get black on `#1a1a24`.
 - Corners through `--rac-radius` (0.5rem): it rounds the trigger and the panel, chips at half (0.25rem), and the chip delete overlay follows the chip's end corners. Set it on `.rac-options` too: the panel is a portal and inherits nothing from the trigger. The panel border stays a plain property: the library has no variable for it.
 - The file is shown verbatim as the Styling "As styled" CSS (Snippets above), so it holds no comments, no doc-keys and nothing site-only. Layout is not theme: a width a container needs belongs to that container (Usage makes its stage `display: block`, so the Select stretches without `width: 100%`).
 - A section that needs another look overrides on its own class, with the Select's `style` (`--*` keys reach the panel too) or with a section rule of equal or higher specificity: `basic.css` is in the entry CSS, so every lazy chunk comes after it and wins a (0,1,0) tie (`.rac-animations-select`, `.rac-perf-options`).
 
 **Traps**
-- Removed as dead code: `color: #c084fc` on the panel never reached the text (`.rac-list` sets `color: var(--rac-fg)` itself; checked headless, options were white) and `outline: none` on the trigger repeats the global `*` rule.
+- Removed as dead code: `color: #c084fc` on the panel never reached the text (the library theme sets `color: var(--rac-fg)` on the panel itself; checked headless, options were white) and `outline: none` on the trigger repeats the global `*` rule.
 - The theme reaches every Select, including the Styling presets. Aurora and Default strip it with the demo-only `rac-preset` class (`src/customization/README.md`, Preset isolation). A new site-wide variable in `basic.css` must be added to the `--*: revert-layer` list of `.rac-preset` too: `all` does not cover custom properties.
 
 ## Track

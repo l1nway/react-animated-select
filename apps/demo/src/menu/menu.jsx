@@ -7,7 +7,6 @@ import './menu.css'
 import './nav.css'
 
 const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)'
-const EDITABLE = 'input:not([type=checkbox], [type=radio], [type=range], [type=button], [type=submit], [type=reset], [type=color], [type=file], [readonly]), textarea:not([readonly]), [contenteditable]:not([contenteditable=false])'
 
 const hrefOf = id => import.meta.env.BASE_URL + pathOf(id)
 
@@ -40,13 +39,13 @@ const Link = memo(function Link({item, selected, className = '', onPick}) {
 
 function Menu() {
     const [active, setActive] = useState(null)
-    const [keyboard, setKeyboard] = useState(false)
     const [entered, setEntered] = useState(false)
 
     const autoScroll = useRef(false)
     const release = useRef(null)
     const observer = useRef(null)
     const current = useRef(null)
+    const bar = useRef(null)
 
     const group = groupOf(active)
     const index = MENU.indexOf(group)
@@ -110,7 +109,8 @@ function Menu() {
         const visible = new Set()
         let top = true
         const sync = () => {
-            if (autoScroll.current || getStore().restoring) return
+            // paused while typing
+            if (autoScroll.current || getStore().restoring || getComputedStyle(bar.current).visibility === 'hidden') return
             // deepest section wins, header means root
             const item = top ? null : ITEMS.findLast(i => visible.has(i.id))
             if (!item && !top) return
@@ -151,28 +151,8 @@ function Menu() {
         return subscribe(observe)
     }, [])
 
-    // keyboard guard
-    useEffect(() => {
-        const coarse = matchMedia('(pointer: coarse)')
-        const update = el => setKeyboard(coarse.matches && !!el?.matches?.(EDITABLE))
-        const onIn = e => update(e.target)
-        const onOut = e => update(e.relatedTarget)
-
-        document.addEventListener('focusin', onIn)
-        document.addEventListener('focusout', onOut)
-        return () => {
-            document.removeEventListener('focusin', onIn)
-            document.removeEventListener('focusout', onOut)
-        }
-    }, [])
-
     return (
-        <aside
-            className='rac-menu rac-enter'
-            data-keyboard={keyboard || undefined}
-            data-entered={entered || undefined}
-            onAnimationEnd={e => e.target === e.currentTarget && setEntered(true)}
-        >
+        <aside className='rac-menu rac-enter' ref={bar} data-entered={entered || undefined} onAnimationEnd={e => e.target === e.currentTarget && setEntered(true)}>
             <nav aria-label='Sections'>
                 {index >= 0 && <span className='rac-menu-indicator rac-pill' style={{'--index': index, '--count': MENU.length}} aria-hidden='true'/>}
                 <ul className='rac-menu-list'>
