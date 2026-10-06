@@ -1,6 +1,7 @@
 import {ShieldCogCorner, Plus, Trash, X} from 'lucide-react'
 import {Select} from 'react-animated-select'
-import {arrowIcons, CHIPS, Title} from '../components/helpers'
+import {arrowIcons, Title} from '../components/helpers'
+import {CHIPS} from '../components/chips'
 import {Tick} from '../components/section'
 import {Segmented} from '../components/segmented'
 import {Collapse} from '@l1nway/collapse'

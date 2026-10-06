@@ -17,9 +17,9 @@ const LOAD = {
     loading: () => import('../plugins/loading'),
     search: () => import('../plugins/search'),
     virtual: () => import('../plugins/virtual'),
-    custom: () => import('./group'),
+    customization: () => import('./group'),
     styling: () => import('../customization/styling'),
-    content: () => import('../customization/content'),
+    custom: () => import('../customization/custom'),
     icons: () => import('../customization/icons'),
     animations: () => import('../customization/animations'),
     dev: () => import('../dev/dev'),
@@ -42,9 +42,9 @@ let preloaded = false
 // block reveal
 let reveal
 const show = (block, i) => {
-    const {target, mounted} = getStore()
     block.style.setProperty('--i', i)
-    block.dataset.reveal = target && mounted < PARTS.length ? 'fade' : 'in'
+    // dom check, strict mode safe
+    block.dataset.reveal = getStore().target && !ready(PARTS) ? 'fade' : 'in'
 }
 const onReveal = entries => entries.filter(entry => entry.isIntersecting).forEach(({target}, i) => {
     reveal.unobserve(target)

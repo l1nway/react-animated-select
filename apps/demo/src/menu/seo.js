@@ -5,7 +5,7 @@ export const SITE = 'https://l1nway.github.io/react-animated-select/'
 export const DESCRIPTION = 'Lightweight, high-performance, and fully customizable Select component for React. Featuring smooth CSS animations, accessible keyboard navigation, and flexible option rendering.'
 
 export const SEO = {
-    start: DESCRIPTION,
+    start: 'Get started with react-animated-select: install the package, render your first Select and try the live demo.',
     usage: 'Install react-animated-select and render your first Select: pass options as an array, or write Option and OptGroup children with any JSX inside.',
     question: 'Ask a question about using react-animated-select and get a quick answer on the topic, without digging through the documentation.',
     features: 'What react-animated-select does out of the box: ARIA combobox, native forms, safe data handling, states, groups, a portal panel and fast rendering.',
@@ -22,9 +22,9 @@ export const SEO = {
     loading: 'Infinite loading in react-animated-select: loadMore fetches the next page of options as the list is scrolled or navigated with the keyboard.',
     search: 'Search in react-animated-select: a planned plugin that filters large option lists as you type.',
     virtual: 'Virtualization in react-animated-select: a planned plugin that mounts only the rows in view, for lists of 10 000 options.',
-    custom: 'Customize react-animated-select with plain CSS: cascade layers, rac- classes, state attributes, CSS variables, custom options, icons and animations.',
+    customization: 'Customize react-animated-select with plain CSS: cascade layers, rac- classes, state attributes, CSS variables, custom options, icons and animations.',
     styling: 'Style react-animated-select with plain CSS: styles in a cascade layer, short rac- classes, ARIA and data state attributes and --rac- variables.',
-    content: 'Custom option rows in react-animated-select: any JSX inside Option, renderOption for array data and reusable defineOption components.',
+    custom: 'Custom option rows in react-animated-select: any JSX inside Option, renderOption for array data and reusable defineOption components.',
     icons: 'Replace every icon of react-animated-select: arrow, clear, remove, check and checkbox accept a URL, an element or a component.',
     animations: 'Smooth CSS animations in react-animated-select with zero animation dependencies: panel, chips, title and option groups.',
     dev: 'Developer tools for react-animated-select: a debug log, server rendering notes and a live playground to try every prop.',
@@ -34,6 +34,7 @@ export const SEO = {
     author: 'Who builds react-animated-select, and where to follow the project.'
 }
 
-export const pathOf = id => id === 'start' ? '' : `${id}/`
+// no item: page top
+export const pathOf = id => id ? `${id}/` : ''
 
-export const titleOf = item => item.id === 'start' ? `${NAME} — animated, accessible Select for React` : `${item.text} — ${NAME}`
+export const titleOf = item => item ? `${item.text} — ${NAME}` : `${NAME} — animated, accessible Select for React`

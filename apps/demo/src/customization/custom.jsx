@@ -2,9 +2,10 @@ import {LayoutList, DollarSign, Euro, PoundSterling, JapaneseYen, SwissFranc, In
 import {Select, Option, defineOption} from 'react-animated-select'
 import {useCallback, useReducer} from 'react'
 import {snippet} from '../components/tokens'
-import {merge, arrowIcons, CHIPS, Title} from '../components/helpers'
+import {merge, arrowIcons, Title} from '../components/helpers'
+import {CHIPS} from '../components/chips'
 import {Showcase, Toggle} from './showcase'
-import './content.css'
+import './custom.css'
 
 // demo data
 const currencies = [
@@ -18,10 +19,10 @@ const currencies = [
 ]
 
 const Currency = ({c, disabled}) =>
-    <span className='rac-content-currency rac-iconed'>
+    <span className='rac-custom-currency rac-iconed'>
         <c.icon color={c.color} aria-hidden='true'/>
-        <span className='rac-content-name'>{c.name}</span>
-        <small className='rac-content-code'>{disabled ? 'soon' : c.id.toUpperCase()}</small>
+        <span className='rac-custom-name'>{c.name}</span>
+        <small className='rac-custom-code'>{disabled ? 'soon' : c.id.toUpperCase()}</small>
     </span>
 
 const renderCurrency = (c, {disabled}) => <Currency c={c} disabled={disabled}/>
@@ -77,7 +78,7 @@ const title = <Title icon={<LayoutList/>}>Custom Options</Title>
 
 const desc = <>Rows can hold any content. For array data, <code>renderOption(item, {'{selected, disabled}'})</code> draws each row from the original item. For JSX, <code>defineOption</code> turns a render function into a reusable option component, so <code>{'currencies.map(c => <CurrencyOption c={c}/>)'}</code> works where an ordinary wrapper would be ignored (it is ignored with a dev warning), on the server too; declare it at module level and keep hooks in the content it renders. By default the title and the chips show only the option's text, so a heavy row never breaks the trigger: it reads <code>label</code>, <code>name</code> or the strings inside the JSX (text inside a component or an image is not found, so give such options a <code>label</code>; an option with no text shows <code>texts.emptyOption</code>). <code>valueAsOption</code> renders the option's own content there instead, the same content or the text, never different JSX. Per-option <code>className</code> and <code>style</code> come from <code>{'<Option/>'}</code> and move onto the chip and the title; the checkbox and the row states stay in the list. Keep rich content decorative and light: buttons or links inside fight the chip's own click, swipe and long press. <code>options</code> can also be a dictionary, <code>{'{usd: {…}, eur: {…}}'}</code>: every value becomes an option, the keys are not used.</>
 
-function Content() {
+function Custom() {
     const [state, dispatch] = useReducer(merge, {tab: 0, value: null, multiple: false, valueAsOption: false})
     const array = state.tab === 0
 
@@ -86,11 +87,11 @@ function Content() {
     const toggle = useCallback((name, on) => dispatch(name === 'multiple' ? {multiple: on, value: null} : {[name]: on}), [])
 
     return (
-        <section className='rac-states rac-content-section' id='content'>
-            <Showcase id='content' label='Custom rows' tabs={TABS} active={state.tab} onPick={pick} codes={TABS[state.tab].codes} title={title} desc={desc}>
+        <section className='rac-states' id='custom'>
+            <Showcase id='custom' label='Custom rows' tabs={TABS} active={state.tab} onPick={pick} codes={TABS[state.tab].codes} title={title} desc={desc}>
                 <div className='rac-showcase-stage'>
                     <Select
-                        className='rac-content-select'
+                        className='rac-custom-select'
                         renderOption={array ? renderCurrency : undefined}
                         options={array ? currencies : undefined}
                         valueAsOption={state.valueAsOption}
@@ -112,4 +113,4 @@ function Content() {
     )
 }
 
-export default Content
+export default Custom

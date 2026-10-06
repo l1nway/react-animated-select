@@ -1,6 +1,7 @@
 import {FileStack, TriangleAlert, Scan, Check, LineSquiggle, FingerprintPattern, Folders} from 'lucide-react'
 import {useCallback, useReducer} from 'react'
-import {merge, arrowIcons, CHIPS, NONE, Heading, numbered} from '../components/helpers'
+import {merge, arrowIcons, NONE, Heading, numbered} from '../components/helpers'
+import {CHIPS} from '../components/chips'
 import {Select} from 'react-animated-select'
 import {Table} from '../components/section'
 import './multiple.css'

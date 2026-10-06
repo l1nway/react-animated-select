@@ -58,9 +58,9 @@ The `##` features of `../../packages/react-animated-select/FEATURES.md` and the 
 | Native form fields | `#forms` |
 | Zero-dependency animations | `#animations` (`keepMounted` in `#debug`) |
 | Fine-grained re-renders | `#performance` |
-| Options as JSX or data | `#usage`, `#grouping`, `#content` |
+| Options as JSX or data | `#usage`, `#grouping`, `#custom` |
 | Any data, never broken | `#safety` |
-| Selected options in the value area | `#content` |
+| Selected options in the value area | `#custom` |
 | Controlled or uncontrolled | `#debug` |
 | Multiple selection with chips | `#multiple` |
 | Touch delete mode | `#multiple`, `#a11y` |
@@ -150,9 +150,10 @@ The site is the library's storefront, so it has to load and run like one. Every 
 
 **Loading**
 - The first screen is the header, the aside and the `start` part (intro, usage, question). Everything else is a lazy part: `<Part id/>` (`src/components/deferred.jsx`), listed in `PARTS` (`src/components/store.js`) and `LOAD`. The root element of a part carries the part id. Parts mount one per idle callback, nearest to the visitor first, and chunks are preloaded right after first paint.
+- The first screen is prerendered into `index.html` at build time and hydrated (`src/components/README.md`, Prerender). Its render must be the same on the server and on the client: nothing read from `window`, the URL, storage or media queries during render, no random values. An intro or entrance state the first paint must show is written in the markup (attributes plus CSS), not set by an effect. Check a first-screen change with JS disabled against the hydrated page: same pixels.
 - A new section is a new part, never an eager import in `app.jsx`.
 - Heavy libraries never enter the entry chunk:
-  - `gsap`: dynamic `import()`, started after the first frame (as in `header.jsx`).
+  - `gsap`: dynamic `import()`, started after the window `load` event (as in `header.jsx`).
   - `framer-motion`: only inside lazy parts, as `m.*` under `<Motion>` from `src/components/motion.jsx`. Never import it in first-screen code.
   - `lottie-react` and its JSON: the lazy player from `catEyes.jsx`.
   - `prism-react-renderer`: `CodeBlock`, with its plain twin.

@@ -54,14 +54,12 @@ function Question() {
     const left = LIMIT - seconds
     const hint = left <= WARN ? `${left} s left` : mode === 'lock' ? 'Recording' : `${keys ? 'Arrow Up' : 'Slide up'} to lock`
 
-    useEffect(() => {LoadingLottie.preload()}, [])
-
     return (
         <section
             className='rac-multiple'
             id='question'
         >
-            <form className='rac-llm-form' onSubmit={onSubmit} aria-busy={loading}>
+            <form className='rac-llm-form' onSubmit={onSubmit} onFocus={LoadingLottie.preload} onPointerDown={LoadingLottie.preload} aria-busy={loading}>
                 <div className='rac-llm-head'>
                     <div className='rac-code-icon'>
                         <BadgeQuestionMark/>
@@ -114,9 +112,12 @@ function Question() {
                                     <span className='rac-llm-loadholder'>AI is thinking</span>
                                     <div className='rac-loading-inline' aria-hidden><i/><i/><i/></div>
                                 </m.div>
-                                <m.div className='rac-llm-loading' {...animIcon.twist} key='loader' aria-hidden>
-                                    <Suspense fallback={null}><LoadingLottie className='rac-cat-loading' loop/></Suspense>
-                                </m.div>
+                                {/* [DOC: lottie-player] */}
+                                <Suspense fallback={null}>
+                                    <m.div className='rac-llm-loading' {...animIcon.twist} key='loader' aria-hidden>
+                                        <LoadingLottie className='rac-cat-loading' loop/>
+                                    </m.div>
+                                </Suspense>
                             </m.div>
                         : value.trim()
                             ? <m.button className='rac-btn-bare rac-send-icon' aria-label='Send question' {...animIcon.base} type='submit' key='send'>

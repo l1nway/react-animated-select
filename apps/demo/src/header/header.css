@@ -79,12 +79,36 @@
 }
 
 .rac-lib-title {
+    color: var(--rac-glyph);
     display: inline-block;
+    position: relative;
     text-align: center;
 }
 
-.rac-lib-title[data-color='0'] {color: var(--rac-color-1);}
-.rac-lib-title[data-color='1'] {color: var(--rac-color-2);}
-.rac-lib-title[data-color='2'] {color: var(--rac-color-3);}
-.rac-lib-title[data-color='3'] {color: var(--rac-color-4);}
-.rac-lib-title[data-color='4'] {color: var(--rac-color-5);}
+.rac-lib-title[data-color='0'] {--rac-glyph: var(--rac-color-1);}
+.rac-lib-title[data-color='1'] {--rac-glyph: var(--rac-color-2);}
+.rac-lib-title[data-color='2'] {--rac-glyph: var(--rac-color-3);}
+.rac-lib-title[data-color='3'] {--rac-glyph: var(--rac-color-4);}
+.rac-lib-title[data-color='4'] {--rac-glyph: var(--rac-color-5);}
+
+.rac-lib-glyph {
+    display: none;
+}
+
+/* intro start state */
+@media (prefers-reduced-motion: no-preference) {
+    [data-glyphs] .rac-lib-title {
+        color: transparent;
+    }
+
+    [data-glyphs] .rac-lib-glyph {
+        color: var(--rac-glyph);
+        position: absolute;
+        display: block;
+        inset: 0;
+    }
+
+    .rac-lib-desc[data-intro] {
+        visibility: hidden;
+    }
+}

@@ -1,14 +1,15 @@
 import {CircleCheck, CircleX} from 'lucide-react'
 import {useReducer, useCallback, useRef, useEffect, useMemo, useState, memo} from 'react'
 import {AnimatePresence, m} from 'framer-motion'
-import {merge, slide, pop, arrowIcons, PAGING, NONE, Warn, numbered} from '../components/helpers'
+import {merge, slide, pop, arrowIcons, NONE, Warn, numbered} from '../components/helpers'
 import {Table} from '../components/section'
 import {Collapse} from '@l1nway/collapse'
 import {Spinner} from '../components/icons'
-import {Select} from 'react-animated-select'
+import {Select, paging} from 'react-animated-select'
 import './loading.css'
 
 // demo data
+const PAGING = [paging]
 const desc = 'Load options page by page. loadMore fires when the list is scrolled close to its end, when the keyboard highlight comes close to it, or on a “Load more” row. Bursts of scroll events trigger one load, and a failed request returned as a Promise unlocks the next attempt. A first page shorter than the list loads the next ones at once, so the list fills itself and then loads as you scroll. Edit the props below and open the Select to try it.'
 const needed = <>{desc}<Warn title='Without the plugin'>Import {'{paging}'} from the package and pass plugins={'{[paging]}'}. Without it hasMore, loadMore and loadButton do nothing, so none of the features below work.</Warn></>
 

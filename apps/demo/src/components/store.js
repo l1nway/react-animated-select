@@ -1,8 +1,9 @@
 import {useSyncExternalStore} from 'react'
-import {ITEMS, MENU, groupOf} from '../menu/components'
+import {ITEMS, MENU, groupOf, dyOf} from '../menu/components'
 
-const INITIAL = {cat: 'idle', scrollTo: null, shown: [], mounted: 0, target: null, restoring: false}
-const INPUT = ['wheel', 'touchstart', 'keydown', 'pointerdown']
+// [DOC: prerender]
+const INITIAL = {cat: 'idle', scrollTo: null, shown: ['start'], mounted: 0, target: null, restoring: false}
+export const INPUT = ['wheel', 'touchstart', 'keydown', 'pointerdown']
 const listeners = new Set()
 let state = INITIAL
 
@@ -36,10 +37,10 @@ const readTarget = () => {
     const path = location.pathname.slice(import.meta.env.BASE_URL.length).split('/')[0]
     let saved = null
     try {saved = (nav === 'reload' || nav === 'back_forward') && JSON.parse(sessionStorage.getItem(KEY))} catch {/* storage blocked */}
-    if (saved?.id && ITEMS.some(item => item.id === saved.id)) return saved
     // legacy hash links
-    const id = [location.hash.slice(1), path].find(id => ITEMS.some(item => item.id === id))
-    return id ? {id, dy: 20} : null
+    const route = [location.hash.slice(1), path].find(id => ITEMS.some(item => item.id === id))
+    if (saved?.id && ITEMS.some(item => item.id === saved.id)) return {...saved, route}
+    return route ? {id: route, dy: dyOf(route), route} : null
 }
 
 const save = () => {
@@ -100,6 +101,7 @@ export function boot() {
             el && scrollTo({top: el.getBoundingClientRect().top + scrollY - target.dy, behavior: 'instant'})
         })
         const unpin = () => {
+            if (state.restoring) return
             pin.disconnect()
             INPUT.forEach(type => removeEventListener(type, unpin))
         }
@@ -109,5 +111,5 @@ export function boot() {
     addEventListener('pagehide', save)
     document.addEventListener('visibilitychange', () => document.hidden && save())
     // restore guard
-    part && setTimeout(() => state.restoring && setStore({restoring: false, shown: [...new Set(['start', ...state.shown])]}), 3000)
+    part && setTimeout(() => state.restoring && (hold(), setStore({restoring: false, shown: [...new Set(['start', ...state.shown])]})), 3000)
 }

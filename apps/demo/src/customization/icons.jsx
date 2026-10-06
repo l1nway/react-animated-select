@@ -1,6 +1,7 @@
 import {memo, useState, useEffect, useReducer, useMemo, useCallback} from 'react'
 import {XMarkIcon, ArrowUpIcon, CheckmarkIcon} from '../components/icons'
-import {merge, popSlow, arrowIcons, CHIPS, prevent, options} from '../components/helpers'
+import {merge, popSlow, arrowIcons, prevent, options} from '../components/helpers'
+import {CHIPS} from '../components/chips'
 import {Atom, ImageUp, ImageOff, Tag, FileText} from 'lucide-react'
 import {Table, Text} from '../components/section'
 import {AnimatePresence, m} from 'framer-motion'

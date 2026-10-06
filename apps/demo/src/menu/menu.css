@@ -91,4 +91,10 @@
         transform: none;
         opacity: 1;
     }
+
+    /* closed before collapse hydrates */
+    .rac-menu:not([data-entered]) &:not([data-open]) {
+        overflow: hidden;
+        height: 0;
+    }
 }

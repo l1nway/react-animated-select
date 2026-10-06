@@ -7,6 +7,7 @@ export const MENU = [{
     short: 'Start',
     icon: House,
     id: 'start',
+    self: true,
     sub: [
         {id: 'usage', text: 'Usage', icon: MousePointer2},
         {id: 'question', text: 'Ask a question', icon: BadgeQuestionMark}
@@ -41,10 +42,10 @@ export const MENU = [{
     text: 'Customization',
     short: 'Customize',
     icon: Eclipse,
-    id: 'custom',
+    id: 'customization',
     sub: [
         {id: 'styling', text: 'Styling & Variables', icon: LineStyle},
-        {id: 'content', text: 'Custom Options', icon: LayoutList},
+        {id: 'custom', text: 'Custom Options', icon: LayoutList},
         {id: 'icons', text: 'Icons', icon: Atom},
         {id: 'animations', text: 'Animations', icon: ListVideo}
     ]
@@ -62,5 +63,8 @@ export const MENU = [{
 }]
 
 export const ITEMS = MENU.flatMap(group => [group, ...group.sub])
+
+// target gap, start flush
+export const dyOf = id => id === MENU[0].id ? 0 : 20
 
 export const groupOf = id => MENU.find(group => group.id === id || group.sub.some(s => s.id === id))

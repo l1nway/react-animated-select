@@ -1,5 +1,5 @@
 import {boot} from './components/store'
-import {createRoot} from 'react-dom/client'
+import {createRoot, hydrateRoot} from 'react-dom/client'
 import {StrictMode, startTransition} from 'react'
 import App from './app'
 import './rac.css'
@@ -8,10 +8,11 @@ import './components/basic.css'
 
 boot()
 
-const root = createRoot(document.getElementById('root'))
-// sliced first render
-startTransition(() => root.render(
+const root = document.getElementById('root')
+const app = (
     <StrictMode>
         <App/>
     </StrictMode>
-))
+)
+// [DOC: prerender]
+startTransition(() => root.firstChild ? hydrateRoot(root, app) : createRoot(root).render(app))

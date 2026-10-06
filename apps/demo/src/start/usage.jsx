@@ -47,7 +47,7 @@ export default function Usage() {
     }
 
     return (
-        <section className='rac-start-usage' id='usage'>
+        <section className='rac-start-usage' id='usage' data-reveal='in' style={{'--i': 2}}>
             <style href='rac-usage' precedence='low'>{CSS}</style>
             <div className='rac-code-title-container2'>
                 <Title icon={<MousePointer2/>}>Usage</Title>

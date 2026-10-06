@@ -10,9 +10,10 @@ Puts a reload, `#hash` or `/route/` visit back at its target while the lazy part
 - `src/rac.css`: `.rac-main[data-restoring]` is `visibility: hidden`; `.rac-section` is `display: block` (Part container box).
 
 **Contract**
-- Target is `{id, dy}`: element id and its distance from the viewport top (`20` for links, the saved value for reloads).
+- Target is `{id, dy}`: element id and its distance from the viewport top (`dyOf(id)` for links, 20, or 0 for `start`, the saved value for reloads), plus `route`: the item named by the path or `#hash`, on links and reloads alike. The menu holds `route` as the current section until the first input (`src/menu/README.md`, Held section).
 - `restoring` stays true until `Mounted` decides the target is in place; the page is hidden meanwhile. The 3 s guard in `boot()` reveals the page anyway.
-- The pin `ResizeObserver` on `body` keeps the target in place after the reveal, until the first user input (`wheel`, `touchstart`, `keydown`, `pointerdown`).
+- The pin `ResizeObserver` on `body` keeps the target in place after the reveal, until the first user input (`wheel`, `touchstart`, `keydown`, `pointerdown`) after the reveal. Input while the page is still hidden does not unpin: on a phone people tap or swipe the blank screen during the wait, and once the pin was gone any insert that `hold`/`release` missed stayed wrong.
+- The 3 s guard calls `hold()` before it adds `start` to `shown`. `start` has children, so no `Loaded` holds for it; without that call the reveal frame had the target off by the height of `start` (1379 px on `/debug/`, Safari emulation, slow 4G, a tap at 1.6 s), and only the pin could fix it.
 
 **Invariants**
 - The pin and `Mounted` compute the target position the same way: `el.getBoundingClientRect().top + scrollY - dy`. Never a sum of `offsetTop`: it is rounded to integers. Firefox at a fractional scale (125 % on Windows) snaps scroll to device pixels (0.8 CSS px), the two values disagree by a fraction, and the target flips by 1 px at every mount. That was the jitter above Playground, Debug and in Styling.
@@ -25,8 +26,8 @@ Puts a reload, `#hash` or `/route/` visit back at its target while the lazy part
 - Native anchoring is not applied at `scrollTop` 0 and picks the first visible element as the anchor, which can be the header strip. The header is excluded from anchoring (`overflow-anchor: none`).
 - Entrance animations start only after `data-restoring` is gone; do not start one earlier, it moves layout under the pin.
 - Chrome picks the anchor once and keeps it until the scroll offset changes by something other than an anchoring adjustment. A `scrollTo` to the same value does not reselect it. So an anchor picked in a bad layout (short page, hidden page) stays bad for every later insert.
-- The `rac-enter` keyframes (`[data-reveal='in']`) animate `transform`, a suppression trigger: while a block plays it, Chrome makes no anchoring adjustment for an anchor inside it. That is why the reveal uses `fade` (opacity only) while parts are still mounting; do not switch it to `in` there.
-- Chrome may report a large `layout-shift` (0.72 on mobile `/ssr/`, in about half the runs) with a container part (`dev`) as the only source, an empty `previousRect` and the viewport as `currentRect`, while every visible element stays in place on every frame. It shows up when two parts mount above the target in one frame (`animations` into `custom`, `debug` into `dev`). The same insert on a settled page gives CLS 0. It looks like a quirk of how Chrome records the rect of a box first laid out under `visibility: hidden`, not a visible shift. It is left as it is; do not chase it with layout changes.
+- The `rac-enter` keyframes (`[data-reveal='in']`) animate `transform`, a suppression trigger: while a block plays it, Chrome makes no anchoring adjustment for an anchor inside it. That is why the reveal uses `fade` (opacity only) while parts are still mounting; do not switch it to `in` there. "Still mounting" is read from the DOM (`ready(PARTS)`), not from the `mounted` counter: `StrictMode` runs the `Mounted` layout effect twice in dev, the counter passes `PARTS.length` early, and the restored target played the 0.92 scale, so the pin measured a scaled box and the title landed ~30 px under the top (Firefox dev, 2026-10-06).
+- Chrome may report a large `layout-shift` (0.72 on mobile `/ssr/`, in about half the runs) with a container part (`dev`) as the only source, an empty `previousRect` and the viewport as `currentRect`, while every visible element stays in place on every frame. It shows up when two parts mount above the target in one frame (`animations` into `customization`, `debug` into `dev`). The same insert on a settled page gives CLS 0. It looks like a quirk of how Chrome records the rect of a box first laid out under `visibility: hidden`, not a visible shift. It is left as it is; do not chase it with layout changes.
 
 **Checking**
 - Chrome at 100 % hides both the fractional-pixel bug and everything Safari-specific. Check Firefox at 125 % scale (`layout.css.devPixelsPerPx`) and Chrome with `overflow-anchor: none` plus `CSS.supports` forced to false for that property (414×896, CPU ×4).
@@ -40,13 +41,13 @@ Puts a reload, `#hash` or `/route/` visit back at its target while the lazy part
 
 The shared container part of a menu group (`group.jsx`): an `article.rac-section` with the group id, `<Motion>`, and one `<Part id/>` per sub item of `groupOf(id)`, in menu order.
 
-- Used by `features`, `plugins` and `custom`: their `LOAD` entries all import `./group` (one chunk), and `Loaded` passes the part `id` as a prop. Other part components ignore that prop.
+- Used by `features`, `plugins` and `customization`: their `LOAD` entries all import `./group` (one chunk), and `Loaded` passes the part `id` as a prop. Other part components ignore that prop.
 - `dev` keeps its own `src/dev/dev.jsx` without `<Motion>`, so the `/dev/` container chunk does not wait for framer-motion on a deep link (Preload after restore). Do not move it to `Group` without measuring `/dev/` restore on mobile.
 - A new group: an entry in `MENU` (`src/menu/components.js`), `LOAD` entries for the group (`./group`) and each sub part, `SEO` texts (`src/menu/seo.js`, also used for the static pages and the sitemap in `vite.config.js`), and a `<Part id/>` in `app.jsx` in document order. `PARTS` and `PARENT` follow `MENU`.
 
 ## Part container box
 
-`.rac-section` (the five container articles `start`, `features`, `plugins`, `custom`, `dev`) is `display: block` (`src/rac.css`).
+`.rac-section` (the five container articles `start`, `features`, `plugins`, `customization`, `dev`) is `display: block` (`src/rac.css`).
 
 - It was `display: flex; flex-direction: column`. A flex container keeps the `margin-bottom` of its last child inside its box (no margin collapsing), so every article ended 16–24 px below its last section. With a target at `dy = 20` that strip of the previous article was in the viewport, Chrome's anchor search stopped at it (the first partially visible box ends the search, even with no visible child), and parts mounted inside that article (`styling`, `content`, `icons` into `custom` above `dev`) did not move the anchor: the target jumped by the inserted height.
 - In block layout the trailing margin collapses out of the article, so the strip is empty margin and the search reaches the target.
@@ -57,7 +58,7 @@ The shared container part of a menu group (`group.jsx`): an `article.rac-section
 
 `filled(id, shift)` in `deferred.jsx`, the fast path only (`liftFirst()` false, see Mount above first; it returns `true` at once otherwise): while restoring, `Mounted` does not scroll until the container of the target (`closest('.rac-section')`, the target itself for a container target) overflows the viewport at the target position, or nothing below the target is left to mount.
 
-- Why: right after the target chunk arrives the page can be shorter than the viewport (`/ssr/` on mobile: `dev` + `ssr`, 759 px in 844). Then `.rac-sections-container` is fully visible and becomes the anchor, and Chrome keeps it (Traps above). Every later insert inside it above the target (`custom`, `debug`) moved the target, with no compensation once the pin was off.
+- Why: right after the target chunk arrives the page can be shorter than the viewport (`/ssr/` on mobile: `dev` + `ssr`, 759 px in 844). Then `.rac-sections-container` is fully visible and becomes the anchor, and Chrome keeps it (Traps above). Every later insert inside it above the target (`customization`, `debug`) moved the target, with no compensation once the pin was off.
 - Not scrolling means `scrollTop` stays 0 (no anchoring at all) until the layout is tall enough. The first real `scrollTo` then changes the offset, and the anchor is picked again, inside the target.
 - `shift` is `top - scrollY`: the check is made for the position the page is about to scroll to.
 - Cost: the reveal waits for the part after the target on short targets (it is in the first `shown` batch anyway, about +0.3 s on mobile `/ssr/`).
@@ -67,9 +68,59 @@ The shared container part of a menu group (`group.jsx`): an `article.rac-section
 
 The preload of every part chunk (`idle(() => Object.keys(LOAD).forEach(fetchPart))` in `Mounted`) starts only once `restoring` is false, or at once where `liftFirst()` is true.
 
-- Why: the first `Mounted` of a deep link is usually a tiny container chunk (`dev`, `custom`). It fired ~50 requests at once, and over slow 4G with 6 connections per host the target chunk came last: `animations` was requested at 1.35 s and arrived at 2.76 s. `/animations/`, `/dev/`, `/playground/` and `/author/` were then revealed by the 3 s guard. With the preload deferred: 2.1, 2.3, 1.9, 2.0 s.
+- Why: the first `Mounted` of a deep link is usually a tiny container chunk (`dev`, `customization`). It fired ~50 requests at once, and over slow 4G with 6 connections per host the target chunk came last: `animations` was requested at 1.35 s and arrived at 2.76 s. `/animations/`, `/dev/`, `/playground/` and `/author/` were then revealed by the 3 s guard. With the preload deferred: 2.1, 2.3, 1.9, 2.0 s.
 - `liftFirst()` browsers must mount every part above the target before the reveal; without the preload those load one by one (`advance` → fetch → mount), which pushed the Safari emulation of `/ssr/` and `/playground/` to the 3 s guard. They keep the immediate preload.
 - A plain `/` visit is unchanged: `restoring` is false from the start.
+
+## Prerender
+
+The first screen (header, aside, `start` without the `question` part, footer) ships as HTML inside `index.html`. It paints as soon as the HTML and the render-blocking CSS arrive, and React hydrates it instead of building it.
+
+**Files**
+- `src/prerender.jsx`: `render()` is `renderToString` of the same tree as `main.jsx` (`StrictMode` > `App`). Keep the two trees identical, or `useId` values drift.
+- `vite.config.js`, `prerender()`, called by the `pages` plugin in `writeBundle`. It loads `prerender.jsx` through `runnerImport` with its own small config:
+  - `noCss` stubs every `.css` import (the runner cannot load CSS, and the client bundle already has it);
+  - `snippets` for the static code tokens;
+  - automatic JSX with `jsxDev: false` (during `vite build`, Node's React is the production build, which has no `jsxDEV`);
+  - `resolve.noExternal` for the library (its `dist` imports CSS, so Node cannot load it natively);
+  - `base`, for the menu `href`s.
+
+  React's hoisted `<style data-precedence>` tags are moved from the markup into `<head>`, right after the charset meta. The client prepends them to `<head>` too (React inserts the first precedence group before `head.firstChild`), so the cascade order is the same with and without the prerender. Only `index.html` gets the markup. The per-section pages and `404.html` stay empty: they are restore targets.
+- `index.html`: a classic inline script right after `#root` empties `#root` before the first paint when the visit will restore: a `#hash`, a reload or back/forward with `rac-scroll` in sessionStorage, or any error (old engine, blocked storage). The check is a superset of `readTarget()` in `store.js`. Such a visit renders on the client exactly as before the prerender (`createRoot`, `.rac-main[data-restoring]`), so a restored page never flashes the start screen. Keep the key and the conditions in sync with `readTarget()`.
+- `main.jsx`: `hydrateRoot` when `#root` has children, else `createRoot`. Both run in `startTransition`.
+- `store.js`: `INITIAL.shown` is `['start']`. `useSyncExternalStore` renders the hydration pass with the server snapshot (`INITIAL`), so `start` must be in it for the server render and the hydration pass to match.
+
+**Contract for first-screen code**
+- The render output is the same on the server and on the client. During render, read nothing from `window`, the URL, storage or `matchMedia`, and use no random or time values. Read them in effects only. A text mismatch makes React throw away the server DOM (minified errors 418/423/425 in the console), and every entrance animation would restart.
+- Whatever the first paint must show is written in the markup, not set by an effect:
+  - The header intro start state: `data-glyphs` with the glyph text, `data-intro` (`src/header/README.md`).
+  - The start blocks carry `data-reveal='in'` and `--i` in JSX (`start.jsx` section 1, `usage.jsx` 2), so their entrance plays from the first paint. `watch()` skips blocks that already have `data-reveal`.
+
+    Two side effects. A block below the fold (a short landscape screen) now animates off screen instead of waiting. After a restore, the start blocks are already shown when the visitor scrolls back up.
+  - Menu, `entered`: it is set from `animationend`. When the entrance ends before hydration (slow JS), that event is lost, so an effect sets `entered` once `getAnimations()` is empty. Without `getAnimations` (Safari < 13.1) it is set at once.
+  - Menu, closed sub-lists: `Collapse` holds them at height 0 only through a WAAPI animation that a layout effect starts. So `menu.css` collapses the closed sub-lists (`:not([data-open])`) until `data-entered`. The rule must not outlive the entrance: closing measures the real height, and the rule would make it 0.
+- Expected motion, not a seam: the closed Select arrow points to the side the list will open on, which the server cannot know (no viewport). A trigger low on the screen turns its arrow up at hydration, with the library's `rotate` transition (library `src/README.md`, Dropdown Position). The owner accepted this on 2026-10-06.
+
+**Measured** (2026-10-06, headless Edge, built demo, `npm run perf` harness, two interleaved runs each):
+
+| Metric | Before | After |
+|---|---|---|
+| M FCP | 1544 / 1552 | 748 / 764 |
+| M TBT | 313 / 283 | 136 / 162 |
+| M long | 259 / 222 | 108 / 115 |
+
+TBT and the longest task fall because hydration commits no new DOM: the first-screen commit used to create and lay out ~1000 nodes in one task. HTML: 39 KB (6.6 KB gzip).
+
+**Verified** (same setup):
+- JS disabled vs hydrated, with gsap held back: 0 changed pixels at 390×844. At 1440×900 only the Select arrow differs (expected, above).
+- Header and `#start` are the same DOM objects after hydration, and no node is removed before it.
+- No entrance animation starts twice, and there are no hydration errors.
+- `#styling`, `/styling/` and a reload at `#multiple` render on the client and land on their target.
+- With reduced motion, the first paint shows the final title and description.
+
+After a first-screen change, repeat the pixel check at 390 and 1440 px.
+
+**Browser support:** `hydrateRoot` works everywhere the demo runs. `getAnimations` needs Safari 13.1+, Chrome 84+ or Firefox 75+, and has a fallback. The guard falls back to client rendering on any error.
 
 ## Mount above first
 
@@ -78,7 +129,7 @@ The preload of every part chunk (`idle(() => Object.keys(LOAD).forEach(fetchPart
 - Firefox: native anchoring works, but each anchoring adjustment is fractional (part heights are not whole device pixels, e.g. 808.9 CSS px at 1.25 = 1011.125 dp). Firefox snaps the scroll layer and each box (and its own layers: buttons, Slider, Segmented) separately, so after every insert above the viewport visible edges re-round by ±1 dp: the Styling tabs, the Showcase code and its Copy button, the SSR lanes, the Debug and Animations tables, the grouping cards flickered for the ~2 s that parts kept mounting above. Measured by the parallel demo session over WebDriver BiDi at `layout.css.devPixelsPerPx = 1.25`; layout boxes themselves did not change after the reveal. With `liftFirst()`: 0 scroll changes and 0 edge flips after the reveal on `grouping`, `debug`, `animations`, `content`, `styling`, `ssr`, first visit and reload (Firefox 157, 1280×800, unthrottled). Cost: the reveal moved from 130–220 ms to 490–600 ms on the mid-page routes (`ssr` about the same, 1.0 s), single runs.
 - Edge and Chrome on desktop showed the same flicker to the user (a Windows scale like 125 %), so the rule covers every fine pointer, not Firefox only (user decision, 2026-10-02). There is no feature to test for this rounding; the first version sniffed `Firefox/` in the user agent.
 - Why not everywhere: tried. On mobile (CPU ×4, slow 4G) every part above has to download and mount before the reveal; deep routes took 2.8–4.3 s, most were revealed by the 3 s guard while parts above were still missing, and the target then moved by 18–22 px (CLS 0.03). On the fast path the same routes reveal in 1.4–2.7 s and the target drifts by less than 1 px (19.6–20.3 px instead of 20, up to 2 dp at DPR 3), which is within the budget. The user chose this split.
-- Numbers with the split (2026-10-02, headless Edge): desktop 1440×900 reveal 0.14–0.57 s, target exactly in place on every frame; mobile 390×844 touch 1.4–2.7 s, drift < 1 px; the Safari emulation 0.5–2.7 s, no drift; CLS 0 on `dev`, `ssr`, `content`, `animations` in both profiles.
+- Numbers with the split (2026-10-02, headless Edge): desktop 1440×900 reveal 0.14–0.57 s, target exactly in place on every frame; mobile 390×844 touch 1.4–2.7 s, drift < 1 px; the Safari emulation 0.5–2.7 s, no drift; CLS 0 on `dev`, `ssr`, `custom` (then `content`), `animations` in both profiles.
 - `hold`/`release` still check `anchored()`, not `liftFirst()`: Chrome, Edge and Firefox have native anchoring and need no manual compensation while the page is hidden.
 - A touch laptop whose primary pointer is the mouse takes the lift-first path; a tablet with a mouse attached may report `coarse`. Both paths are correct, only the timing differs.
 
@@ -250,11 +301,12 @@ Height slide for panels, rows and the menu sub-lists comes from the package `@l1
 - `in` replaces the old `visibility`. Extra props (`id`, `className`, `aria-*`) go to the element. Unmounted while closed unless `unmountOnExit={false}`: an `aria-controls` then points at a missing element until it opens; keep `aria-expanded` on the toggle.
 - While leaving it keeps rendering its last children (Safety relies on it: the editor Select keeps its last chip while the panel collapses).
 - No CSS `transition` on the animated sides, and no `gap` around a Collapse. A new height or fade animation of a block uses it, not a CSS or framer copy.
+- The closed state is not in the markup: a layout effect holds it with a WAAPI animation. A closed `Collapse` with `unmountOnExit={false}` in prerendered HTML is open until hydration. The menu covers it with CSS (Prerender).
 - Library-side findings go to the package's `FUTURE.md`, not to a local patch.
 
 ## Segmented
 
-Segmented switch with a sliding pill: one value out of N buttons (`segmented.jsx`, styles inside it as the `CSS` constant, all `.rac-segmented*`). Users: Usage (start), Showcase (Content, Styling), Safety (presets), the `choices` cell of the props table (Debug).
+Segmented switch with a sliding pill: one value out of N buttons (`segmented.jsx`, styles inside it as the `CSS` constant, all `.rac-segmented*`). Users: Usage (start), Showcase (Custom, Styling), Safety (presets), the `choices` cell of the props table (Debug).
 
 **Props: `Segmented({id, name, label, items, value, onPick, tabs, disabled, className, ...rest})`**
 - `disabled`: every item except the active one gets the `disabled` attribute (`button` or `input`), fades to `opacity: 0.45` over 150 ms and shows the `progress` cursor. The arrow keys do nothing. The active item stays enabled on purpose: it holds the focus after a roving key press, and a focused element that turns disabled loses focus to `body`. Used while a `CodeMorph` redraws (Usage, Showcase).
@@ -283,6 +335,7 @@ How the `Segmented` pill follows the active item (`place` + the layout effect in
 - Before the first measure (SSR, no JS) the fallback is the old math: `var(--x, var(--index) / var(--count))`, `var(--w, 1 / var(--count))`. `--index`/`--count` stay inline for it.
 - Animate only on a pick. The first placement and every `ResizeObserver` (items) placement are `still`: `transition: none`, a forced reflow, then the transition back. `place` returns early when `--x`/`--w` are unchanged, so the observer's initial callback does not cancel a running slide.
 - No match (`index` -1, `findIndex` failed) or a zero-width root (hidden): `place` keeps the previous values; the observer re-places when the items get a size.
+- The mount-time read forces style and layout of the freshly mounted part, and a CPU profile shows `place` hot on a mobile load. That is work the frame would do anyway: moving the first placement into the observer's initial callback (after layout, before paint), together with dropping the geometry reads of `watch`, left the load's main-thread total unchanged, because the next reader (the library's `useDropdownPosition` reading `--rac-list-max-height`) paid the same flush, and with that read stubbed out too the frame did (A/B, mobile CPU ×4, 2026-10-06). Not worth changing for speed.
 - Checked: all 8 switches at 1400 and 390 px, pill vs active item within 0.02 px; Debug edges at DPR 1, 1.25 and 1.5 with no background pixel between the pill and the cell borders.
 
 ## Slider
@@ -335,7 +388,7 @@ The site's action button (submit, replay). Reference: the Forms Submit (`src/fea
 
 ## Code morph
 
-A code block that redraws only what changed when its snippet changes (`CodeMorph` in `code.jsx`, `.rac-morph-*` and the `@starting-style` block in `code.css`). Users: Usage (start), Showcase (Content, Styling).
+A code block that redraws only what changed when its snippet changes (`CodeMorph` in `code.jsx`, `.rac-morph-*` and the `@starting-style` block in `code.css`). Users: Usage (start), Showcase (Custom, Styling).
 
 **Contract**
 - `<CodeMorph code={snippet} onBusy={setBusy}/>`: `code` is a build-time snippet object (`snippet\`…\``, `snippet.css\`…\`` or a `?snippet` file import, see Snippets), never a runtime string. `memo`: keep `code` a module-level constant.
@@ -401,3 +454,12 @@ Horizontal row of the cards that becomes draggable only when it overflows (`Trac
 - When the glide reaches an edge with speed left (`|v| ≥ 0.05` px/ms) it does not stop dead: `bounce()` takes over the same rAF and `v`, running a damped spring on an overshoot `o` (px, scroll direction): `v += (−STIFF·o − DAMP·v)·dt`, `o += v·dt`, `STIFF = 0.0005`, `DAMP = 0.033` (ω ≈ 0.022/ms, ζ ≈ 0.75: peak ≈ 50 ms after impact, settled in ≈ 250 ms, ~3 % undershoot). Each frame feeds `o` into the same `pull()` as the mouse rubber band, so the displayed offset is `rubber(|o|)` and never exceeds `PULL`; raw peak ≈ `20·v`, so a hard flick (3 px/ms) shows ≈ 24 px, a soft one (0.3) ≈ 5 px.
 - The edge card gets `data-hit='end'|'start'` and stretches with `--rac-track-s`: `scale: 1+0.08s 1−0.04s`, `transform-origin` on the side away from the wall, so its outer edge lags toward the wall while the row overshoots (jelly). `data-bounce` on the track turns the card transitions off (the JS writes every frame). Both attributes and the inline properties go away in `release()` when `|o| < 0.3` and `|v| < 0.01`, at values ≈ 0, so nothing jumps.
 - Only a glide that started the frame inside the range bounces. A release while already at the edge (after a mouse pull) is left to the CSS translate spring-back; otherwise two springs would fight.
+
+## Chips preset
+
+`CHIPS = [chips]` (`chips.js`): the stable `plugins` array for every demo Select with chips (Safety, Forms, A11y, Multiple, Custom, Icons, Styling). `PAGING` lives in its only consumer, `src/plugins/loading.jsx`.
+
+- Why its own file: `helpers.jsx` is imported by first-screen code (Usage, the question form, `section.jsx`), and Rollup assigns a whole module to one chunk, so `CHIPS` there pulled the `chips` plugin (about +5.4 KB gzip JS and its CSS, `SIZES` in `src/plugins/bundle.jsx`) into the entry. Do not import a library plugin from a module that the first screen imports.
+- `vite.config.js` keeps the library in the long-lived `select` vendor chunk, which loads with the entry, and gives the plugin modules of the package `dist` their own lazy vendor chunks: `chips` (`chip*`, `useChip*`) and `paging`. `VENDOR` is matched in key order, so those keys stay above `select`.
+- Why own chunks and not just "not `select`": Rollup puts a manual chunk's static dependencies that no other manual chunk claims into that chunk. The package `index.js` re-exports the plugins, so an unassigned `chip.js` was pulled into `select` and loaded with the entry anyway. The plugins have no side effects (`sideEffects` lists only CSS), so the entry never imports the `chips` / `paging` chunks; only the parts that use them do.
+- Measured (2026-10-06, gzip): `select` JS 22.0 → 15.8 KB and its render-blocking CSS 2.3 → 1.8 KB; `chips` 6.5 KB JS + 0.9 KB CSS and `paging` 1.0 KB load with the parts. If the library adds or renames a plugin module, extend the regexes, then check that the entry did not grow (`npm run perf`, `Entry KB`).

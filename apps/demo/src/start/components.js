@@ -28,8 +28,8 @@ export const animIcon = {
         initial: {
             opacity: 0,
             scale: 0.5,
-            rotate: -120,
-            x: -50
+            rotate: 120,
+            x: 50
         },
         exit: {
             rotate: 120,

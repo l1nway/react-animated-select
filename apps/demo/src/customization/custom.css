@@ -1,8 +1,4 @@
-.rac-states.rac-content-section {
-  margin: 0;
-}
-
-.rac-content-currency {
+.rac-custom-currency {
   display: inline-flex;
   align-items: center;
   --rac-icon: 1.1em;
@@ -10,19 +6,19 @@
   gap: 0.5em;
 }
 
-.rac-content-name {
+.rac-custom-name {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
 }
 
-.rac-content-code {
+.rac-custom-code {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.04em;
   color: var(--rac-muted);
 }
 
-.rac-content-select .rac-chip {
+.rac-custom-select .rac-chip {
   background-color: color-mix(in srgb, var(--accent, var(--rac-tint-2)) 20%, var(--rac-tint-2));
 
   @media (hover: hover) {

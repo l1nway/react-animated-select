@@ -1,12 +1,17 @@
-import {setStore, useStore} from '../components/store'
-import {useRef, useEffect, lazy, Suspense} from 'react'
-// player with lazy data
+import {setStore, subscribe, useStore} from '../components/store'
+import {useRef, useEffect, useState, lazy, Suspense} from 'react'
+// [DOC: lottie-player]
 const lottieWith = loadData => {
-    const load = () => Promise.all([import('lottie-react'), loadData()])
-    const Player = lazy(() => load().then(([lottie, data]) => {
+    let ready
+    const load = () => Promise.all([import('lottie-react'), loadData()]).then(([lottie, data]) => {
         const Lottie = lottie.default
-        return {default: props => <Lottie animationData={data.default} {...props}/>}
-    }))
+        return ready ??= {default: props => <Lottie animationData={data.default} {...props}/>}
+    })
+    const Lazy = lazy(load)
+    const Player = props => {
+        const [Comp] = useState(() => ready?.default ?? Lazy)
+        return <Comp {...props}/>
+    }
     return Object.assign(Player, {preload: load})
 }
 
@@ -134,10 +139,25 @@ function CatEyes() {
         return () => EVENTS.forEach(name => window.removeEventListener(name, track))
     }, [])
 
-    // idle preload
+    // [DOC: cat-preload]
     useEffect(() => {
-        const timer = setTimeout(EyesLottie.preload, 4000)
-        return () => clearTimeout(timer)
+        let near
+        const watch = () => {
+            const el = !near && document.getElementById('playground')
+            if (!el) return
+            near = new IntersectionObserver(([entry]) => {
+                if (!entry.isIntersecting) return
+                near.disconnect()
+                EyesLottie.preload()
+            }, {rootMargin: '150% 0px'})
+            near.observe(el)
+        }
+        watch()
+        const unsubscribe = subscribe(watch)
+        return () => {
+            unsubscribe()
+            near?.disconnect()
+        }
     }, [])
 
     return status === 'idle' ? null : <Eyes status={status} pointer={pointer}/>

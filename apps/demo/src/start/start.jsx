@@ -46,7 +46,7 @@ function Start() {
     return (
         <article className='rac-section' id='start'>
             <style href='rac-start' precedence='low'>{CSS}</style>
-            <section>
+            <section data-reveal='in' style={{'--i': 1}}>
                 <h2 className='rac-start-title'>Getting started</h2>
                 <p className='rac-start-desc'>A premium React select component focused on performance and reliability. Beyond its extensive feature set and deep customization options, this component is built to be exceptionally stable. It gracefully handles complex data and unexpected prop values, providing a rock-solid foundation for your application's UI.</p>
                 <p className='rac-start-desc'>Go ahead — experiment with different configurations and build the perfect Select component tailored to your needs.</p>

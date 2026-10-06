@@ -1,14 +1,20 @@
-import {MENU, ITEMS, groupOf} from './components'
+import {MENU, ITEMS, groupOf, dyOf} from './components'
 import {pathOf, titleOf} from './seo'
-import {setStore, subscribe, getStore, PARTS, showAll} from '../components/store'
+import {setStore, subscribe, getStore, PARTS, INPUT, showAll} from '../components/store'
 import {Collapse} from '@l1nway/collapse'
-import {useRef, useEffect, useState, useCallback, memo} from 'react'
+import {useRef, useEffect, useLayoutEffect, useState, useCallback, memo} from 'react'
 import './menu.css'
 import './nav.css'
 
 const EASE = 'cubic-bezier(0.4, 0, 0.2, 1)'
+// soft keyboard fields
+const TEXT = ':is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=button], [type=submit], [type=reset], [type=image], [type=date], [type=datetime-local], [type=month], [type=time]), textarea, [contenteditable]:not([contenteditable=false])):not([readonly], [inputmode=none])'
+const FIELD = {attributeFilter: ['type', 'readonly', 'inputmode', 'contenteditable']}
+const FOCUS = ['focusin', 'focusout']
 
 const hrefOf = id => import.meta.env.BASE_URL + pathOf(id)
+// group link shows its first sub
+const entryOf = item => item.sub && !item.self ? item.sub[0] : item
 
 // debounced url and title sync
 let routeTimer
@@ -16,7 +22,7 @@ const setRoute = item => {
     clearTimeout(routeTimer)
     routeTimer = setTimeout(() => {
         document.title = titleOf(item)
-        const url = hrefOf(item.id) + location.search
+        const url = hrefOf(item?.id) + location.search
         url !== location.pathname + location.search + location.hash && history.replaceState(history.state, '', url)
     }, 300)
 }
@@ -41,19 +47,21 @@ function Menu() {
     const [active, setActive] = useState(null)
     const [entered, setEntered] = useState(false)
 
-    const autoScroll = useRef(false)
-    const release = useRef(null)
+    // [DOC: held-section]
+    const held = useRef(null)
     const observer = useRef(null)
     const current = useRef(null)
     const bar = useRef(null)
 
     const group = groupOf(active)
     const index = MENU.indexOf(group)
+    // pill fades out in place
+    const slot = useRef(0)
+    index >= 0 && (slot.current = index)
 
     const pick = useCallback(item => {
-        autoScroll.current = true
-        const shown = item.sub?.[0] ?? item
-        current.current = shown.id
+        const shown = entryOf(item)
+        held.current = current.current = shown.id
         setActive(shown.id)
         setRoute(shown)
 
@@ -64,25 +72,9 @@ function Menu() {
             const target = document.getElementById(item.id)
             settled = target && PARTS.every(id => document.getElementById(id)) ? settled + 1 : 0
             if (waiting && settled < 3 && ++frames < 180) return requestAnimationFrame(scroll)
-            if (!target) return
-
-            // scroll end guard
-            release.current?.()
-            const done = () => {
-                autoScroll.current = false
-                release.current()
-            }
-            const timer = setTimeout(done, 1500)
-            release.current = () => {
-                clearTimeout(timer)
-                removeEventListener('scrollend', done)
-                release.current = null
-            }
-            addEventListener('scrollend', done)
-
-            scrollTo({
+            target && scrollTo({
                 behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
-                top: target.getBoundingClientRect().top + scrollY - 20
+                top: target.getBoundingClientRect().top + scrollY - dyOf(item.id)
             })
         }
 
@@ -90,9 +82,41 @@ function Menu() {
         scroll()
     }, [])
 
-    useEffect(() => () => {
-        release.current?.()
-        clearTimeout(routeTimer)
+    // url route held, before paint
+    useLayoutEffect(() => {
+        const route = getStore().target?.route
+        held.current = current.current = route ? entryOf(ITEMS.find(item => item.id === route)).id : null
+        held.current && setActive(held.current)
+        // free on visitor input
+        const free = () => {getStore().restoring || (held.current = null)}
+        INPUT.forEach(type => addEventListener(type, free, {passive: true}))
+        return () => {
+            INPUT.forEach(type => removeEventListener(type, free))
+            clearTimeout(routeTimer)
+        }
+    }, [])
+
+    // entrance ended before hydration
+    useEffect(() => {getStore().restoring || bar.current.getAnimations?.().length || setEntered(true)}, [])
+
+    // [DOC: mobile-bottom-bar]
+    useEffect(() => {
+        const root = document.documentElement
+        let field = null
+        const set = () => root.toggleAttribute('data-typing', !!field?.matches(TEXT))
+        const watcher = new MutationObserver(set)
+        const focus = e => {
+            field = e.type === 'focusin' ? e.target : e.relatedTarget
+            watcher.disconnect()
+            field && watcher.observe(field, FIELD)
+            set()
+        }
+        FOCUS.forEach(name => document.addEventListener(name, focus))
+        return () => {
+            FOCUS.forEach(name => document.removeEventListener(name, focus))
+            watcher.disconnect()
+            root.removeAttribute('data-typing')
+        }
     }, [])
 
     // scroll requests
@@ -108,17 +132,20 @@ function Menu() {
     useEffect(() => {
         const visible = new Set()
         let top = true
+        let restoring = getStore().restoring
         const sync = () => {
             // paused while typing
-            if (autoScroll.current || getStore().restoring || getComputedStyle(bar.current).visibility === 'hidden') return
-            // deepest section wins, header means root
-            const item = top ? null : ITEMS.findLast(i => visible.has(i.id))
+            if (getStore().restoring || getComputedStyle(bar.current).visibility === 'hidden') return
+            // held, deepest section, header root
+            const item = held.current ? ITEMS.find(i => i.id === held.current) : top ? null : ITEMS.findLast(i => visible.has(i.id))
             if (!item && !top) return
+            // held or own head
+            const head = held.current || item?.self && document.getElementById(item.sub[0].id)?.getBoundingClientRect().top > innerHeight / 2
             // gap between subs keeps current
-            const shown = item && (item.sub ? item.sub.find(s => s.id === current.current) ?? item.sub[0] : item)
+            const shown = item && (item.sub && !head ? item.sub.find(s => s.id === current.current) ?? item.sub[0] : item)
             current.current = shown?.id ?? null
             setActive(shown?.id ?? null)
-            setRoute(shown ?? ITEMS[0])
+            setRoute(shown)
         }
         observer.current = new IntersectionObserver(entries => {
             entries.forEach(({isIntersecting, target, boundingClientRect}) => {
@@ -132,9 +159,11 @@ function Menu() {
             sync()
         }, {rootMargin: '-1px 0px 0px 0px'})
         header.observe(document.querySelector('.rac-header'))
+        const unsubscribe = subscribe(() => restoring !== (restoring = getStore().restoring) && sync())
         return () => {
             observer.current.disconnect()
             header.disconnect()
+            unsubscribe()
         }
     }, [])
 
@@ -154,7 +183,7 @@ function Menu() {
     return (
         <aside className='rac-menu rac-enter' ref={bar} data-entered={entered || undefined} onAnimationEnd={e => e.target === e.currentTarget && setEntered(true)}>
             <nav aria-label='Sections'>
-                {index >= 0 && <span className='rac-menu-indicator rac-pill' style={{'--index': index, '--count': MENU.length}} aria-hidden='true'/>}
+                <span className='rac-menu-indicator rac-pill' data-on={index >= 0 || undefined} style={{'--index': slot.current, '--count': MENU.length}} aria-hidden='true'/>
                 <ul className='rac-menu-list'>
                     {MENU.map((item, i) => (
                         <li className='rac-enter' style={{'--i': i}} key={item.id}>

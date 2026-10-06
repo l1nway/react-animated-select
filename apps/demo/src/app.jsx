@@ -18,7 +18,7 @@ function App() {
           <Part id='start'><Start/></Part>
           <Part id='features'/>
           <Part id='plugins'/>
-          <Part id='custom'/>
+          <Part id='customization'/>
           <Part id='dev'/>
         </main>
       </div>

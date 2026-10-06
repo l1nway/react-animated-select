@@ -30,13 +30,13 @@ One row per key of the `icons` prop; upload or drop an image on a row to overrid
 
 ## Showcase
 
-Live Select + tabbed code below it (`showcase.jsx`, `showcase.css`). Users: Content, Styling.
+Live Select + tabbed code below it (`showcase.jsx`, `showcase.css`). Users: Custom, Styling.
 
 **Contract**
 - `Showcase({id, label, tabs, active, onPick, codes, title, desc, children})`: `tabs` are `Segmented` tab items (`{id, text}`), `codes` the snippets of the active tab (one `CodeMorph` + `CopyButton` each, see Code morph in `src/components/README.md`), `children` the stage.
-- Code slots are keyed by index, so each slot morphs from the previous tab's snippet to the new one. Keep the number of slots equal across the tabs of one Showcase (Styling: always JSX + CSS; Content: one). A slot that appears or disappears mounts without animation.
+- Code slots are keyed by index, so each slot morphs from the previous tab's snippet to the new one. Keep the number of slots equal across the tabs of one Showcase (Styling: always JSX + CSS; Custom: one). A slot that appears or disappears mounts without animation.
 - Showcase owns `busy` (state): its `CodeMorph`s set it, and `Segmented disabled={busy}` locks the other tabs while the code redraws.
-- Without `title`: the switcher sits above the panel (Content). With `title` (a `Title` element) the switcher moves into the header row `.rac-code-title-container2.rac-showcase-head` next to it, `desc` renders as `p.rac-heading-desc` below, and the root gets `data-head` (gap `1em`, same as the section). The header wraps (`flex-wrap`) so a 3-tab switcher drops under the title on phones.
+- Without `title`: the switcher sits above the panel (Custom). With `title` (a `Title` element) the switcher moves into the header row `.rac-code-title-container2.rac-showcase-head` next to it, `desc` renders as `p.rac-heading-desc` below, and the root gets `data-head` (gap `1em`, same as the section). The header wraps (`flex-wrap`) so a 3-tab switcher drops under the title on phones.
 - `.rac-showcase-stage` is `width: fit-content`: the toggles row sets the width. The Select inside is `contain: inline-size`, so its chips never widen the stage; it stretches to the stage and grows in height instead. Do not remove the containment: without it every added chip widens the box (layout jump).
 - Styling presets (`PRESETS` in `reference.js`): `{id, text, props, codes}`, where `codes` is always `[jsx, css]`. `props` is spread last into the Select (it may override `placeholder`). `codes[1].text` is injected as a `<style>` on the stage.
   - `site` (As styled) shows `src/components/basic.css` itself through `import basic from '../components/basic.css?snippet'` (build-time tokenized, Snippets in `src/components/README.md`). It is the same file the site imports in `main.jsx`, so the snippet cannot drift. Do not retype those rules in `reference.js`. The theme is global (Site theme in `src/components/README.md`), so this preset passes no class: `props` is only `icons`, and the JSX snippet is `<Select icons options/>`.

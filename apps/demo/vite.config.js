@@ -11,9 +11,11 @@ const BASE = '/react-animated-select/'
 // workspace library source, served by the dev server
 const LIBRARY = fileURLToPath(new URL('../../packages/react-animated-select/src/index.js', import.meta.url))
 
-// long-lived vendor chunks
+// long-lived vendor chunks, first match wins
 const VENDOR = {
   react: /node_modules[\\/](react|react-dom|scheduler)[\\/]/,
+  chips: /packages[\\/]react-animated-select[\\/]dist[\\/](chip|useChip)/,
+  paging: /packages[\\/]react-animated-select[\\/]dist[\\/]paging/,
   select: /packages[\\/]react-animated-select[\\/]/,
   prism: /node_modules[\\/]prism-react-renderer[\\/]/
 }
@@ -55,6 +57,23 @@ const fill = (html, {title, description, url}) => html
   .replace(/((?:og:|twitter:)title' content=')[^']*/g, `$1${title}`)
   .replace(/((?:'|og:|twitter:)description' content=')[^']*/g, `$1${description}`)
   .replace(/((?:og:url' content|canonical' href)=')[^']*/g, `$1${url}`)
+// first screen into index.html
+const ROOT = /<div id=['"]root['"]><\/div>/
+const CHARSET = /<meta charset[^>]*>/i
+const HOISTED = /<style data-precedence[^>]*>[\s\S]*?<\/style>/g
+const NO_CSS = '\0no-css'
+const noCss = {name: 'no-css', enforce: 'pre', resolveId: source => /\.css$/.test(source) ? NO_CSS : null, load: id => id === NO_CSS ? '' : null}
+const prerender = async html => {
+  if (!ROOT.test(html) || !CHARSET.test(html)) throw new Error('prerender: index.html needs a charset meta and an empty #root')
+  const {module: {render}} = await runnerImport(`${root}/src/prerender.jsx`, {
+    root, base: BASE, configFile: false, logLevel: 'silent', plugins: [noCss, snippets],
+    esbuild: {jsx: 'automatic', jsxDev: false}, resolve: {noExternal: ['react-animated-select']}
+  })
+  // hoisted styles first, as react inserts them
+  const styles = []
+  const app = render().replace(HOISTED, style => {styles.push(style); return ''})
+  return html.replace(CHARSET, tag => `${tag}\n    ${styles.join('')}`).replace(ROOT, () => `<div id='root'>${app}</div>`)
+}
 let root
 const pages = {
   name: 'pages',
@@ -73,7 +92,9 @@ const pages = {
       url: SITE + pathOf(item.id)
     }))))
     await write('404.html', html.replace('<head>', `<head>\n    <meta name='robots' content='noindex'/>`))
-    await write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${ITEMS.map(item => `  <url><loc>${SITE}${pathOf(item.id)}</loc></url>`).join('\n')}\n</urlset>\n`)
+    // [DOC: prerender]
+    await write('index.html', await prerender(html))
+    await write('sitemap.xml', `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${[null, ...ITEMS].map(item => `  <url><loc>${SITE}${pathOf(item?.id)}</loc></url>`).join('\n')}\n</urlset>\n`)
   }
 }
 

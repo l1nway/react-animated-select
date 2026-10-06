@@ -33,7 +33,13 @@
         }
 
         .rac-menu-indicator::before {
+            transition: opacity 350ms cubic-bezier(0.4, 0, 0.2, 1);
             border-radius: 999px;
+            opacity: 0;
+        }
+
+        .rac-menu-indicator[data-on]::before {
+            opacity: 1;
         }
 
         nav {
@@ -93,7 +99,7 @@
 
     /* hidden while typing */
     @media (pointer: coarse) {
-        body:has(:is(input:not([type=checkbox], [type=radio], [type=range], [type=color], [type=file], [type=button], [type=submit], [type=reset], [type=image], [type=date], [type=datetime-local], [type=month], [type=time]), textarea, [contenteditable]:not([contenteditable=false])):not([readonly], [inputmode=none]):focus) .rac-menu {
+        :root[data-typing] .rac-menu {
             visibility: hidden;
         }
     }

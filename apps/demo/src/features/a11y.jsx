@@ -1,7 +1,8 @@
 import {PersonStanding, Keyboard, Glasses, Smartphone, Zap} from 'lucide-react'
 import {Select} from 'react-animated-select'
 import {Table} from '../components/section'
-import {arrowIcons, CHIPS, numbered} from '../components/helpers'
+import {arrowIcons, numbered} from '../components/helpers'
+import {CHIPS} from '../components/chips'
 import {Track, Card} from '../components/track'
 import './a11y.css'
 
