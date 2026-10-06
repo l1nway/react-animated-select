@@ -24,8 +24,8 @@ function App() {
       </div>
       <footer className='rac-footer'>
           <span className='text-[#c3abff]'>Developed by l1nway</span>
-          <a href='https://github.com/l1nway'>
-            <GitHub className='rac-footer-icon'/>
+          <a href='https://github.com/l1nway' aria-label='l1nway on GitHub'>
+            <GitHub className='rac-footer-icon' aria-hidden='true'/>
           </a>
       </footer>
       <CatEyes/>

@@ -6,7 +6,7 @@ Puts a reload, `#hash` or `/route/` visit back at its target while the lazy part
 
 **Files**
 - `store.js`: `boot()` (target, `restoring`, pin, 3 s guard), `readTarget`, `save`, `advance` (mount order), `liftFirst`.
-- `deferred.jsx`: `Mounted` (runs after every part mount, restores and reveals), `filled`, `settled`, `lifted`, `ready`, the preload of every chunk.
+- `deferred.jsx`: `Mounted` (runs after every part mount, restores and reveals), `filled`, `settled`, `lifted`, `ready`, the preload of every chunk (Staged preload).
 - `src/rac.css`: `.rac-main[data-restoring]` is `visibility: hidden`; `.rac-section` is `display: block` (Part container box).
 
 **Contract**
@@ -66,15 +66,42 @@ The shared container part of a menu group (`group.jsx`): an `article.rac-section
 
 ## Preload after restore
 
-The preload of every part chunk (`idle(() => Object.keys(LOAD).forEach(fetchPart))` in `Mounted`) starts only once `restoring` is false, or at once where `liftFirst()` is true.
+The preload of every part chunk (in `Mounted`) starts only once `restoring` is false, or at once where `liftFirst()` is true. Without a restore it is staged (Staged preload); on the `liftFirst()` restore path every chunk is requested at once (`idle(() => Object.keys(LOAD).forEach(fetchPart))`).
 
 - Why: the first `Mounted` of a deep link is usually a tiny container chunk (`dev`, `customization`). It fired ~50 requests at once, and over slow 4G with 6 connections per host the target chunk came last: `animations` was requested at 1.35 s and arrived at 2.76 s. `/animations/`, `/dev/`, `/playground/` and `/author/` were then revealed by the 3 s guard. With the preload deferred: 2.1, 2.3, 1.9, 2.0 s.
 - `liftFirst()` browsers must mount every part above the target before the reveal; without the preload those load one by one (`advance` → fetch → mount), which pushed the Safari emulation of `/ssr/` and `/playground/` to the 3 s guard. They keep the immediate preload.
 - A plain `/` visit is unchanged: `restoring` is false from the start.
 
+## Staged preload
+
+`preload()` in `deferred.jsx`: the part chunks, nearest to the visitor first (distance in `PARTS` from the target part, else from `start`), `BATCH` (3) at a time. The next batch is requested once the previous one has settled (a failed chunk settles too, `fetchPart` catches it), plus one `idle`. It starts behind `afterPaint` (After paint).
+
+- Why: all ~25 chunks plus their CSS at once (~55 requests) competed with each other and with the first lazy parts on slow 4G, and Lighthouse showed them as one long dependency tree.
+- `advance()` still fetches the part it mounts on its own; `fetchPart` dedupes through `PENDING`.
+- Not used on the `liftFirst()` restore path (Preload after restore): there every part above the target must arrive before the reveal.
+
+## After paint
+
+`afterPaint(fn)` in `store.js` runs `fn` once the first contentful paint has happened: a `PerformanceObserver` on `paint` entries (`buffered`), resolved once and shared, so later calls run on a microtask with no extra frame. Users: the header intro (gsap import), `preload()`, and `advance()` outside a restore.
+
+- Why: Lighthouse (and PSI) estimates FCP from a fast observed trace, and every request started before the observed FCP counts towards it. With the CSS inlined (Inline css) hydration runs before the first contentful paint in such a trace (the entrance fades gate FCP), so the `question` chunks, gsap and the first preload batch landed before it in about half the runs: simulated FCP 2.1 s instead of 1.5 s, score 93 instead of 99. A `requestAnimationFrame` gate was not enough: frames run ~150 ms before the first contentful one. On a real slow phone the HTML paints long before the JS arrives, so the gate is already open at hydration and delays nothing.
+- Not on the restore path: `.rac-main[data-restoring]` is hidden and the restore `#root` is empty, so no contentful paint happens before the reveal, and `advance()` must mount the target first. `advance()` calls `step()` directly while `restoring`.
+- Fallbacks: without paint timing (`PerformanceObserver.supportedEntryTypes` lacks `paint`: Safari < 14.1) it resolves at once. A 3 s timer resolves it when no paint comes (a tab loaded in the background paints only when shown).
+- Support: paint timing `first-contentful-paint` in Chrome 60+, Firefox 84+, Safari 14.1+ (MDN, PerformancePaintTiming).
+
+## Inline css
+
+`inline()` in `vite.config.js`, run by the `pages` plugin on `index.html` before every HTML file is written (the prerendered `index.html`, the per-section pages, `404.html`). Each `<link rel="stylesheet">` that Vite put into `index.html` (the entry CSS and the `select` vendor CSS, ~7.7 KB gzip) becomes a `<style>` with the file content, in the same place, so the cascade order is unchanged. No request blocks the first paint.
+
+- The `<link>` stays right after the `<style>`, with `disabled`. Vite's preload helper skips a CSS dependency when `link[href="…"][rel="stylesheet"]` is already in the document; without it every lazy part that imports the library re-added `select.css` at the end of `<head>`: one more request, and the library CSS then came after the lazy chunks' CSS. A disabled stylesheet is not fetched until `disabled` is removed (MDN, `<link>` `disabled`; Chrome, Firefox, Safari), and nothing removes it.
+- `build.modulePreload.resolveDependencies` cannot filter these files: it gets only the JS dependencies.
+- The `.css` files stay in `dist/assets`; nothing requests them.
+- A link whose file is not in the bundle throws, so a changed Vite output fails the build instead of shipping an unstyled page.
+- Measured (2026-10-06, Lighthouse 13 mobile, `vite preview`, together with After paint and the header change, 8 runs): score 98 → 99–100, FCP 1.83 → 1.51 s, LCP 2.0 → 1.52–1.67 s, SI 1.83–1.90 → 1.58–1.80 s. `npm run perf`: M FCP 896 → 256 ms. The JS-off first paint is byte-identical to the build before (390 and 1440 px).
+
 ## Prerender
 
-The first screen (header, aside, `start` without the `question` part, footer) ships as HTML inside `index.html`. It paints as soon as the HTML and the render-blocking CSS arrive, and React hydrates it instead of building it.
+The first screen (header, aside, `start` without the `question` part, footer) ships as HTML inside `index.html`, with its CSS inlined (Inline css). It paints as soon as the HTML arrives, and React hydrates it instead of building it.
 
 **Files**
 - `src/prerender.jsx`: `render()` is `renderToString` of the same tree as `main.jsx` (`StrictMode` > `App`). Keep the two trees identical, or `useId` values drift.

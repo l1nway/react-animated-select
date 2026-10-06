@@ -74,14 +74,21 @@ const prerender = async html => {
   const app = render().replace(HOISTED, style => {styles.push(style); return ''})
   return html.replace(CHARSET, tag => `${tag}\n    ${styles.join('')}`).replace(ROOT, () => `<div id='root'>${app}</div>`)
 }
+// [DOC: inline-css]
+const STYLESHEET = /<link rel=['"]stylesheet['"][^>]*?href=['"]([^'"]+\.css)['"][^>]*>/g
+const inline = (html, bundle) => html.replace(STYLESHEET, (tag, href) => {
+  const css = bundle[href.slice(BASE.length)]?.source
+  if (typeof css !== 'string') throw new Error(`inline: ${href} not in the bundle`)
+  return `<style>${css}</style>${tag.replace(/\s*\/?>$/, ' disabled>')}`
+})
 let root
 const pages = {
   name: 'pages',
   apply: 'build',
   configResolved: config => {root = config.root},
-  async writeBundle({dir}) {
+  async writeBundle({dir}, bundle) {
     const {module: {ITEMS}} = await runnerImport(`${root}/src/menu/components.js`, {root, configFile: false, logLevel: 'silent'})
-    const html = await readFile(`${dir}/index.html`, 'utf8')
+    const html = inline(await readFile(`${dir}/index.html`, 'utf8'), bundle)
     const write = async (path, text) => {
       await mkdir(dirname(`${dir}/${path}`), {recursive: true})
       await writeFile(`${dir}/${path}`, text)

@@ -1,4 +1,4 @@
-import {getStore} from '../components/store'
+import {afterPaint, getStore} from '../components/store'
 import {useLayoutEffect, useRef} from 'react'
 import Menu from './menu'
 import './header.css'
@@ -39,19 +39,17 @@ function Header() {
 
         const state = {progress: 0}
         let tl, live = true
-        const start = () => Promise.all([import('gsap'), import('gsap/ScrambleTextPlugin')]).then(([{gsap}, {ScrambleTextPlugin}]) => {
+        // after first paint
+        afterPaint(() => live && Promise.all([import('gsap'), import('gsap/ScrambleTextPlugin')]).then(([{gsap}, {ScrambleTextPlugin}]) => {
             if (!live) return
             gsap.registerPlugin(ScrambleTextPlugin)
             tl = gsap.timeline({onComplete: finish})
                 .to(state, {progress: 1, duration: 1.5, ease: 'power2.inOut', onUpdate: () => draw(glyphs, state.progress)}, 0)
                 .to(text, {duration: 2.5, ease: 'power2.inOut', scrambleText: {text: DESC, chars: CHARS, oldClass: 'rac-lib-temp', newClass: 'rac-lib-desc'}}, 0)
-        }).catch(done)
-        // after page load
-        document.readyState === 'complete' ? start() : addEventListener('load', start, {once: true})
+        }).catch(done))
 
         return () => {
             live = false
-            removeEventListener('load', start)
             tl?.kill()
             done()
         }

@@ -299,11 +299,21 @@ html, body {
   height: auto;
   flex: 1;
 
+  @media (prefers-reduced-motion: no-preference) {
+    animation: rac-sections-line 0.8s ease-out;
+  }
+
   @media (max-width: 1024px) {
     border-left: none;
     padding: 0em 2em;
     max-width: 100%;
     min-width: 100%;
+  }
+}
+
+@keyframes rac-sections-line {
+  from {
+    border-left-color: transparent;
   }
 }
 

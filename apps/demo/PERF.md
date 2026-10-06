@@ -21,3 +21,4 @@ One row per measured state of the site, written by `npm run perf -- --log "note"
 | 2026-10-05 | ebfb4a4+ | 0.8.2 | 744 | 744 | 124 | 95 | 96 | 0 | 0.000 | 2 | 96.2 | prerendered first screen + hydrateRoot; gsap after load, title and desc in one timeline; lottie on approach to playground; chips/paging out of entry; typing flag instead of body:has() |
 | 2026-10-05 | ebfb4a4+ | 0.8.2 | 764 | 764 | 187 | 128 | 128 | 0 | 0.000 | 3 | 96.2 | header glyphs as text nodes (WebKit attr repaint fix), lottie player without suspend after preload |
 | 2026-10-06 | ebfb4a4+ | 0.8.2 | 896 | 896 | 98 | 103 | 108 | 0 | 0.000 | 2 | 96.3 | /start/ route, held section until input (menu), restore pin kept while hidden, guard holds start; content renamed custom, group customization; icons offset fix |
+| 2026-10-06 | 06ac55e+ | 0.8.2 | 296 | 484 | 117 | 95 | 92 | 0 | 0.000 | 2 | 96.5 | first-screen CSS inlined, gsap/preload/advance after FCP, staged nearest-first preload |

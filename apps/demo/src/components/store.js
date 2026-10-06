@@ -30,6 +30,21 @@ const KEY = 'rac-scroll'
 export const partOf = id => PARTS.includes(id) ? id : groupOf(id)?.id
 const withParent = id => PARENT[id] ? [PARENT[id], id] : [id]
 export const idle = fn => window.requestIdleCallback ? requestIdleCallback(fn, {timeout: 400}) : setTimeout(fn, 40)
+// [DOC: after-paint]
+const FCP = 'first-contentful-paint'
+let painted
+const paint = resolve => {
+    if (!window.PerformanceObserver?.supportedEntryTypes?.includes('paint') || performance.getEntriesByName(FCP).length) return resolve()
+    const observer = new PerformanceObserver(list => list.getEntriesByName(FCP).length && done())
+    const timer = setTimeout(() => done(), 3000)
+    const done = () => {
+        observer.disconnect()
+        clearTimeout(timer)
+        resolve()
+    }
+    observer.observe({type: 'paint', buffered: true})
+}
+export const afterPaint = fn => {(painted ??= new Promise(paint)).then(fn)}
 export const showAll = () => setStore({shown: PARTS})
 
 const readTarget = () => {
@@ -74,7 +89,7 @@ let pending = false
 export const advance = () => {
     if (pending) return
     pending = true
-    idle(() => {
+    const step = () => idle(() => {
         pending = false
         const {shown, target, restoring} = state
         const from = PARTS.indexOf(partOf(target?.id) ?? 'start')
@@ -86,6 +101,7 @@ export const advance = () => {
         hold()
         setStore({shown: [...new Set([...shown, ...withParent(next)])]})
     })
+    state.restoring ? step() : afterPaint(step)
 }
 
 export function boot() {

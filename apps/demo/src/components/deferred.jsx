@@ -1,4 +1,4 @@
-import {advance, getStore, hold, idle, liftFirst, partOf, release, setStore, useStore, PARTS} from './store'
+import {advance, afterPaint, getStore, hold, idle, liftFirst, partOf, release, setStore, useStore, PARTS} from './store'
 import {startTransition, useEffect, useLayoutEffect, useState} from 'react'
 
 const LOAD = {
@@ -36,6 +36,14 @@ const fetchPart = id => PENDING[id] ??= LOAD[id]().then(module => {READY[id] = m
     delete PENDING[id]
     console.error(error)
 })
+// [DOC: staged-preload]
+const BATCH = 3
+const preload = () => {
+    const from = PARTS.indexOf(partOf(getStore().target?.id) ?? 'start')
+    const queue = Object.keys(LOAD).sort((a, b) => Math.abs(PARTS.indexOf(a) - from) - Math.abs(PARTS.indexOf(b) - from))
+    const next = () => queue.length && Promise.all(queue.splice(0, BATCH).map(fetchPart)).then(() => idle(next))
+    next()
+}
 const INSTANT = {behavior: 'instant'}
 let preloaded = false
 
@@ -107,7 +115,7 @@ function Mounted({id}) {
         // [DOC: preload-after-restore]
         if (!preloaded && (!getStore().restoring || liftFirst())) {
             preloaded = true
-            idle(() => Object.keys(LOAD).forEach(fetchPart))
+            getStore().restoring ? idle(() => Object.keys(LOAD).forEach(fetchPart)) : afterPaint(() => idle(preload))
         }
         advance()
     }, [id])
