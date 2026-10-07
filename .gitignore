@@ -7,7 +7,6 @@ Thumbs.db
 .vscode/
 .idea/
 **/.claude/settings.local.json
-MONOREPO_MIGRATION.md
 
 # secrets and local env
 .env

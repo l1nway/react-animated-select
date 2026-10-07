@@ -31,9 +31,6 @@
 }
 
 .rac-multiple-subfeature {
-  margin-left: 2em;
-}
-
-.rac-multiple-subtitle + .rac-multiple-subfeature {
   padding-bottom: 0.5em;
+  margin-left: 2em;
 }
