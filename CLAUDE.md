@@ -12,7 +12,7 @@ react-animated-select/                 git root, github.com/l1nway/react-animate
 ├─ TESTING.md                          test plan
 ├─ .changeset/                         config.json and pending changesets
 ├─ .github/workflows/                  ci.yml, pages.yml, release.yml, backend.yml
-├─ scripts/                            copyMeta.js, checkPack.js
+├─ scripts/                            copyMeta.js, checkPack.js, size.js (README.md)
 ├─ packages/react-animated-select/     the npm package: src/, index.d.ts, vite.config.js, CLAUDE.md, FEATURES.md, STYLES.md, BUGS.md
 ├─ apps/demo/                          the demo site, https://l1nway.github.io/react-animated-select/ (CLAUDE.md, SYNC.md)
 ├─ apps/backend/                       the LLM backend, own lock, .env local only (CLAUDE.md, KNOWLEDGE.md, BUGS.md)
@@ -29,10 +29,11 @@ Each workspace has its own `CLAUDE.md`; read it before working there.
 - `npm run sandbox`: the local playground on port 5174.
 - `npm run build`: the package, then the demo.
 - `npm run lint`, `npm test`, `npm run check:pack` (the npm tarball holds exactly `package.json`, `README.md`, `LICENSE`, `index.d.ts` and `dist/**`).
+- `npm run size`: consumer bundles of the built package (core, + chips, + paging, all), min / gzip against the byte budgets, tree-shaking markers; needs the package build first.
 
 Local development needs two terminals: `npm run dev` and `npm run dev:api`; optionally a third, `npm run sandbox`.
 
-Full check: `npm run lint`, `npm run build`, `npm run check:pack`, `npm test`.
+Full check: `npm run lint`, `npm run build`, `npm run check:pack`, `npm run size`, `npm test`.
 
 ## Repo rules
 
@@ -67,7 +68,7 @@ The general browser rules are in `web-platforms.md`; these are this repo's appli
   One line for the changelog, written for library users.
   ```
   Before 1.0: `minor` for a breaking change or a new feature, `patch` for a fix. Internal changes (tests, docs only, demo, backend) need no changeset.
-- **Before a library release,** re-measure the bundle sizes (Rolldown-Vite consumer build, React external) and write the current numbers into `SIZES` in `apps/demo/src/plugins/bundle.jsx`.
+- **Before a library release,** run `npm run size` (after the package build; Vite consumer build, React external, also in CI) and copy its numbers into `SIZES` in `apps/demo/src/plugins/bundle.jsx`, the "Measured" line of `packages/react-animated-select/FEATURES.md`, `TESTING.md` and the size table of the root `README.md` (a README change needs its patch changeset). A size change in a release states the delta; raising a budget in `scripts/size.js` is the owner's decision.
 - Never run `npm publish`, `changeset publish`, `npm version` or `git tag` by hand. Releases happen only by merging the "Version Packages" pull request that CI opens.
 - The demo deploys to GitHub Pages on every push to `main` that touches the library or the demo. Backend-only pushes do not rebuild it.
 

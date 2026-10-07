@@ -13,6 +13,7 @@ Format: `- YYYY-MM-DD · docs | styling | prompts | codebase · what changed (so
 - 2026-10-05 · docs, styling · in touch delete mode `.rac-clear` and `.rac-arrow` stay mounted and keep their box, collapsing in place by `scale: 0` / `opacity: 0` / `visibility: hidden` / `pointer-events: none`, and in every mode the chip row takes their width through the internal `data-del-room` + `--rac-room` and the chips animate into the freed space and back (`STYLES.md` `data-deleting`, `data-del-room`, `--rac-room`, `rac-clear`)
 - 2026-10-05 · docs · a long press entering touch delete mode no longer opens the options panel for a moment, and fires no `onOpenChange` pair (`FEATURES.md` Touch delete mode)
 - 2026-10-05 · docs, styling · the panel background and text colour moved from `.rac-list` to `.rac-options` (an overshooting `easing` showed the page through the panel's bottom edge while it opened); `--rac-bg` / `--rac-fg` are the trigger and panel colours, and `.rac-list` shaped on its own needs a matching `.rac-options` (`STYLES.md` `rac-options`, `rac-list`, `--rac-bg`)
+- 2026-10-07 · docs · bundle sizes re-measured by `npm run size` (Vite + Rollup consumer, min / gzip): core 39.5 / 15.6 KB JS, 6.4 / 1.8 KB CSS; chips +15.7 / +5.6 KB JS, +2.3 / +0.5 KB CSS; paging +1.5 / +0.5 KB JS; the old 37.5 / 14.4, +9.5 / +3.3, +1 KB are stale (`FEATURES.md` Tree-shakable plugins, Measured)
 
 ## Bugs
 

@@ -18,6 +18,7 @@
         "lint": "npm run lint --workspaces --if-present",
         "test": "npm test --workspaces --if-present",
         "check:pack": "node scripts/checkPack.js",
+        "size": "node scripts/size.js",
         "changeset": "changeset",
         "version-packages": "changeset version && npm install --package-lock-only",
         "release": "npm run build -w packages/react-animated-select && npm run check:pack && changeset publish"
@@ -25,9 +26,12 @@
     "devDependencies": {
         "@changesets/cli": "^3.0.3",
         "@eslint/js": "^9.39.1",
+        "css-loader": "^7.1.5",
         "eslint": "^9.39.1",
         "eslint-plugin-react-hooks": "^7.0.1",
         "eslint-plugin-react-refresh": "^0.4.24",
-        "globals": "^16.5.0"
+        "globals": "^16.5.0",
+        "mini-css-extract-plugin": "^2.10.2",
+        "webpack": "^5.111.1"
     }
 }

@@ -59,15 +59,15 @@ import {Select, chips, paging} from 'react-animated-select'
 
 A plugin you never import is not in your bundle, JS or CSS. An inline array (`plugins={[chips]}`) is fine: it is compared by value. The plugin list may change at runtime; in multiple mode, turning `chips` off or on morphs the chips into the comma-separated labels and back, without a layout jump.
 
-Sizes (Vite / rolldown consumer build, React external, minified / gzip):
+Sizes (Vite consumer build, React external, minified / gzip):
 
 | Import | JS | CSS |
 |---|---|---|
-| `{Select}` (core) | 37.5 / 14.4 KB | |
-| `+ chips` | +9.5 / +3.3 KB | +2.0 / +0.4 KB |
-| `+ paging` | +1.0 / +0.35 KB | |
+| `{Select}` (core) | 39.5 / 15.6 KB | 6.4 / 1.8 KB |
+| `+ chips` | +15.7 / +5.6 KB | +2.3 / +0.5 KB |
+| `+ paging` | +1.5 / +0.5 KB | |
 
-esbuild keeps every CSS file reachable from the package by design, so an esbuild build without `chips` still includes the chip CSS (about 2 KB); Rollup, Vite and webpack drop it.
+esbuild keeps every CSS file reachable from the package by design, so an esbuild build without `chips` still includes the chip CSS (about 2.3 KB); Rollup, Vite and webpack drop it.
 
 ## Migrating to 0.8
 

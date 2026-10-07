@@ -6,6 +6,8 @@
 @~/projects/claude-rules/web-platforms.md
 @~/projects/claude-rules/css.md
 @~/projects/claude-rules/arch-features.md
+@~/projects/claude-rules/perf.md
+@~/projects/claude-rules/perf-web.md
 
 
 The repo root `CLAUDE.md` has the map, the commands and the links between workspaces (rule 1: library and backend findings; rules 2 and 3: `SYNC.md`); this file adds the demo.
@@ -77,7 +79,7 @@ Not mapped yet: Server rendering (SSR) (the demo has `#ssr`) and Tree-shakable p
 
 ## Performance
 
-Budgets of this site (they override the defaults of `web.md`, and are mirrored in `COLUMNS` in `scripts/perf.mjs`):
+Budgets of this site (they override the defaults of `web.md`, and are the differences are in `budgets` in `perf.config.mjs`):
 
 | Metric | Mobile (CPU Ã—4, slow 4G) | Desktop |
 |---|---|---|
@@ -89,10 +91,9 @@ Budgets of this site (they override the defaults of `web.md`, and are mirrored i
 | Entry JS (entry + preloaded chunks) | â‰¤ 120 KB gzip | â€” |
 
 **Measuring: `npm run perf -w apps/demo`**
+- The shared engine (`perf-web.md`): `scripts/perf.mjs` is a symlink to `~/projects/claude-rules/tools/perf.mjs`; this site's settings are in `perf.config.mjs` (budgets, the `.rac-menu` CLS exclusion, the taps for `M INP`, the `Lib` column). Fix the engine there, never by replacing the symlink with a copy.
 - Builds only the demo, against the library `dist` as it is: build the library first (`npm run build -w packages/react-animated-select`).
-- Builds, starts `vite preview` and headless Chrome/Edge (no extra deps; `BROWSER=<path>` if not found), runs 3 cold loads per profile plus idle and full-scroll passes, and prints every metric against its budget and the last `PERF.md` row. It exits 1 when a budget is broken or the page throws.
-- Run it at the end of any session that touched loading, animation, scroll, a part or dependencies, and after adapting the demo to a library change that affects them. Optionally run it before starting, for a clean baseline.
-- Then log the result: `npm run perf -- --log "what changed and why"`. This appends a row to `PERF.md`, the performance journal (format at its top). Log only states worth keeping; never log a regression without saying why it was worth it.
+- Run it also after adapting the demo to a library change that affects loading, animation or scroll. Log with `npm run perf -- --log "what changed and why"` (journal `PERF.md`).
 
 **Loading**
 - The first screen is the header, the aside and the `start` part (intro, usage, question). Everything else is a lazy part: `<Part id/>` (`src/components/deferred.jsx`), listed in `PARTS` (`src/components/store.js`) and `LOAD`. The root element of a part carries the part id. Parts mount one per idle callback, nearest to the visitor first, and chunks are preloaded nearest first, in small batches, after the first contentful paint (`afterPaint`, `src/components/README.md`). The first-screen CSS is inlined into the HTML at build time; nothing render-blocking may be added back.

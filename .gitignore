@@ -4,9 +4,9 @@ dist/
 *.log
 .DS_Store
 Thumbs.db
+.claude/
 .vscode/
 .idea/
-**/.claude/settings.local.json
 
 # secrets and local env
 .env

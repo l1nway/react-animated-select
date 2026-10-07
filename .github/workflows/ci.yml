@@ -18,6 +18,7 @@ jobs:
       - run: npm run lint
       - run: npm run build -w packages/react-animated-select
       - run: npm run check:pack
+      - run: npm run size
       - run: npm test --workspaces --if-present
       - run: npm run build -w apps/demo
   backend:

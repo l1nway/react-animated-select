@@ -5,6 +5,8 @@
 @~/projects/claude-rules/web.md
 @~/projects/claude-rules/web-platforms.md
 @~/projects/claude-rules/library.md
+@~/projects/claude-rules/perf.md
+@~/projects/claude-rules/perf-lib.md
 
 
 The repo root `CLAUDE.md` has the map, the commands, the releases (changesets) and the links between workspaces; this file adds the library.
@@ -22,7 +24,7 @@ The repo root `CLAUDE.md` has the map, the commands, the releases (changesets) a
 - Verify after each change, from the repo root: `npm run lint -w packages/react-animated-select` and `npm run build -w packages/react-animated-select`, then check the relevant demo in `apps/sandbox/src/App.jsx` (`npm run sandbox`).
 - Every new feature or prop gets a demo case in `apps/sandbox/src/App.jsx` (local), and reaches the demo site through link rule 2 of the root `CLAUDE.md`.
 - File reorganization is in progress: flat `src/` (no subfolders), camelCase file names, `.js` for files without JSX. The JSX-structure refactor is deferred until the owner starts it, except the trigger, done on 2026-09-30 (flat tree, `@layer rac`, state attributes, renamed classes). The styles refactor was done on 2026-09-30 (`base.css` / `theme.css`, tokens). The title and chip ellipsis and the content-sized trigger were done on 2026-10-01 (doc-key `trigger-width`; animation frames clip the ellipsis and lift the size limits while they run). The title change animation (a slide of the width today) is due for a separate step on animations, together with keying the title by its state instead of its text: today any text change (typing a placeholder, `selectedText`, switching `texts`) replays the title animation (doc-key `value`, "Known issue"). That step reviews every animation trigger in the project: animate on a change of option or state, never on a mere text change. The chip row spacer was reworked into the row hold (doc-key `chip-hold`), and the inline delete spacer into the delete reserve on the same breaks (`delete-reserve`, `collapse-group`). Delete-mode changes (`deleteInline`, `deleteAlways`, touch delete mode) hold the rows and animate the chip widths since 2026-10-04 (doc-key `delete-mode`).
-- Tree-shaking was done on 2026-10-04: the `chips` and `paging` plugins, version 0.8.0 (README Plugins, Paging; FEATURES "Tree-shakable plugins"; the package-side build changes shipped in 0.8.1, see [BUGS.md](BUGS.md) "Carried over in the monorepo migration"). Measurement harnesses live in the scratchpad only: rebuild them from README Plugins when needed (esbuild for size, rolldown-vite / webpack consumers for CSS drops, Playwright for runtime).
+- Tree-shaking was done on 2026-10-04: the `chips` and `paging` plugins, version 0.8.0 (README Plugins, Paging; FEATURES "Tree-shakable plugins"; the package-side build changes shipped in 0.8.1, see [BUGS.md](BUGS.md) "Carried over in the monorepo migration"). Size and tree-shaking are guarded by `npm run size` (root `scripts/size.js`, Vite and webpack consumers, in CI; doc-key `bundle-size` in `scripts/README.md`). The runtime harnesses (Playwright) are not committed yet: the plan is in [TESTING.md](../../TESTING.md).
 - Tests (asked on 2026-10-04, not started): full behavioural coverage, run by GitHub on every push, npm publishing blocked unless they pass. The handoff plan is the temporary [TESTING.md](../../TESTING.md) at the repo root.
 - Next library edits (agreed on 2026-10-01, not started): the animation rework (a `motion` prop by role), chip reordering by drag with haptics, the virtualized option list, and search on top of it. Plans, decisions and open questions are in the FEATURES.md "Planned" section. Suggested order: virtualization, search, animations, drag. Each step starts with an analysis shown to the owner.
 
@@ -61,7 +63,7 @@ The repo root `CLAUDE.md` has the map, the commands, the releases (changesets) a
 - **A plugin enters the core only through component slots** (`<ext.Slot/>`, any hooks inside) **or pure functions** (`ext.fn(...)` called inside a core hook or handler). **Never a hook called from a core hook**: the plugin list may change between renders.
 - A seam is added only when a plugin needs it. The plugin object's fields are internal (may change in any minor); public are `plugins` and the plugin exports.
 - A plugin's CSS lives in its own file, imported by the plugin module, opening with `@layer rac.base, rac.theme;`. Never share a selector list between core and plugin rules. The core CSS is imported by `select.jsx`, never by `index.js` (a re-export-only module loses its CSS imports in Rollup / rolldown / webpack).
-- A change to a plugin boundary re-runs the bundle harness (core / per plugin / all, with marker checks for strings unique to each plugin).
+- A change to a plugin boundary re-runs `npm run size` (core / per plugin / all, with marker checks for strings unique to each plugin); a new plugin adds its entry, marker and budget there.
 - Future features (virtual list, search, sortable chips, motion presets) are written as plugins from their first line.
 
 ## Features catalogue

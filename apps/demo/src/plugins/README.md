@@ -7,7 +7,7 @@ The Plugins group (`/plugins/`): one part per library plugin, shipped or planned
 Overview of the plugin model: what a plugin is, the import snippet and the size table.
 
 - `bundle.jsx`, no own styles. `Heading` (id `plugins-heading`, kept from when it lived in Performance), `CodeBlock`, `Table` with `columns` and own rows (`plugin-sizes`).
-- Sizes are measured, not computed: re-measure on a library release (Rolldown-Vite consumer build, React external) and update `SIZES`. The text lists the planned plugins (search, virtualization, chip sorting); keep it in sync with the Soon parts below.
+- Sizes are measured, not computed: copy them from `npm run size` at the repo root (Vite + Rollup consumer build of the built package, React external; `scripts/README.md`, Bundle size) on a library release and update `SIZES` and the method line in `desc`. KB there is 1024 B; the plugin rows are the differences between the script's `chips` / `paging` entries and `core`. The text lists the planned plugins (search, virtualization, chip sorting); keep it in sync with the Soon parts below.
 
 ## Infinite Loading
 
