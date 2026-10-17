@@ -20,6 +20,8 @@ export const setStore = next => {
 }
 
 export const useStore = select => useSyncExternalStore(subscribe, () => select(state), () => select(INITIAL))
+// [DOC: prerender]
+export const entrance = state => state.target ? 'fade' : 'in'
 
 // page parts in document order
 const NESTED = MENU.slice(1)
@@ -32,13 +34,16 @@ const withParent = id => PARENT[id] ? [PARENT[id], id] : [id]
 export const idle = fn => window.requestIdleCallback ? requestIdleCallback(fn, {timeout: 400}) : setTimeout(fn, 40)
 // [DOC: after-paint]
 const FCP = 'first-contentful-paint'
+const revealed = () => state.target && !state.restoring
 let painted
 const paint = resolve => {
-    if (!window.PerformanceObserver?.supportedEntryTypes?.includes('paint') || performance.getEntriesByName(FCP).length) return resolve()
+    if (revealed() || !window.PerformanceObserver?.supportedEntryTypes?.includes('paint') || performance.getEntriesByName(FCP).length) return resolve()
     const observer = new PerformanceObserver(list => list.getEntriesByName(FCP).length && done())
+    const off = subscribe(() => revealed() && done())
     const timer = setTimeout(() => done(), 3000)
     const done = () => {
         observer.disconnect()
+        off()
         clearTimeout(timer)
         resolve()
     }

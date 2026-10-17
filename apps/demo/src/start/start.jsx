@@ -1,6 +1,6 @@
 import {CopyButton, CodeBlock} from '../components/code'
 import {Part} from '../components/deferred'
-import {setStore} from '../components/store'
+import {entrance, setStore, useStore} from '../components/store'
 import {snippet} from '../components/tokens'
 import {Play} from 'lucide-react'
 import Usage from './usage'
@@ -43,10 +43,11 @@ const CSS = `
 const tryDemo = () => setStore({scrollTo: 'playground'})
 
 function Start() {
+    const reveal = useStore(entrance)
     return (
         <article className='rac-section' id='start'>
             <style href='rac-start' precedence='low'>{CSS}</style>
-            <section data-reveal='in' style={{'--i': 1}}>
+            <section data-reveal={reveal} style={{'--i': 1}}>
                 <h2 className='rac-start-title'>Getting started</h2>
                 <p className='rac-start-desc'>A premium React select component focused on performance and reliability. Beyond its extensive feature set and deep customization options, this component is built to be exceptionally stable. It gracefully handles complex data and unexpected prop values, providing a rock-solid foundation for your application's UI.</p>
                 <p className='rac-start-desc'>Go ahead — experiment with different configurations and build the perfect Select component tailored to your needs.</p>

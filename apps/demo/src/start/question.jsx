@@ -7,6 +7,7 @@ import {Collapse} from '@l1nway/collapse'
 import {Motion} from '../components/motion'
 import {animIcon, submit} from './components'
 import useLLM, {MAX} from './useLLM'
+import useGrow from './useGrow'
 import gsap from 'gsap'
 import './question.css'
 import './recorder.css'
@@ -49,6 +50,7 @@ function Question() {
     const {state, textareaRef, ask, notify, onChange, onInvalid, onSubmit} = useLLM()
     const {rec, mic, micRef, pillRef, cancel} = useRecorder(ask, notify)
     const {answer, loading, value, status} = state
+    const growRef = useGrow(textareaRef, value)
     const {mode, seconds, keys} = rec
     const crash = mode ? null : state.crash
     const left = LIMIT - seconds
@@ -77,22 +79,24 @@ function Question() {
                     </Collapse>
                 </div>
                 <div className='rac-llm-field' data-crash={crash ?? undefined}>
-                    <textarea
-                        aria-labelledby='question-title'
-                        aria-describedby='question-desc'
-                        readOnly={loading || !!mode}
-                        placeholder='Ask a question…'
-                        className='rac-llm-input'
-                        onInvalid={onInvalid}
-                        onChange={onChange}
-                        enterKeyHint='send'
-                        ref={textareaRef}
-                        onKeyDown={submit}
-                        maxLength={MAX}
-                        value={value}
-                        required
-                        rows={1}
-                    />
+                    <div className='rac-llm-grow' ref={growRef}>
+                        <textarea
+                            aria-labelledby='question-title'
+                            aria-describedby='question-desc'
+                            readOnly={loading || !!mode}
+                            placeholder='Ask a question…'
+                            className='rac-llm-input'
+                            onInvalid={onInvalid}
+                            onChange={onChange}
+                            enterKeyHint='send'
+                            ref={textareaRef}
+                            onKeyDown={submit}
+                            maxLength={MAX}
+                            value={value}
+                            required
+                            rows={1}
+                        />
+                    </div>
                     <AnimatePresence>
                         {mode &&
                             <m.div className='rac-llm-rec' data-warn={left <= WARN || undefined} {...fade} key='rec'>

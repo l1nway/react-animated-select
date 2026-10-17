@@ -16,23 +16,34 @@
   display: flex;
 }
 
+.rac-llm-grow {
+  overflow-clip-margin: 4px;
+  overflow-x: visible;
+  overflow-y: clip;
+  min-width: 0;
+  width: 100%;
+}
+
 .rac-llm-input {
-  transition:
-    border-color 300ms ease,
-    height 300ms;
+  transition: border-color 300ms ease;
   border: 1px solid var(--rac-line);
   background-color: var(--rac-surface-2);
   padding: 1em 3em 1em 1em;
   color: var(--rac-text);
-  field-sizing: content;
+  box-sizing: border-box;
   min-height: 3.75em;
+  overflow-y: hidden;
   max-height: 12em;
-  overflow-y: auto;
+  display: block;
   font: inherit;
   outline: none;
   resize: none;
   width: 100%;
   margin: 0;
+
+  &[data-scroll] {
+    overflow-y: auto;
+  }
 
   &:hover, &:focus {
     border-color: var(--rac-line-hover);
@@ -44,7 +55,7 @@
     cursor: wait;
   }
 
-  [data-crash] > & {
+  [data-crash] & {
     padding-right: 4.5em;
   }
 }
@@ -143,8 +154,10 @@
 }
 
 .rac-llm-loading {
+  inset: 0 0.5em 0 auto;
+  height: fit-content;
   position: absolute;
-  right: 0.5em;
+  margin: auto 0;
   width: 3.5em;
   cursor: wait;
 }
@@ -154,12 +167,19 @@
 }
 .rac-llm-thinking {
   position: absolute;
-  padding: 1em;
+  align-items: center;
+  padding: 0 1em;
+  display: flex;
   cursor: wait;
+  inset: 0 auto;
 }
 
 .rac-loading-inline {
+  padding-bottom: 0.25em;
+  box-sizing: border-box;
   display: inline-flex;
+  align-items: flex-end;
+  height: 1lh;
   gap: 0.25em;
 }
 

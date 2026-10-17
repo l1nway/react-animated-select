@@ -91,7 +91,7 @@ Budgets of this site (they override the defaults of `web.md`, and are the differ
 | Entry JS (entry + preloaded chunks) | â‰¤ 120 KB gzip | â€” |
 
 **Measuring: `npm run perf -w apps/demo`**
-- The shared engine (`perf-web.md`): `scripts/perf.mjs` is a symlink to `~/projects/claude-rules/tools/perf.mjs`; this site's settings are in `perf.config.mjs` (budgets, the `.rac-menu` CLS exclusion, the taps for `M INP`, the `Lib` column). Fix the engine there, never by replacing the symlink with a copy.
+- The shared engine (`perf-web.md`): `scripts/perf.mjs` is a local symlink to `~/projects/claude-rules/tools/perf.mjs`, gitignored and not tracked (a dangling link broke CI lint); a fresh clone has no `npm run perf` until the owner creates it with `ln -s`, and CI does not run perf. This site's settings are in `perf.config.mjs` (budgets, the `.rac-menu` CLS exclusion, the taps for `M INP`, the `Lib` column). Fix the engine there, never by replacing the symlink with a copy.
 - Builds only the demo, against the library `dist` as it is: build the library first (`npm run build -w packages/react-animated-select`).
 - Run it also after adapting the demo to a library change that affects loading, animation or scroll. Log with `npm run perf -- --log "what changed and why"` (journal `PERF.md`).
 

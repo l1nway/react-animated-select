@@ -2,6 +2,7 @@ import {Zap, Star, Shield, ChevronUp, X, MousePointer2} from 'lucide-react'
 import {CopyButton, CodeMorph} from '../components/code'
 import {snippet} from '../components/tokens'
 import {Segmented} from '../components/segmented'
+import {entrance, useStore} from '../components/store'
 import {Select, Option} from 'react-animated-select'
 import {Title} from '../components/helpers'
 import {Fragment, useState} from 'react'
@@ -38,6 +39,7 @@ export default function Usage() {
     const [tab, setTab] = useState(0)
     const [value, setValue] = useState()
     const [busy, setBusy] = useState(false)
+    const reveal = useStore(entrance)
     const active = TABS[tab]
 
     const pick = i => {
@@ -47,7 +49,7 @@ export default function Usage() {
     }
 
     return (
-        <section className='rac-start-usage' id='usage' data-reveal='in' style={{'--i': 2}}>
+        <section className='rac-start-usage' id='usage' data-reveal={reveal} style={{'--i': 2}}>
             <style href='rac-usage' precedence='low'>{CSS}</style>
             <div className='rac-code-title-container2'>
                 <Title icon={<MousePointer2/>}>Usage</Title>
