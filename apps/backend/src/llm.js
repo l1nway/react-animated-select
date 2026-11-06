@@ -121,7 +121,7 @@ async function reply(question, signal) {
     if (key === 'offtop') return run('offtop', SYSTEM.offtop, question, signal)
     if (key !== 'codebase') {
         const text = await run('docs', SYSTEM[key], question, signal)
-        if (!/^\W*ESCALATE\b/.test(text)) return text
+        if (!/^\W*ESC(ALATE)?\W*$|^\W*ESCALATE\b/.test(text)) return text
         console.log(`[${key}] escalated to codebase`)
     }
     return run('codebase', SYSTEM.codebase, question, signal)

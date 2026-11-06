@@ -16,7 +16,7 @@ The LLM backend behind the demo's "Ask a question" (`POST /ask`). Express 5, Com
 
 
 - `.env` is local and never committed. `.env.example` lists the keys the code reads (`PORT`, `GEMINI_API_KEY`, `GROQ_API_KEY`, `TRUST_PROXY`, `LIMIT_*`); keep it in sync when the code reads a new one.
-- In production the keys live in the AWS service's configuration, never in git, GitHub or a deploy zip.
+- In production the keys live in `~/rac/.env` on the VM (mode 600), never in git, GitHub or the deploy bundle; the workflow's rsync excludes `.env`.
 
 ## Code and limits
 
@@ -24,7 +24,7 @@ The LLM backend behind the demo's "Ask a question" (`POST /ask`). Express 5, Com
 - `src/index.js`: the Express app and `POST /ask`. `src/llm.js`: providers, model roles, routing and transcription. `src/limits.js`: rate limit and upload limits.
 - Limits run before the body is read: one request in flight per IP, `LIMIT_PER_MINUTE` (5) and `LIMIT_PER_DAY` (50) per IP, `LIMIT_GLOBAL_PER_DAY` (2000) for everyone; over the limit â†’ `429` with `Retry-After`. Counters live in memory, so they reset on restart and are per instance.
 - Body limits: `prompt` at most 2048 characters, one `audio/*` file at most 1 MB; over â†’ `413`.
-- The client IP comes from `X-Forwarded-For` through `TRUST_PROXY` hops (default `2`: nginx on Elastic Beanstalk, then CloudFront). With a load balancer in front of nginx it is `3`. A wrong value either puts every visitor into one bucket or lets a client spoof its IP.
+- The client IP comes from `X-Forwarded-For` through `TRUST_PROXY` hops (default `2`; Compose pins `1`: Caddy is the only proxy). Another proxy or CDN in front adds a hop. A wrong value either puts every visitor into one bucket or lets a client spoof its IP.
 - A request aborts its LLM calls when the client disconnects or after 40 s (the site gives up at 45 s). Unreadable audio (Whisper `400`) returns `400`.
 - **CORS** (`ORIGINS` in `src/index.js`) allows only `https://l1nway.github.io` and `http://localhost` / `http://127.0.0.1` on any port. It is not authentication (`curl` ignores it); the limits above are the real protection. A new site origin (custom domain, preview) must be added to `ORIGINS`, or browsers block its requests.
 
@@ -62,4 +62,4 @@ Free tiers of Groq and the Gemini API (AI Studio key), checked on 2026-10-05. `R
 ## Deploy
 
 
-Target: an Oracle Cloud VM (Docker Compose: backend + Caddy), deployed by `.github/workflows/backend.yml` on every push to `main` that touches `apps/backend`, the library or the root `README.md`. Design, setup and traps: `README.md` ("Deploy to Oracle"). The AWS zip stays the live path until the DNS cutover; after it, AWS is shut down and the AWS mentions in this file and in `apps/demo` docs are removed. `DOMAIN` in `.env.example` is read by Compose, not by the code.
+Target: an Oracle Cloud VM (Docker Compose: backend + Caddy), deployed by `.github/workflows/backend.yml` on every push to `main` that touches `apps/backend`, the library or the root `README.md`. Design, setup and traps: `README.md` ("Deploy to Oracle"). The move from AWS is done: the demo points at `https://92.5.61.99.sslip.io`. `DOMAIN` in `.env.example` is read by Compose, not by the code.

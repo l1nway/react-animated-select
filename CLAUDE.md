@@ -38,7 +38,7 @@ Full check: `npm run lint`, `npm run build`, `npm run check:pack`, `npm run size
 ## Repo rules
 
 - The package is published on npm. Treat every change to it as something that ships to real users.
-- Secrets live only in `apps/backend/.env` (local) and in AWS; never in git or GitHub.
+- Secrets live only in `apps/backend/.env` (local) and in `~/rac/.env` on the Oracle VM; never in git or GitHub.
 - `apps/sandbox` is local and gitignored: never reference it from tracked code. A scenario worth keeping becomes a test.
 - `@l1nway/collapse` is a demo dependency only. The library never imports it; it keeps its own `motion.jsx`.
 

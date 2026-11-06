@@ -41,7 +41,7 @@ The repo root `CLAUDE.md` has the map, the commands and the links between worksp
 ## SYNC.md and findings
 
 - `SYNC.md` is the demo's inbox: what the library and the backend changed that the demo still has to show or adapt to. A demo session reads it, does the work, and removes done entries. Entry format and statuses are at its top.
-- Link rule 1 covers everything the demo finds that has to change in the library or the backend, not only bugs: API gaps, missing classes or variables, docs that disagree with the code, perf or a11y issues, ideas. `backend.md` holds the backend request contract the site relies on and the backend problems found from the site so far.
+- Link rule 1 covers everything the demo finds that has to change in the library or the backend, not only bugs: API gaps, missing classes or variables, docs that disagree with the code, perf or a11y issues, ideas. `backend.md` holds the backend request contract the site relies on.
 - Record a finding in the same step it is found, and mention it in the reply. Never work around a library bug in the site silently: either show the limitation honestly, or add a minimal workaround and record it in the entry.
 - Adapting the demo to a library or backend change doubles as extra testing: anything surprising is a finding under rule 1.
 
