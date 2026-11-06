@@ -62,4 +62,4 @@ Free tiers of Groq and the Gemini API (AI Studio key), checked on 2026-10-05. `R
 ## Deploy
 
 
-Today the backend is uploaded to AWS as a manual zip. `.github/workflows/backend.yml` (manual trigger only) is a template for a CI deploy and is enabled after the AWS service, region and an OIDC role are set up.
+Target: an Oracle Cloud VM (Docker Compose: backend + Caddy), deployed by `.github/workflows/backend.yml` on every push to `main` that touches `apps/backend`, the library or the root `README.md`. Design, setup and traps: `README.md` ("Deploy to Oracle"). The AWS zip stays the live path until the DNS cutover; after it, AWS is shut down and the AWS mentions in this file and in `apps/demo` docs are removed. `DOMAIN` in `.env.example` is read by Compose, not by the code.

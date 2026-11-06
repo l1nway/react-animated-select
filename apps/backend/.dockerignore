@@ -1,0 +1,10 @@
+node_modules
+.env*
+.agents
+*.md
+scripts
+REVISION
+Dockerfile
+docker-compose.yml
+Caddyfile
+bootstrap.sh

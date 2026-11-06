@@ -34,7 +34,7 @@ The repo root `CLAUDE.md` has the map, the commands and the links between worksp
 ## Site, backend URL and commands
 
 - Site: `https://l1nway.github.io/react-animated-select/` (Vite `base` `/react-animated-select/`). GitHub Actions (`.github/workflows/pages.yml`) builds and deploys it on every push to `main` that touches the library or the demo. There is no `gh-pages` branch and no deploy script.
-- The "Ask a question" URL comes from `import.meta.env.VITE_API_URL` (read in `src/start/useLLM.jsx`): `.env.development` â†’ `http://localhost:3000/ask` (the local backend, `npm run dev:api`); `.env.production` â†’ `https://react-animated-select-backend.online/ask` (AWS); `.env.remote` â†’ the production URL, for `npm run dev:remote`. A personal override goes into `.env.development.local` (gitignored).
+- The "Ask a question" URL comes from `import.meta.env.VITE_API_URL` (read in `src/start/useLLM.jsx`): `.env.development` â†’ `http://localhost:3000/ask` (the local backend, `npm run dev:api`), with `VITE_API_FALLBACK` (the deployed backend) used when nothing listens locally (`src/start/README.md`, "Api fallback"); `.env.production` â†’ `https://92.5.61.99.sslip.io/ask` (Oracle VM); `.env.remote` â†’ the production URL, for `npm run dev:remote`. A personal override goes into `.env.development.local` (gitignored).
 - Commands, from the repo root: `npm run dev`, `npm run dev:remote`, `npm run dev:api`, `npm run lint -w apps/demo`, `npm run build` (library, then demo), `npm run perf -w apps/demo`.
 - Full check: `npm run lint -w apps/demo`, `npm run build` at the root, a browser check of the changed part, and `npm run perf -w apps/demo` logged in `PERF.md` for loading, animation or scroll (see Performance).
 

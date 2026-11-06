@@ -1,10 +1,15 @@
 name: Backend
 on:
+  push:
+    branches: [main]
+    paths:
+      - 'apps/backend/**'
+      - 'packages/react-animated-select/**'
+      - 'README.md'
+      - '.github/workflows/backend.yml'
   workflow_dispatch:
-  workflow_call:
 permissions:
   contents: read
-  id-token: write
 concurrency:
   group: backend
   cancel-in-progress: false
@@ -22,16 +27,20 @@ jobs:
           cache: npm
           cache-dependency-path: apps/backend/package-lock.json
       - run: npm ci
-      - run: npm test --if-present
       - run: npm run build-data
-      - run: zip -r "$RUNNER_TEMP/backend.zip" . -x 'node_modules/*' '.env*'
-      - uses: aws-actions/configure-aws-credentials@v4
-        with:
-          role-to-assume: ${{vars.AWS_ROLE_ARN}}
-          aws-region: ${{vars.AWS_REGION}}
-      - run: |
-          label="backend-${GITHUB_SHA::7}-${GITHUB_RUN_ID}"
-          aws s3 cp "$RUNNER_TEMP/backend.zip" "s3://${{vars.EB_BUCKET}}/$label.zip"
-          aws elasticbeanstalk create-application-version --application-name "${{vars.EB_APP}}" --version-label "$label" --source-bundle "S3Bucket=${{vars.EB_BUCKET}},S3Key=$label.zip"
-          aws elasticbeanstalk update-environment --environment-name "${{vars.EB_ENV}}" --version-label "$label"
-          aws elasticbeanstalk wait environment-updated --environment-names "${{vars.EB_ENV}}"
+      - run: echo "$GITHUB_SHA" > REVISION
+      - name: Prepare SSH
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/id_deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/id_deploy
+        env:
+          SSH_KEY: ${{secrets.OCI_SSH_KEY}}
+          KNOWN_HOSTS: ${{secrets.OCI_KNOWN_HOSTS}}
+      - name: Upload
+        run: rsync -az --delete --exclude node_modules --exclude '.env*' --exclude .agents -e "ssh -i ~/.ssh/id_deploy" ./ "${{vars.OCI_USER}}@${{vars.OCI_HOST}}:rac/"
+      - name: Restart
+        run: ssh -i ~/.ssh/id_deploy "${{vars.OCI_USER}}@${{vars.OCI_HOST}}" 'cd rac && docker compose up -d --build --remove-orphans && docker image prune -f'
+      - name: Check
+        run: curl -fsS --retry 12 --retry-delay 5 --retry-all-errors "https://${{vars.OCI_DOMAIN}}/"

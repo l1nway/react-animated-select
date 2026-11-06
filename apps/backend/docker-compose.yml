@@ -1,0 +1,31 @@
+# [DOC: deploy-oracle]
+services:
+  backend:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: 3000
+      TRUST_PROXY: 1
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(r => process.exit(r.ok ? 0 : 1), () => process.exit(1))"]
+      interval: 10s
+      retries: 5
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+volumes:
+  caddy_data:
+  caddy_config:

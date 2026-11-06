@@ -19,7 +19,7 @@ Format: `- YYYY-MM-DD · docs | styling | prompts | codebase · what changed (so
 
 - **`npm audit`: 3 high vulnerabilities, dev-only.** `nodemon@3.1.14` (latest) pulls `chokidar@3` → `braces@3.0.3` (stack exhaustion on nested patterns); no patched `braces` for this chain exists. Not shipped to production. Option: replace `nodemon` with `node --watch` (Node 24, one fewer dependency); needs the owner's approval.
 - **Gemini free-tier quotas are unverified.** Google publishes them only in AI Studio (Rate limits page). Unofficial figures: about 20 requests per day per Flash model, about 500 per Flash-Lite model. Read the real numbers there and adjust `ROLES` in `src/llm.js` if the codebase role runs dry.
-- **Production is not deployed.** The code from 2026-10-05 (limits, model roles, knowledge base) runs only locally until the next deploy; `TRUST_PROXY` must be checked against the AWS topology first (`CLAUDE.md`, "Code and limits").
+- **Production is not deployed.** The code from 2026-10-05 (limits, model roles, knowledge base) runs only locally until the next deploy; `TRUST_PROXY` must be checked against the AWS topology first (`CLAUDE.md`, "Code and limits"). Superseded by the move to Oracle (`README.md`), where Compose pins `TRUST_PROXY=1`.
 
 ## Done
 

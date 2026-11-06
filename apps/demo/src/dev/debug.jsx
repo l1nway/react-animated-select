@@ -3,11 +3,12 @@ import {options, merge, arrowIcons} from '../components/helpers'
 import {Collapse, Presence} from '@l1nway/collapse'
 import {Table} from '../components/section'
 import {Select} from 'react-animated-select'
-import {useCallback, useReducer} from 'react'
+import {useCallback, useEffect, useReducer} from 'react'
 import './debug.css'
 
 // demo data
-const initial = {controlled: true, value: null, open: undefined, keepMounted: false, onOpenChange: undefined}
+const initial = {controlled: true, mounted: true, value: null, open: undefined, keepMounted: false, onOpenChange: undefined}
+const SWAP = 300
 const columns = [[Tag, 'Prop'], [MousePointerClick, 'Value'], [FileText, 'Description']]
 
 const desc = 'Control the Select from outside, like a native input, or leave it alone: value and open both work controlled and uncontrolled. onOpenChange never fires on mount or for a no-op. Picking the already selected option of a single Select just closes the menu, without onChange. Clearing (the clear button, Delete or Backspace) reports null, or [] in multiple mode. A disabled Select or one without options is never shown open, whatever open says.'
@@ -17,7 +18,7 @@ const rows = [{
     field: 'controlled',
     kind: 'choices',
     choices: [{text: 'value + onChange', value: true}, {text: 'defaultValue', value: false}],
-    text: 'With value and onChange the value lives in your state, and With defaultValue the Select reads it once on mount, keeps the value itself and still reports every change through onChange. Pick one mode per Select, as with a React input: this demo remounts the Select when you switch.'
+    text: 'With value and onChange the value lives in your state, and With defaultValue the Select reads it once on mount, keeps the value itself and still reports every change through onChange. Pick one mode per Select, as with a React input: this demo remounts the Select when you switch. An empty Select switched to defaultValue gets the first option; a picked value is kept in both modes.'
 }, {
     prop: 'open',
     kind: 'choices',
@@ -53,10 +54,20 @@ const cells = {call: Call}
 // [DOC: debug-table]
 function Debug() {
     const [state, dispatch] = useReducer(merge, initial)
-    const {controlled, value, open, keepMounted} = state
+    const {controlled, mounted, value, open, keepMounted} = state
 
     const onChange = useCallback(next => dispatch({value: next}), [])
-    const change = useCallback((field, next) => dispatch({[field]: next, ...field === 'controlled' && {value: null, onOpenChange: undefined}}), [])
+    const empty = value == null
+    const change = useCallback((field, next) => {
+        const swap = field === 'controlled' && next !== controlled
+        dispatch({[field]: next, ...swap && {onOpenChange: undefined, ...!next && empty && {value: options[0]}}})
+    }, [controlled, empty])
+    // remount after the swap
+    useEffect(() => {
+        if (controlled === mounted) return
+        const timer = setTimeout(() => dispatch({mounted: controlled, onOpenChange: undefined}), SWAP)
+        return () => clearTimeout(timer)
+    }, [controlled, mounted])
     const isOpenControlled = open !== undefined
     const openChange = useCallback(next => dispatch({onOpenChange: next, ...isOpenControlled && {open: next}}), [isOpenControlled])
 
@@ -64,9 +75,9 @@ function Debug() {
         <section className='rac-debug' id='debug' aria-labelledby='debug-title'>
             <Table id='debug' icon={<Bug className='rac-debug-bug'/>} title='Debug' desc={desc} columns={columns} rows={rows} state={state} onChange={change} cells={cells}/>
             <Select
-                key={String(controlled)}
-                defaultValue={controlled ? undefined : options[0]}
-                value={controlled ? value : undefined}
+                key={String(mounted)}
+                defaultValue={mounted ? undefined : value}
+                value={mounted ? value : undefined}
                 keepMounted={keepMounted}
                 onOpenChange={openChange}
                 onChange={onChange}

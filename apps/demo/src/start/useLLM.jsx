@@ -3,6 +3,7 @@ import {clearShake, merge, shake} from '../components/helpers'
 
 export const MAX = 2048
 const API = import.meta.env.VITE_API_URL
+const FALLBACK = import.meta.env.DEV && import.meta.env.VITE_API_FALLBACK
 const TIMEOUT = 45000
 const SLOW = 3000
 const BUSY = 'The server is busy, still waiting for an answer…'
@@ -15,6 +16,11 @@ const ERRORS = {
     413: 'The question is too long.',
     429: 'Too many questions in a row. Wait a minute and try again.'
 }
+
+// [DOC: api-fallback]
+const endpoint = async () => FALLBACK
+    ? fetch(API, {mode: 'no-cors', signal: AbortSignal.timeout(1500)}).then(() => API, () => FALLBACK)
+    : API
 
 function useLLM() {
     const [state, dispatch] = useReducer(merge, {loading: false, answer: '', value: '', status: null, crash: null})
@@ -52,7 +58,7 @@ function useLLM() {
         notify(null)
         dispatch({loading: true, answer: '', crash: null})
         try {
-            const res = await fetch(API, {method: 'POST', body, signal: ctrl.signal}).catch(() => {throw new Error(navigator.onLine ? 'blocked' : 'network')})
+            const res = await fetch(await endpoint(), {method: 'POST', body, signal: ctrl.signal}).catch(() => {throw new Error(navigator.onLine ? 'blocked' : 'network')})
             if (!res.ok) throw new Error(res.status)
             const {answer} = await res.json()
             if (typeof answer !== 'string' || !answer.trim()) throw new Error('empty')
